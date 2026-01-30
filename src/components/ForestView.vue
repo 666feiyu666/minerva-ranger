@@ -24,22 +24,28 @@
        <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
           
           <div v-for="project in store.projects" :key="project.id" 
-               class="bg-melvor-panel border border-melvor-border rounded-lg overflow-hidden flex flex-col hover:border-green-800 transition-colors shadow-lg">
+               class="bg-melvor-panel border border-melvor-border rounded-lg overflow-hidden flex flex-col hover:border-green-800 transition-colors shadow-lg group relative">
              
              <div class="p-4 bg-[#202020] border-b border-melvor-border flex justify-between items-center">
-                <div class="flex items-center gap-3">
+                <div class="flex items-center gap-3 cursor-pointer hover:opacity-80 transition-opacity" @click="store.selectProject(project.id)">
                    <div class="text-2xl">{{ project.icon }}</div>
                    <div>
                       <h3 class="font-bold text-gray-200">{{ project.name }}</h3>
                       <div class="text-xs text-blue-400 font-bold">Level {{ project.level }}</div>
                    </div>
                 </div>
-                <div class="text-right">
-                   <div class="text-xl font-mono text-green-500 font-bold">{{ project.totalTrees }} 🌲</div>
+                
+                <div class="flex items-center gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button @click.stop="handleRename(project)" class="p-2 hover:bg-gray-700 rounded text-gray-400 hover:text-white" title="Rename">
+                        ✏️
+                    </button>
+                    <button @click.stop="handleDelete(project)" class="p-2 hover:bg-red-900/50 rounded text-gray-400 hover:text-red-400" title="Delete">
+                        🗑️
+                    </button>
                 </div>
              </div>
-
-             <div class="p-4 flex-1 bg-[#151515] min-h-[150px]">
+             
+             <div class="p-4 flex-1 bg-[#151515] min-h-[150px] cursor-pointer" @click="store.selectProject(project.id)">
                 <div v-if="!project.forest || Object.keys(project.forest).length === 0" class="h-full flex items-center justify-center text-gray-700 text-sm italic">
                    Soil is empty...
                 </div>
@@ -54,8 +60,13 @@
                 </div>
              </div>
 
-             <div class="p-2 bg-[#1a1a1a] border-t border-melvor-border text-[10px] text-gray-600 text-center uppercase tracking-widest">
-                {{ Object.keys(project.forest || {}).length }} Species Discovered
+             <div class="p-2 bg-[#1a1a1a] border-t border-melvor-border flex justify-between items-center px-4">
+                <div class="text-[10px] text-gray-600 uppercase tracking-widest">
+                    {{ Object.keys(project.forest || {}).length }} Species Discovered
+                </div>
+                <div class="text-sm font-mono text-green-500 font-bold">
+                    {{ project.totalTrees }} 🌲
+                </div>
              </div>
 
           </div>
@@ -73,4 +84,17 @@ const store = useGameStore()
 const totalTreesGlobal = computed(() => {
     return store.projects.reduce((sum, p) => sum + p.totalTrees, 0)
 })
+
+const handleRename = (project) => {
+    const newName = prompt("Rename project:", project.name)
+    if (newName && newName.trim() !== "") {
+        store.renameProject(project.id, newName.trim())
+    }
+}
+
+const handleDelete = (project) => {
+    if (confirm(`Are you sure you want to delete "${project.name}"?\nThis action cannot be undone.`)) {
+        store.deleteProject(project.id)
+    }
+}
 </script>
