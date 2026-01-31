@@ -5,10 +5,10 @@
        <div>
           <h2 class="text-3xl font-bold text-blue-400 flex items-center gap-3">
             <span>📝</span> 
-            <span>Research Notebook</span>
+            <span>记录</span>
           </h2>
           <p class="text-gray-400 text-sm mt-1">
-             Manage your knowledge assets. Tag notes with multiple projects.
+             记录你在密涅瓦的巡林日常。
           </p>
        </div>
        <div class="flex flex-col items-end">

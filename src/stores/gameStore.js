@@ -32,6 +32,21 @@ export const useGameStore = defineStore('game', () => {
   // === 4. 计算属性 ===
   const globalLevel = computed(() => Math.floor(Math.sqrt(globalXP.value / 100)) + 1)
   
+  // [新增] 全局等级进度条
+  const globalLevelProgress = computed(() => {
+    const level = globalLevel.value
+    // 反推当前等级的基础XP: 100 * (L-1)^2
+    const currentBaseXP = 100 * Math.pow(level - 1, 2)
+    // 反推下一等级的目标XP: 100 * L^2
+    const nextLevelXP = 100 * Math.pow(level, 2)
+    
+    const needed = nextLevelXP - currentBaseXP
+    const current = globalXP.value - currentBaseXP
+    
+    if (needed === 0) return 0
+    return Math.min((current / needed) * 100, 100)
+  })
+  
   const activeProject = computed(() => projects.value.find(p => p.id === activeProjectId.value))
   const runningProject = computed(() => projects.value.find(p => p.id === runningProjectId.value))
 
@@ -80,7 +95,6 @@ export const useGameStore = defineStore('game', () => {
   }
 
   // --- 修改：支持多标签 (Many-to-Many) ---
-  // projectIds 应该是一个数组 [id1, id2, ...]
   function uploadNote(title, content, projectIds = []) {
     const cleanContent = content.replace(/\s/g, '')
     const wordCount = cleanContent.length
@@ -89,12 +103,11 @@ export const useGameStore = defineStore('game', () => {
     
     coins.value += earnedCoins
     
-    // 确保 projectIds 是数组（兼容性处理）
     const tags = Array.isArray(projectIds) ? projectIds : (projectIds ? [projectIds] : [])
 
     notebook.value.unshift({ 
       id: Date.now(), 
-      projectIds: tags, // 这里存储数组
+      projectIds: tags, 
       title, 
       wordCount, 
       coins: earnedCoins, 
@@ -102,11 +115,9 @@ export const useGameStore = defineStore('game', () => {
     })
   }
 
-  // --- 新增：更新笔记标签 ---
   function updateNoteTags(noteId, newProjectIds) {
     const note = notebook.value.find(n => n.id === noteId)
     if (note) {
-        // 更新标签数组
         note.projectIds = [...newProjectIds]
     }
   }
@@ -180,9 +191,31 @@ export const useGameStore = defineStore('game', () => {
     }
     
     projects.value = projects.value.filter(p => p.id !== id)
-    // 注意：删除项目后，notebook 里的 projectIds 可能会包含无效 ID，
-    // 这通常没问题，显示层过滤掉即可，或者在这里做一次深度清理。
-    // 为了性能，我们选择在显示层处理。
+  }
+
+function reorderProjects(fromIndex, toIndex) {
+    if (fromIndex < 0 || fromIndex >= projects.value.length || toIndex < 0 || toIndex >= projects.value.length) return
+    if (fromIndex === toIndex) return
+
+    const itemToMove = projects.value[fromIndex]
+    
+    // 1. 先移除移动项
+    projects.value.splice(fromIndex, 1)
+
+    // 2. 计算插入位置
+    // 如果是从上往下拖 (from < to)，因为上方少了一个元素，原本的 toIndex 现在指向的是下一个元素。
+    // 为了实现“插入到目标位置之前”的效果，我们需要对索引进行调整。
+    // 举例：[A, B, C]。拖 A(0) 到 C(2)。
+    // 移除 A -> [B, C]。原来的 C 是 index 2，现在是 index 1。
+    // 我们想变成 [B, A, C]，即插入到 1 的位置。
+    // 所以如果 from < to，目标索引应该减 1。
+    
+    let insertIndex = toIndex
+    if (fromIndex < toIndex) {
+        insertIndex -= 1
+    }
+
+    projects.value.splice(insertIndex, 0, itemToMove)
   }
 
   // === 8. 持久化 ===
@@ -195,7 +228,7 @@ export const useGameStore = defineStore('game', () => {
       coins: coins.value,
       globalXP: globalXP.value,
       unlockedTreeIds: unlockedTreeIds.value,
-      projects: projects.value,
+      projects: projects.value, // 顺序会被保存
       notebook: notebook.value,
       activeProjectId: activeProjectId.value,
       runningProjectId: runningProjectId.value, 
@@ -216,7 +249,6 @@ export const useGameStore = defineStore('game', () => {
       unlockedTreeIds.value = data.unlockedTreeIds || ['t1']
       projects.value = (data.projects || []).map(p => ({ ...p, forest: p.forest || {} }))
       
-      // 兼容性处理：如果旧存档是单 ID (projectId)，转换为数组 (projectIds)
       const rawNotebook = data.notebook || []
       notebook.value = rawNotebook.map(note => ({
         ...note,
@@ -279,14 +311,14 @@ export const useGameStore = defineStore('game', () => {
   function cheatAddCoins() { coins.value += 1000; globalXP.value += 1000 }
 
   return { 
-    projects, globalXP, globalLevel, coins, unlockedTreeIds, activeView, notebook,
+    projects, globalXP, globalLevel, globalLevelProgress, coins, unlockedTreeIds, activeView, notebook,
     activeProjectId, activeProject, runningProjectId, runningProject, 
     activeTreeId, activeTree, timer, maxTime, isRunning, progressPercentage, 
     TREE_TYPES, inventoryTrees,
     getTreeYield, buyTree, createProject, selectProject, 
     openShop, openForest, openNotebook, uploadNote,
     startAction, stopTimer, toggleAction, downloadSaveFile, importSaveData, cheatAddCoins, getTreeIcon,
-    renameProject, deleteProject,
+    renameProject, deleteProject, reorderProjects,
     updateNoteTags
   }
 })
