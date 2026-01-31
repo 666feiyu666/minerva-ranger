@@ -30,9 +30,9 @@
        </div>
     </div>
 
-    <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar flex flex-col gap-6">
+    <div class="flex-1 flex flex-col gap-6 overflow-hidden min-h-0">
        
-       <div class="border rounded-lg p-6 transition-all backdrop-blur-sm shadow-md"
+       <div class="border rounded-lg p-6 transition-all backdrop-blur-sm shadow-md shrink-0 overflow-y-auto max-h-[40vh] custom-scrollbar"
             :class="store.isNightMode ? 'bg-[#1a1a1a]/60 border-gray-700' : 'bg-white/50 border-white/60'">
           <h3 class="text-lg font-bold mb-4 transition-colors"
               :class="store.isNightMode ? 'text-gray-200' : 'text-gray-800'">Submit New Note</h3>
@@ -88,10 +88,10 @@
           </div>
        </div>
 
-       <div class="border rounded-lg p-6 flex-1 flex flex-col backdrop-blur-sm shadow-md transition-all"
+       <div class="border rounded-lg p-6 flex-1 flex flex-col min-h-0 backdrop-blur-sm shadow-md transition-all"
             :class="store.isNightMode ? 'bg-[#1a1a1a]/60 border-gray-700' : 'bg-white/50 border-white/60'">
           
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3 shrink-0">
               <h3 class="text-lg font-bold transition-colors"
                   :class="store.isNightMode ? 'text-gray-200' : 'text-gray-800'">Submission History</h3>
               <div class="flex items-center gap-2">
@@ -114,7 +114,7 @@
               No notes found matching the current filter.
           </div>
 
-          <div class="space-y-2 overflow-y-auto pr-1 custom-scrollbar">
+          <div class="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
              <div v-for="note in filteredNotes" :key="note.id" 
                   class="border p-3 rounded transition-all backdrop-blur-sm hover:shadow-md"
                   :class="store.isNightMode 
