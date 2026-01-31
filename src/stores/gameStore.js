@@ -141,6 +141,13 @@ export const useGameStore = defineStore('game', () => {
 
     timer.value += delta
 
+    // [新增] 只要在运行，就将经过的秒数累加到当前项目中
+    if (runningProject.value) {
+        //以此确保字段存在
+        if (!runningProject.value.totalTimeSpent) runningProject.value.totalTimeSpent = 0
+        runningProject.value.totalTimeSpent += delta
+    }
+
     // 检查进度是否完成 (支持一次 Tick 完成多次生长)
     if (timer.value >= activeTree.value.time) {
       const finishedCycles = Math.floor(timer.value / activeTree.value.time)
@@ -279,7 +286,7 @@ function reorderProjects(fromIndex, toIndex) {
       coins.value = data.coins || 0
       globalXP.value = data.globalXP || 0
       unlockedTreeIds.value = data.unlockedTreeIds || ['t1']
-      projects.value = (data.projects || []).map(p => ({ ...p, forest: p.forest || {} }))
+      projects.value = (data.projects || []).map(p => ({ ...p, forest: p.forest || {}, totalTimeSpent: p.totalTimeSpent || 0 }))
       
       const rawNotebook = data.notebook || []
       notebook.value = rawNotebook.map(note => ({
@@ -334,7 +341,7 @@ function reorderProjects(fromIndex, toIndex) {
     URL.revokeObjectURL(url)
   }
   function buyTree(tree) { if (unlockedTreeIds.value.includes(tree.id)) return; if (coins.value >= tree.price) { coins.value -= tree.price; unlockedTreeIds.value.push(tree.id) } }
-  function createProject(name) { const newProj = { id: Date.now(), name, icon: '📁', level: 1, currentXP: 0, nextLevelXP: 100, totalTrees: 0, forest: {} }; projects.value.push(newProj); selectProject(newProj.id) }
+  function createProject(name) { const newProj = { id: Date.now(), name, icon: '📁', level: 1, currentXP: 0, nextLevelXP: 100, totalTrees: 0, totalTimeSpent: 0, forest: {} }; projects.value.push(newProj); selectProject(newProj.id) }
   function selectProject(id) { activeProjectId.value = id; activeView.value = 'dashboard' }
   
   function openShop() { activeView.value = 'shop' }

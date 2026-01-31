@@ -12,6 +12,12 @@
               <h2 class="text-3xl font-bold text-white tracking-wide">{{ store.activeProject.name }}</h2>
               <div class="flex items-center gap-3 mt-1">
                  <span class="px-2 py-0.5 rounded bg-blue-900/50 border border-blue-800 text-blue-200 font-bold text-xs">Lv. {{ store.activeProject.level }}</span>
+                 
+                 <span class="px-2 py-0.5 rounded bg-purple-900/50 border border-purple-800 text-purple-200 font-bold text-xs flex items-center gap-1">
+                    <span>⏱️</span>
+                    {{ formatDuration(store.activeProject.totalTimeSpent) }}
+                 </span>
+
                  <span class="text-sm text-gray-400">XP Multiplier: <span class="text-yellow-400 font-bold">x{{ yieldMultiplier }}</span></span>
               </div>
             </div>
@@ -22,7 +28,7 @@
           
           <template v-if="store.activeProjectId === store.runningProjectId">
               <div class="absolute top-0 left-0 h-full bg-gradient-to-r from-emerald-900 to-emerald-600 transition-all duration-100 ease-linear" 
-                  :style="{ width: store.progressPercentage + '%' }">
+                   :style="{ width: store.progressPercentage + '%' }">
               </div>
               <div class="absolute inset-0 flex items-center justify-between px-6 z-10">
                  <div class="flex items-center gap-3">
@@ -87,10 +93,19 @@ import { computed } from 'vue'
 import { useGameStore } from '@/stores/gameStore'
 const store = useGameStore()
 const yieldMultiplier = computed(() => store.getTreeYield(store.inventoryTrees[0], store.activeProject).multiplier)
-// 修改 formatTime，先用 Math.floor 取整，再取余
+
+// [修改] 倒计时格式化：先取整，避免显示小数
 const formatTime = (s) => {
-  const seconds = Math.floor(s) // [新增] 强制取整
+  const seconds = Math.floor(s) 
   return `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`
+}
+
+// [新增] 总时长格式化 (例如: 1h 25m)
+const formatDuration = (seconds) => {
+  if (!seconds) return '0m'
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  return h > 0 ? `${h}h ${m}m` : `${m}m`
 }
 
 // 辅助判断：某棵树是否在【当前视图项目】中处于激活状态
@@ -99,7 +114,6 @@ const isTreeActive = (treeId) => {
 }
 
 const getButtonText = (tree) => {
-  // 只有当这棵树属于 正在运行的项目 时，才显示 Pause/Resume
   if (isTreeActive(tree.id)) {
       return store.isRunning ? 'Pause' : 'Resume'
   }
@@ -116,11 +130,9 @@ const getButtonClass = (tree) => {
 }
 
 const handleButtonClick = (tree) => {
-  // 如果点击的是当前正在跑的树 -> 暂停
   if (isTreeActive(tree.id)) {
       store.toggleAction()
   } else {
-      // 否则 -> 开启新任务（Store 会自动停止旧项目的任务）
       store.startAction(tree.id)
   }
 }
