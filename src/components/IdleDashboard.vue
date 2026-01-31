@@ -1,5 +1,5 @@
 <template>
-  <div class="flex-1 p-6 flex flex-col h-full overflow-hidden bg-[#1a1a1a]">
+  <div class="flex-1 p-6 flex flex-col h-full overflow-hidden bg-transparent">
     
     <div class="bg-melvor-panel border border-melvor-border rounded-lg p-6 mb-6 shadow-xl shrink-0">
        <div class="flex justify-between items-start mb-4">
@@ -32,9 +32,9 @@
               </div>
               <div class="absolute inset-0 flex items-center justify-between px-6 z-10">
                  <div class="flex items-center gap-3">
-                    <span v-if="store.isRunning" class="animate-bounce text-2xl">🚿</span>
+                    <span v-if="store.isRunning" class="animate-bounce text-2xl">🌲</span>
                     <span class="font-bold text-gray-200 text-lg tracking-wide drop-shadow-md">
-                       {{ store.activeTree ? `Growing: ${store.activeTree.name}` : 'Ready...' }}
+                       {{ store.activeTree ? `种植: ${store.activeTree.name}` : 'Ready...' }}
                     </span>
                     <span v-if="!store.isRunning && store.timer > 0" class="text-xs text-yellow-500 font-bold border border-yellow-700 px-2 py-0.5 rounded bg-yellow-900/30">
                       PAUSED

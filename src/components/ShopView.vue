@@ -1,69 +1,101 @@
 <template>
-  <div class="flex-1 p-6 flex flex-col h-full bg-[#121212] overflow-hidden">
-    
-    <div class="flex justify-between items-center mb-6 shrink-0 bg-melvor-panel p-6 rounded-lg border border-melvor-border shadow-lg">
-       <div>
-          <h2 class="text-3xl font-bold text-yellow-500 flex items-center gap-3">
-            <span>🛒</span> 糖水菠萝的商店
-          </h2>
-          <p class="text-gray-400 text-sm mt-1">糖水菠萝一点都不黑心。</p>
-       </div>
-       <div class="flex flex-col items-end">
-          <div class="flex items-center gap-2 bg-black/40 px-5 py-2 rounded-full border border-yellow-900/50 mb-2 cursor-pointer" @click="store.cheatAddCoins">
-             <span class="text-2xl">🪙</span>
-             <span class="text-2xl font-bold text-yellow-400 font-mono">{{ store.coins }}</span>
-          </div>
-          <div class="text-xs text-gray-500">Global Level: <span class="text-blue-400 font-bold text-sm">{{ store.globalLevel }}</span></div>
-       </div>
-    </div>
+  <div class="flex-1 p-6 overflow-y-auto custom-scrollbar">
+    
+    <div class="flex items-center justify-between mb-6">
+       <h2 class="text-2xl font-bold flex items-center gap-2 transition-colors"
+           :class="store.isNightMode ? 'text-gray-100' : 'text-gray-800'">
+         <span class="text-3xl">🛒</span> Seeds Shop
+       </h2>
+       
+       <div class="px-4 py-2 rounded-full font-mono font-bold text-lg border transition-all"
+            :class="store.isNightMode 
+              ? 'bg-yellow-900/30 text-yellow-400 border-yellow-700/50' 
+              : 'bg-yellow-100 text-yellow-700 border-yellow-300 shadow-sm'">
+          💰 {{ store.coins }}
+       </div>
+    </div>
 
-    <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-          
-          <div v-for="tree in store.TREE_TYPES" :key="tree.id"
-             :class="['relative p-5 rounded-lg border-2 flex flex-col transition-all select-none',
-             store.unlockedTreeIds.includes(tree.id) ? 'bg-[#1a251a] border-green-900/50 opacity-70' : 'bg-melvor-panel border-melvor-border hover:border-gray-500']"
-          >
-             <div class="flex items-center gap-4 mb-4">
-                <div class="text-4xl bg-[#2d2d2d] w-16 h-16 flex items-center justify-center rounded-full border border-[#3d3d3d] shadow-lg">
-                   {{ tree.icon }}
-                </div>
-                <div>
-                   <h3 class="font-bold text-gray-100 text-lg">{{ tree.name }}</h3>
-                   <div class="text-xs text-blue-400 font-bold bg-blue-900/20 px-2 py-0.5 rounded mt-1 inline-block">
-                      XP Reward: {{ tree.xp }}
-                   </div>
-                </div>
-             </div>
-             
-             <p class="text-xs text-gray-500 mb-4 h-8">{{ tree.desc }}</p>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+      <div v-for="tree in store.TREE_TYPES" :key="tree.id" 
+           class="relative border-2 rounded-lg p-5 flex flex-col items-center text-center transition-all duration-300 group backdrop-blur-sm"
+           :class="[
+             // 卡片背景与边框适配
+             store.isNightMode 
+               ? 'bg-[#1a1a1a]/80 border-gray-700 hover:border-gray-500' 
+               : 'bg-white/60 border-white/60 shadow-sm hover:shadow-md hover:-translate-y-1 hover:bg-white/80',
+             // 已拥有状态的特殊样式
+             isOwned(tree) ? 'opacity-70 grayscale-[0.3]' : ''
+           ]"
+      >
+          <div class="text-5xl mb-4 transform group-hover:scale-110 transition-transform filter drop-shadow-sm">{{ tree.icon }}</div>
+          
+          <h3 class="text-xl font-bold mb-1"
+              :class="store.isNightMode ? 'text-gray-100' : 'text-gray-900'">
+              {{ tree.name }}
+          </h3>
+          <p class="text-xs mb-4 h-8 flex items-center justify-center px-2"
+             :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">
+             {{ tree.desc }}
+          </p>
 
-             <div class="mt-auto">
-                
-                <div v-if="store.unlockedTreeIds.includes(tree.id)" class="w-full py-2 bg-green-900/20 border border-green-800/50 text-green-500 text-center rounded text-xs font-bold uppercase tracking-widest flex items-center justify-center gap-2">
-                   <span>✔</span> Owned
-                </div>
+          <div class="w-full space-y-2 mb-4 text-xs font-bold">
+             <div class="flex justify-between items-center px-2 py-1 rounded"
+                  :class="store.isNightMode ? 'bg-black/20' : 'bg-gray-100'">
+                <span :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">XP/H</span>
+                <span class="text-blue-500">+{{ tree.xp }}</span>
+             </div>
+             <div class="flex justify-between items-center px-2 py-1 rounded"
+                  :class="store.isNightMode ? 'bg-black/20' : 'bg-gray-100'">
+                <span :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">GROW</span>
+                <span :class="store.isNightMode ? 'text-gray-300' : 'text-gray-600'">{{ tree.time / 60 }}m</span>
+             </div>
+             <div class="flex justify-between items-center px-2 py-1 rounded"
+                  :class="store.isNightMode ? 'bg-black/20' : 'bg-gray-100'">
+                <span :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">REQ</span>
+                <span :class="store.globalLevel >= tree.levelReq ? 'text-green-500' : 'text-red-500'">Lv. {{ tree.levelReq }}</span>
+             </div>
+          </div>
 
-                <button v-else-if="store.globalLevel < tree.levelReq" disabled class="w-full py-2 bg-black/40 border border-gray-800 text-gray-600 rounded cursor-not-allowed flex items-center justify-center gap-2">
-                   <span>🔒</span> Requires Lv.{{ tree.levelReq }}
-                </button>
-
-                <button v-else @click="store.buyTree(tree)" 
-                   :disabled="store.coins < tree.price"
-                   :class="['w-full py-2 border rounded font-bold flex items-center justify-center gap-2 transition-all shadow-lg',
-                   store.coins >= tree.price ? 'bg-yellow-700 hover:bg-yellow-600 text-white border-yellow-500 hover:scale-105' : 'bg-gray-800 text-gray-500 border-gray-700 cursor-not-allowed']">
-                   <span>🛒</span> Buy: {{ tree.price }} 🪙
-                </button>
-
-             </div>
-          </div>
-
-       </div>
-    </div>
-  </div>
+          <button 
+             @click="store.buyTree(tree)"
+             :disabled="isOwned(tree) || store.coins < tree.price || store.globalLevel < tree.levelReq"
+             class="w-full py-2 rounded font-bold text-sm uppercase tracking-wider transition-all"
+             :class="getBtnClass(tree)"
+          >
+             <span v-if="isOwned(tree)">Owned</span>
+             <span v-else-if="store.globalLevel < tree.levelReq">Locked (Lv.{{tree.levelReq}})</span>
+             <span v-else>Buy ({{ tree.price }})</span>
+          </button>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup>
 import { useGameStore } from '@/stores/gameStore'
 const store = useGameStore()
+
+const isOwned = (tree) => store.unlockedTreeIds.includes(tree.id)
+
+const getBtnClass = (tree) => {
+    if (isOwned(tree)) {
+        return store.isNightMode 
+            ? 'bg-gray-800 text-gray-500 cursor-not-allowed border border-gray-700' 
+            : 'bg-gray-200 text-gray-400 cursor-not-allowed border border-gray-300'
+    }
+    if (store.globalLevel < tree.levelReq) {
+        return store.isNightMode
+            ? 'bg-red-900/20 text-red-700 cursor-not-allowed border border-red-900/30'
+            : 'bg-red-50 text-red-300 cursor-not-allowed border border-red-100'
+    }
+    if (store.coins < tree.price) {
+        return store.isNightMode
+            ? 'bg-gray-700 text-gray-500 cursor-not-allowed'
+            : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+    }
+    // 可购买状态
+    return store.isNightMode
+        ? 'bg-green-700 hover:bg-green-600 text-white shadow-lg shadow-green-900/50'
+        : 'bg-green-500 hover:bg-green-400 text-white shadow-lg shadow-green-200'
+}
 </script>

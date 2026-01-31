@@ -27,17 +27,16 @@ export const useGameStore = defineStore('game', () => {
   const activeTreeId = ref(null)
   const isRunning = ref(false)
   const timer = ref(0)          
-  const lastSaveTime = ref(Date.now())
+  
+  // [新增] 夜间模式状态 (默认 false = 白天)
+  const isNightMode = ref(false)
 
   // === 4. 计算属性 ===
   const globalLevel = computed(() => Math.floor(Math.sqrt(globalXP.value / 100)) + 1)
   
-  // [新增] 全局等级进度条
   const globalLevelProgress = computed(() => {
     const level = globalLevel.value
-    // 反推当前等级的基础XP: 100 * (L-1)^2
     const currentBaseXP = 100 * Math.pow(level - 1, 2)
-    // 反推下一等级的目标XP: 100 * L^2
     const nextLevelXP = 100 * Math.pow(level, 2)
     
     const needed = nextLevelXP - currentBaseXP
@@ -94,7 +93,6 @@ export const useGameStore = defineStore('game', () => {
     globalXP.value += totalXP
   }
 
-  // --- 修改：支持多标签 (Many-to-Many) ---
   function uploadNote(title, content, projectIds = []) {
     const cleanContent = content.replace(/\s/g, '')
     const wordCount = cleanContent.length
@@ -122,55 +120,49 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-// === 6. 计时器与动作控制 ===
+  // [新增] 切换日夜模式
+  function toggleNightMode() {
+    isNightMode.value = !isNightMode.value
+  }
+
+  // === 6. 计时器与动作控制 ===
   let timerInterval = null
   let lastTimestamp = 0
 
-  // [新增] 独立的 Tick 逻辑，职责单一，代码更干净
   function gameTick() {
-    // 安全检查：如果没有树或不在运行，停止计时
     if (!activeTree.value || !isRunning.value) {
       stopTimer()
       return
     }
 
     const now = Date.now()
-    // 计算精确的逝去时间 (秒)，处理浏览器后台降频问题
     const delta = (now - lastTimestamp) / 1000
     lastTimestamp = now
 
     timer.value += delta
 
-    // [新增] 只要在运行，就将经过的秒数累加到当前项目中
     if (runningProject.value) {
-        //以此确保字段存在
         if (!runningProject.value.totalTimeSpent) runningProject.value.totalTimeSpent = 0
         runningProject.value.totalTimeSpent += delta
     }
 
-    // 检查进度是否完成 (支持一次 Tick 完成多次生长)
     if (timer.value >= activeTree.value.time) {
       const finishedCycles = Math.floor(timer.value / activeTree.value.time)
       
       if (finishedCycles > 0) {
         completeCycle(finishedCycles)
-        // 保留剩余的进度时间，而不是清零，防止时间亏损
         timer.value %= activeTree.value.time
       }
     }
   }
 
   function startTimer() {
-    if (isRunning.value) return // 防止重复启动
+    if (isRunning.value) return 
     
     isRunning.value = true
     lastTimestamp = Date.now()
     
-    // 清除可能存在的旧定时器
     if (timerInterval) clearInterval(timerInterval)
-    
-    // 设置为 100ms 刷新一次。
-    // 相比 1000ms，这能让进度条更丝滑，同时减少后台由于休眠导致的误差感知。
     timerInterval = setInterval(gameTick, 100)
   }
 
@@ -232,23 +224,13 @@ export const useGameStore = defineStore('game', () => {
     projects.value = projects.value.filter(p => p.id !== id)
   }
 
-function reorderProjects(fromIndex, toIndex) {
+  function reorderProjects(fromIndex, toIndex) {
     if (fromIndex < 0 || fromIndex >= projects.value.length || toIndex < 0 || toIndex >= projects.value.length) return
     if (fromIndex === toIndex) return
 
     const itemToMove = projects.value[fromIndex]
-    
-    // 1. 先移除移动项
     projects.value.splice(fromIndex, 1)
 
-    // 2. 计算插入位置
-    // 如果是从上往下拖 (from < to)，因为上方少了一个元素，原本的 toIndex 现在指向的是下一个元素。
-    // 为了实现“插入到目标位置之前”的效果，我们需要对索引进行调整。
-    // 举例：[A, B, C]。拖 A(0) 到 C(2)。
-    // 移除 A -> [B, C]。原来的 C 是 index 2，现在是 index 1。
-    // 我们想变成 [B, A, C]，即插入到 1 的位置。
-    // 所以如果 from < to，目标索引应该减 1。
-    
     let insertIndex = toIndex
     if (fromIndex < toIndex) {
         insertIndex -= 1
@@ -267,14 +249,14 @@ function reorderProjects(fromIndex, toIndex) {
       coins: coins.value,
       globalXP: globalXP.value,
       unlockedTreeIds: unlockedTreeIds.value,
-      projects: projects.value, // 顺序会被保存
+      projects: projects.value, 
       notebook: notebook.value,
       activeProjectId: activeProjectId.value,
       runningProjectId: runningProjectId.value, 
       activeTreeId: activeTreeId.value,
       isRunning: isRunning.value,
       timer: timer.value,
-      lastSaveTime: Date.now()
+      isNightMode: isNightMode.value // [新增] 保存日夜模式
     }
   }
 
@@ -298,8 +280,10 @@ function reorderProjects(fromIndex, toIndex) {
       runningProjectId.value = data.runningProjectId || data.activeProjectId || null 
       activeTreeId.value = data.activeTreeId || null
       timer.value = data.timer || 0
+      isNightMode.value = data.isNightMode || false // [新增] 读取日夜模式
+      
       const wasRunning = data.isRunning || false
-      const lastSave = data.lastSaveTime || Date.now()
+      const lastSave = data.timestamp || Date.now() // 注意：这里使用了 data.timestamp 或当前时间
 
       if (wasRunning && activeTreeId.value && runningProjectId.value) {
         const now = Date.now()
@@ -323,7 +307,9 @@ function reorderProjects(fromIndex, toIndex) {
     } catch (e) { console.error(e); if (!silent) alert('存档损坏') }
   }
 
-  watch([coins, globalXP, unlockedTreeIds, projects, notebook, activeProjectId, runningProjectId, activeTreeId, isRunning, timer], () => { saveToLocalStorage() }, { deep: true })
+  // [修改] 监听 isNightMode 的变化以自动保存
+  watch([coins, globalXP, unlockedTreeIds, projects, notebook, activeProjectId, runningProjectId, activeTreeId, isRunning, timer, isNightMode], () => { saveToLocalStorage() }, { deep: true })
+  
   function loadGame() { const saved = localStorage.getItem(SAVE_KEY); if (saved) importSaveData(saved, true) }
   loadGame()
 
@@ -353,11 +339,13 @@ function reorderProjects(fromIndex, toIndex) {
     projects, globalXP, globalLevel, globalLevelProgress, coins, unlockedTreeIds, activeView, notebook,
     activeProjectId, activeProject, runningProjectId, runningProject, 
     activeTreeId, activeTree, timer, maxTime, isRunning, progressPercentage, 
+    isNightMode, // 导出状态
     TREE_TYPES, inventoryTrees,
     getTreeYield, buyTree, createProject, selectProject, 
     openShop, openForest, openNotebook, uploadNote,
     startAction, stopTimer, toggleAction, downloadSaveFile, importSaveData, cheatAddCoins, getTreeIcon,
     renameProject, deleteProject, reorderProjects,
-    updateNoteTags
+    updateNoteTags,
+    toggleNightMode // 导出方法
   }
 })

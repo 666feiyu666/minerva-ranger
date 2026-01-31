@@ -1,39 +1,57 @@
 <template>
-  <div class="flex-1 p-6 flex flex-col h-full bg-[#121212] overflow-hidden">
+  <div class="flex-1 p-6 flex flex-col h-full bg-transparent overflow-hidden">
     
-    <div class="flex justify-between items-center mb-6 shrink-0 bg-melvor-panel p-6 rounded-lg border border-melvor-border shadow-lg">
+    <div class="flex justify-between items-center mb-6 shrink-0 p-6 rounded-lg border shadow-lg backdrop-blur-sm transition-all"
+         :class="store.isNightMode 
+           ? 'bg-[#1a1a1a]/80 border-gray-700' 
+           : 'bg-white/70 border-white/60 shadow-lg ring-1 ring-black/5'">
        <div>
-          <h2 class="text-3xl font-bold text-blue-400 flex items-center gap-3">
+          <h2 class="text-3xl font-bold flex items-center gap-3 transition-colors"
+              :class="store.isNightMode ? 'text-blue-400' : 'text-blue-600'">
             <span>📝</span> 
             <span>记录</span>
           </h2>
-          <p class="text-gray-400 text-sm mt-1">
+          <p class="text-sm mt-1 transition-colors"
+             :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">
              记录你在密涅瓦的巡林日常。
           </p>
        </div>
        <div class="flex flex-col items-end">
-          <div class="flex items-center gap-2 bg-black/40 px-5 py-2 rounded-full border border-yellow-900/50 mb-2">
+          <div class="flex items-center gap-2 px-5 py-2 rounded-full border mb-2 backdrop-blur-sm transition-colors"
+               :class="store.isNightMode 
+                 ? 'bg-black/40 border-yellow-900/50' 
+                 : 'bg-yellow-50 border-yellow-200 shadow-sm'">
              <span class="text-2xl">🪙</span>
-             <span class="text-2xl font-bold text-yellow-400 font-mono">{{ store.coins }}</span>
+             <span class="text-2xl font-bold font-mono transition-colors"
+                   :class="store.isNightMode ? 'text-yellow-400' : 'text-yellow-600'">{{ store.coins }}</span>
           </div>
-          <div class="text-xs text-gray-500">Rate: 10 Words = 1 Coin</div>
+          <div class="text-xs transition-colors"
+               :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">Rate: 10 Words = 1 Coin</div>
        </div>
     </div>
 
     <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar flex flex-col gap-6">
        
-       <div class="bg-melvor-panel border border-melvor-border rounded-lg p-6">
-          <h3 class="text-lg font-bold text-gray-200 mb-4">Submit New Note</h3>
+       <div class="border rounded-lg p-6 transition-all backdrop-blur-sm shadow-md"
+            :class="store.isNightMode ? 'bg-[#1a1a1a]/60 border-gray-700' : 'bg-white/50 border-white/60'">
+          <h3 class="text-lg font-bold mb-4 transition-colors"
+              :class="store.isNightMode ? 'text-gray-200' : 'text-gray-800'">Submit New Note</h3>
           
           <div class="flex flex-col gap-4">
              <div>
-                <label class="block text-xs text-gray-500 uppercase tracking-widest mb-2">Tag Projects (Optional)</label>
-                <div v-if="store.projects.length === 0" class="text-sm text-gray-600 italic">
+                <label class="block text-xs uppercase tracking-widest mb-2"
+                       :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">Tag Projects (Optional)</label>
+                <div v-if="store.projects.length === 0" class="text-sm italic"
+                     :class="store.isNightMode ? 'text-gray-600' : 'text-gray-400'">
                    No projects created yet. Note will be saved to Global only.
                 </div>
-                <div v-else class="grid grid-cols-2 md:grid-cols-3 gap-2 bg-[#1a1a1a] p-3 rounded border border-gray-700 max-h-32 overflow-y-auto custom-scrollbar">
+                <div v-else class="grid grid-cols-2 md:grid-cols-3 gap-2 p-3 rounded border max-h-32 overflow-y-auto custom-scrollbar transition-colors"
+                     :class="store.isNightMode 
+                       ? 'bg-[#1a1a1a] border-gray-700' 
+                       : 'bg-white/80 border-gray-200 shadow-inner'">
                    <label v-for="p in store.projects" :key="p.id" 
-                          class="flex items-center gap-2 text-sm text-gray-300 cursor-pointer hover:text-white select-none">
+                          class="flex items-center gap-2 text-sm cursor-pointer select-none transition-colors"
+                          :class="store.isNightMode ? 'text-gray-300 hover:text-white' : 'text-gray-600 hover:text-gray-900'">
                       <input type="checkbox" :value="p.id" v-model="selectedProjectIds" 
                              class="rounded border-gray-600 bg-gray-700 text-blue-500 focus:ring-offset-[#1a1a1a]">
                       <span class="truncate" :title="p.name">{{ p.name }}</span>
@@ -42,89 +60,124 @@
              </div>
 
              <div>
-                <label class="block text-xs text-gray-500 uppercase tracking-widest mb-1">Note Title</label>
+                <label class="block text-xs uppercase tracking-widest mb-1"
+                       :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">Note Title</label>
                 <input v-model="noteTitle" type="text" placeholder="e.g., Chapter 1 Summary..." 
-                   class="w-full bg-[#1a1a1a] border border-gray-700 rounded p-3 text-white focus:border-blue-500 outline-none transition-colors">
+                   class="w-full rounded p-3 outline-none transition-colors border"
+                   :class="store.isNightMode 
+                     ? 'bg-[#1a1a1a] border-gray-700 text-white focus:border-blue-500 placeholder-gray-600' 
+                     : 'bg-white border-gray-300 text-gray-900 focus:border-blue-500 placeholder-gray-400 shadow-sm'">
              </div>
 
-             <div class="border-2 border-dashed border-gray-700 rounded-lg p-8 text-center hover:bg-[#1a1a1a] transition-colors cursor-pointer relative"
+             <div class="border-2 border-dashed rounded-lg p-8 text-center transition-all cursor-pointer relative group"
+                  :class="store.isNightMode 
+                    ? 'border-gray-700 hover:bg-[#1a1a1a] hover:border-gray-500' 
+                    : 'border-gray-300 hover:bg-white/80 hover:border-blue-400 bg-white/30'"
                   @click="triggerFileSelect">
                 <input ref="fileInput" type="file" accept=".md,.txt" class="hidden" @change="handleFileChange">
-                <div class="text-4xl mb-2">📄</div>
-                <p class="text-gray-400 font-bold">Click to upload .md file</p>
-                <p class="text-xs text-gray-600 mt-1">
+                <div class="text-4xl mb-2 transition-transform group-hover:scale-110">📄</div>
+                <p class="font-bold transition-colors"
+                   :class="store.isNightMode ? 'text-gray-400' : 'text-gray-600'">Click to upload .md file</p>
+                <p class="text-xs mt-1 transition-colors"
+                   :class="store.isNightMode ? 'text-gray-600' : 'text-gray-500'">
                    Tags: 
-                   <span v-if="selectedProjectIds.length === 0" class="text-gray-500">Global Only</span>
-                   <span v-else class="text-blue-400 font-bold">{{ selectedProjectIds.length }} Projects Selected</span>
+                   <span v-if="selectedProjectIds.length === 0" class="opacity-70">Global Only</span>
+                   <span v-else class="text-blue-500 font-bold">{{ selectedProjectIds.length }} Projects Selected</span>
                 </p>
              </div>
           </div>
        </div>
 
-       <div class="bg-melvor-panel border border-melvor-border rounded-lg p-6 flex-1 flex flex-col">
+       <div class="border rounded-lg p-6 flex-1 flex flex-col backdrop-blur-sm shadow-md transition-all"
+            :class="store.isNightMode ? 'bg-[#1a1a1a]/60 border-gray-700' : 'bg-white/50 border-white/60'">
           
           <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
-              <h3 class="text-lg font-bold text-gray-200">Submission History</h3>
+              <h3 class="text-lg font-bold transition-colors"
+                  :class="store.isNightMode ? 'text-gray-200' : 'text-gray-800'">Submission History</h3>
               <div class="flex items-center gap-2">
-                  <span class="text-xs text-gray-500 uppercase">Filter:</span>
+                  <span class="text-xs uppercase" :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">Filter:</span>
                   <select v-model="filterId" 
-                      class="bg-[#1a1a1a] border border-gray-700 rounded px-3 py-1 text-sm text-gray-300 focus:border-blue-500 outline-none">
+                      class="border rounded px-3 py-1 text-sm outline-none transition-colors"
+                      :class="store.isNightMode 
+                        ? 'bg-[#1a1a1a] border-gray-700 text-gray-300' 
+                        : 'bg-white border-gray-300 text-gray-700 shadow-sm'">
                       <option value="ALL">Show All</option>
                       <option v-for="p in store.projects" :key="p.id" :value="p.id">
-                         📁 {{ p.name }}
+                          📁 {{ p.name }}
                       </option>
                   </select>
               </div>
           </div>
           
-          <div v-if="filteredNotes.length === 0" class="text-gray-600 text-center py-10 italic">
-             No notes found matching the current filter.
+          <div v-if="filteredNotes.length === 0" class="text-center py-10 italic transition-colors"
+               :class="store.isNightMode ? 'text-gray-600' : 'text-gray-400'">
+              No notes found matching the current filter.
           </div>
 
           <div class="space-y-2 overflow-y-auto pr-1 custom-scrollbar">
              <div v-for="note in filteredNotes" :key="note.id" 
-                  class="bg-[#1a1a1a] border border-[#333] p-3 rounded hover:border-gray-600 transition-colors">
+                  class="border p-3 rounded transition-all backdrop-blur-sm hover:shadow-md"
+                  :class="store.isNightMode 
+                    ? 'bg-[#1a1a1a]/80 border-[#333] hover:border-gray-600' 
+                    : 'bg-white/60 border-gray-200 hover:bg-white hover:border-blue-200'">
                 
                 <div class="flex items-start justify-between">
                     <div class="flex items-start gap-3 flex-1">
-                        <div class="bg-blue-900/20 p-2 rounded text-blue-400 mt-1">📝</div>
+                        <div class="p-2 rounded mt-1 transition-colors"
+                             :class="store.isNightMode ? 'bg-blue-900/20 text-blue-400' : 'bg-blue-50 text-blue-600'">📝</div>
                         <div class="flex-1">
-                            <div class="font-bold text-gray-200 flex items-center gap-2">
+                            <div class="font-bold flex items-center gap-2 transition-colors"
+                                 :class="store.isNightMode ? 'text-gray-200' : 'text-gray-800'">
                                 {{ note.title }}
                                 <button v-if="editingNoteId !== note.id" @click="startEdit(note)" 
-                                        class="text-gray-600 hover:text-blue-400 text-xs transition-colors" title="Edit Tags">
+                                        class="text-xs transition-colors" 
+                                        :class="store.isNightMode ? 'text-gray-600 hover:text-blue-400' : 'text-gray-400 hover:text-blue-600'"
+                                        title="Edit Tags">
                                     ✏️
                                 </button>
                             </div>
                             
                             <div v-if="editingNoteId !== note.id" class="flex flex-wrap items-center gap-2 mt-1">
-                                <span class="text-xs text-gray-500">{{ note.date }}</span>
+                                <span class="text-xs" :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">{{ note.date }}</span>
                                 <template v-if="note.projectIds && note.projectIds.length > 0">
                                     <span v-for="pid in note.projectIds" :key="pid" 
-                                            class="text-[10px] text-green-400 bg-green-900/20 px-1.5 rounded border border-green-900/30">
+                                          class="text-[10px] px-1.5 rounded border transition-colors"
+                                          :class="store.isNightMode 
+                                            ? 'text-green-400 bg-green-900/20 border-green-900/30' 
+                                            : 'text-emerald-700 bg-emerald-50 border-emerald-200'">
                                         {{ getProjectName(pid) }}
                                     </span>
                                 </template>
-                                <span v-else class="text-[10px] text-gray-500 bg-gray-800 px-1.5 rounded">
+                                <span v-else class="text-[10px] px-1.5 rounded"
+                                      :class="store.isNightMode ? 'text-gray-500 bg-gray-800' : 'text-gray-500 bg-gray-200'">
                                     Global
                                 </span>
                             </div>
 
-                            <div v-else class="mt-2 bg-[#121212] p-3 rounded border border-blue-900/50 animate-in fade-in zoom-in duration-200">
-                                <div class="text-xs text-gray-400 mb-2 font-bold uppercase tracking-wider">Reclassify Note</div>
+                            <div v-else class="mt-2 p-3 rounded border animate-in fade-in zoom-in duration-200"
+                                 :class="store.isNightMode 
+                                   ? 'bg-[#121212] border-blue-900/50' 
+                                   : 'bg-white border-blue-200 shadow-lg'">
+                                <div class="text-xs mb-2 font-bold uppercase tracking-wider"
+                                     :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">Reclassify Note</div>
                                 <div class="grid grid-cols-2 gap-2 mb-3 max-h-32 overflow-y-auto custom-scrollbar">
                                     <label v-for="p in store.projects" :key="p.id" 
-                                            class="flex items-center gap-2 text-xs text-gray-300 cursor-pointer select-none">
+                                           class="flex items-center gap-2 text-xs cursor-pointer select-none"
+                                           :class="store.isNightMode ? 'text-gray-300' : 'text-gray-700'">
                                         <input type="checkbox" :value="p.id" v-model="editSelectedIds" 
-                                                class="rounded border-gray-600 bg-gray-700 text-blue-500 focus:ring-offset-[#1a1a1a]">
+                                               class="rounded border-gray-600 bg-gray-700 text-blue-500 focus:ring-offset-[#1a1a1a]">
                                         <span class="truncate">{{ p.name }}</span>
                                     </label>
                                 </div>
                                 <div class="flex gap-2">
-                                    <button @click="saveEdit" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded font-bold transition-colors">
+                                    <button @click="saveEdit" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded font-bold transition-colors shadow-sm">
                                         Save
                                     </button>
-                                    <button @click="cancelEdit" class="px-3 py-1 bg-gray-700 hover:bg-gray-600 text-gray-300 text-xs rounded transition-colors">
+                                    <button @click="cancelEdit" 
+                                            class="px-3 py-1 text-xs rounded transition-colors"
+                                            :class="store.isNightMode 
+                                              ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                                              : 'bg-gray-200 hover:bg-gray-300 text-gray-700'">
                                         Cancel
                                     </button>
                                 </div>
@@ -133,8 +186,9 @@
                     </div>
 
                     <div class="text-right pl-4">
-                        <div class="text-yellow-500 font-bold font-mono">+{{ note.coins }} 🪙</div>
-                        <div class="text-xs text-gray-600">{{ note.wordCount }} words</div>
+                        <div class="font-bold font-mono transition-colors"
+                             :class="store.isNightMode ? 'text-yellow-500' : 'text-yellow-600'">+{{ note.coins }} 🪙</div>
+                        <div class="text-xs" :class="store.isNightMode ? 'text-gray-600' : 'text-gray-400'">{{ note.wordCount }} words</div>
                     </div>
                 </div>
              </div>
@@ -180,8 +234,6 @@ const saveEdit = () => {
         cancelEdit()
     }
 }
-
-// ... (以下逻辑保持不变：初始化勾选、FilteredNotes 计算、文件上传等) ...
 
 if (store.activeProjectId) {
     selectedProjectIds.value = [store.activeProjectId]
@@ -230,3 +282,19 @@ const handleFileChange = (event) => {
     reader.readAsText(file)
 }
 </script>
+
+<style scoped>
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent; 
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.4); 
+  border-radius: 3px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.6); 
+}
+</style>

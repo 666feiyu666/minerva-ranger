@@ -1,18 +1,28 @@
 <template>
-  <div class="flex-1 flex flex-col h-full bg-[#121212] overflow-hidden relative selection:bg-transparent">
+  <div class="flex-1 flex flex-col h-full bg-transparent overflow-hidden relative selection:bg-transparent">
     
     <div v-if="!viewingProject" class="flex flex-col h-full">
         <div class="shrink-0 p-6 pb-2">
-            <div class="flex justify-between items-center bg-melvor-panel p-6 rounded-lg border border-melvor-border shadow-lg">
+            <div class="flex justify-between items-center p-6 rounded-lg border shadow-lg backdrop-blur-sm transition-all duration-500"
+                 :class="store.isNightMode 
+                   ? 'bg-[#1a1a1a]/80 border-gray-700' 
+                   : 'bg-white/70 border-white/60 shadow-lg ring-1 ring-black/5'">
                 <div>
-                    <h2 class="text-3xl font-bold text-green-500 flex items-center gap-3">
+                    <h2 class="text-3xl font-bold flex items-center gap-3 transition-colors"
+                        :class="store.isNightMode ? 'text-green-500' : 'text-emerald-600'">
                         <span>🧭</span> 巡林
                     </h2>
-                    <p class="text-gray-400 text-sm mt-1">管理你的生态数据，点击卡片进入 3D 视图。</p>
+                    <p class="text-sm mt-1 transition-colors"
+                       :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">
+                       管理你的生态数据，点击卡片进入 3D 视图。
+                    </p>
                 </div>
                 <div class="flex flex-col items-end">
-                    <div class="text-2xl font-bold text-white">{{ totalTreesGlobal }} <span class="text-green-500">Trees Planted</span></div>
-                    <div class="text-xs text-gray-500">Global Ecosystem</div>
+                    <div class="text-2xl font-bold transition-colors"
+                         :class="store.isNightMode ? 'text-white' : 'text-gray-800'">
+                        {{ totalTreesGlobal }} <span :class="store.isNightMode ? 'text-green-500' : 'text-emerald-600'">Trees Planted</span>
+                    </div>
+                    <div class="text-xs" :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">Global Ecosystem</div>
                 </div>
             </div>
         </div>
@@ -26,42 +36,68 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">
                 <div v-for="project in store.projects" :key="project.id" 
-                    class="bg-melvor-panel border border-melvor-border rounded-lg overflow-hidden flex flex-col hover:border-green-500 hover:shadow-green-900/20 transition-all shadow-lg group relative cursor-pointer"
+                    class="border rounded-lg overflow-hidden flex flex-col transition-all shadow-lg group relative cursor-pointer backdrop-blur-sm"
+                    :class="store.isNightMode 
+                      ? 'bg-[#1a1a1a]/80 border-gray-700 hover:border-green-500 hover:shadow-green-900/20' 
+                      : 'bg-white/60 border-white/60 hover:bg-white/90 hover:shadow-xl hover:-translate-y-1 hover:border-emerald-300'"
                     @click="openInspection(project)">
                     
-                    <div class="p-4 bg-[#202020] border-b border-melvor-border flex justify-between items-center group-hover:bg-[#252525] transition-colors">
+                    <div class="p-4 border-b flex justify-between items-center transition-colors"
+                         :class="store.isNightMode 
+                           ? 'bg-[#202020]/50 border-gray-700 group-hover:bg-[#252525]/80' 
+                           : 'bg-white/40 border-gray-100 group-hover:bg-white/60'">
                         <div class="flex items-center gap-3">
                             <div class="text-2xl group-hover:scale-110 transition-transform">{{ project.icon }}</div>
                             <div>
-                                <h3 class="font-bold text-gray-200">{{ project.name }}</h3>
-                                <div class="text-xs text-blue-400 font-bold">Level {{ project.level }}</div>
+                                <h3 class="font-bold transition-colors"
+                                    :class="store.isNightMode ? 'text-gray-200' : 'text-gray-800'">
+                                    {{ project.name }}
+                                </h3>
+                                <div class="text-xs font-bold"
+                                     :class="store.isNightMode ? 'text-blue-400' : 'text-blue-600'">
+                                     Level {{ project.level }}
+                                </div>
                             </div>
                         </div>
                         
                         <div class="flex items-center gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button @click.stop="handleRename(project)" class="p-2 hover:bg-gray-700 rounded text-gray-400 hover:text-white" title="Rename">
+                            <button @click.stop="handleRename(project)" 
+                                    class="p-2 rounded transition-colors"
+                                    :class="store.isNightMode ? 'text-gray-400 hover:bg-gray-700 hover:text-white' : 'text-gray-400 hover:bg-gray-200 hover:text-gray-700'"
+                                    title="Rename">
                                 ✏️
                             </button>
-                            <button @click.stop="handleDelete(project)" class="p-2 hover:bg-red-900/50 rounded text-gray-400 hover:text-red-400" title="Delete">
+                            <button @click.stop="handleDelete(project)" 
+                                    class="p-2 rounded transition-colors"
+                                    :class="store.isNightMode ? 'text-gray-400 hover:bg-red-900/50 hover:text-red-400' : 'text-gray-400 hover:bg-red-100 hover:text-red-600'"
+                                    title="Delete">
                                 🗑️
                             </button>
                         </div>
                     </div>
                     
-                    <div class="p-4 flex-1 bg-[#151515] min-h-[120px] relative">
-                        <div class="absolute inset-0 flex items-center justify-center bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                            <span class="bg-black/80 text-white text-xs px-3 py-1 rounded-full border border-green-500/50 backdrop-blur font-bold uppercase tracking-wider">
+                    <div class="p-4 flex-1 min-h-[120px] relative transition-colors"
+                         :class="store.isNightMode ? 'bg-[#151515]/80' : 'bg-gray-50/50'">
+                        <div class="absolute inset-0 flex items-center justify-center transition-opacity pointer-events-none opacity-0 group-hover:opacity-100 z-10">
+                            <span class="px-3 py-1 rounded-full border backdrop-blur font-bold uppercase tracking-wider text-xs shadow-xl"
+                                  :class="store.isNightMode 
+                                    ? 'bg-black/80 text-white border-green-500/50' 
+                                    : 'bg-white/90 text-emerald-800 border-emerald-500/50'">
                                 Click to Inspect 3D View
                             </span>
                         </div>
 
-                        <div v-if="!project.forest || Object.keys(project.forest).length === 0" class="h-full flex items-center justify-center text-gray-700 text-sm italic">
+                        <div v-if="!project.forest || Object.keys(project.forest).length === 0" class="h-full flex items-center justify-center text-sm italic"
+                             :class="store.isNightMode ? 'text-gray-700' : 'text-gray-400'">
                             Soil is empty...
                         </div>
                         
-                        <div v-else class="flex flex-wrap gap-2 content-start">
+                        <div v-else class="flex flex-wrap gap-2 content-start opacity-100 group-hover:opacity-40 transition-opacity duration-300">
                             <div v-for="(count, treeId) in project.forest" :key="treeId" 
-                                class="flex items-center gap-1 bg-[#252525] border border-[#333] px-2 py-1 rounded-full text-xs text-gray-300"
+                                class="flex items-center gap-1 border px-2 py-1 rounded-full text-xs"
+                                :class="store.isNightMode 
+                                  ? 'bg-[#252525] border-[#333] text-gray-300' 
+                                  : 'bg-white border-gray-200 text-gray-600 shadow-sm'"
                                 title="Trees planted">
                                 <span class="text-lg">{{ store.getTreeIcon(treeId) }}</span>
                                 <span class="font-bold">x{{ count }}</span>
@@ -69,11 +105,14 @@
                         </div>
                     </div>
 
-                    <div class="p-2 bg-[#1a1a1a] border-t border-melvor-border flex justify-between items-center px-4">
-                        <div class="text-[10px] text-gray-600 uppercase tracking-widest">
+                    <div class="p-2 border-t flex justify-between items-center px-4 transition-colors"
+                         :class="store.isNightMode ? 'bg-[#1a1a1a] border-gray-700' : 'bg-white/40 border-gray-100'">
+                        <div class="text-[10px] uppercase tracking-widest"
+                             :class="store.isNightMode ? 'text-gray-600' : 'text-gray-400'">
                             {{ Object.keys(project.forest || {}).length }} Species
                         </div>
-                        <div class="text-sm font-mono text-green-500 font-bold">
+                        <div class="text-sm font-mono font-bold"
+                             :class="store.isNightMode ? 'text-green-500' : 'text-emerald-600'">
                             {{ project.totalTrees }} 🌲
                         </div>
                     </div>
@@ -82,50 +121,71 @@
         </div>
     </div>
 
-    <div v-else class="absolute inset-0 z-50 bg-[#0a0a0a] flex flex-col animate-in fade-in zoom-in duration-300">
+    <div v-else class="absolute inset-0 z-50 flex flex-col animate-in fade-in zoom-in duration-300 transition-colors"
+         :class="store.isNightMode ? 'bg-[#0a0a0a]/95' : 'bg-[#e0f2fe]/95'">
        
        <div class="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-50 pointer-events-none">
           <button @click="closeInspection" 
-                  class="pointer-events-auto flex items-center gap-2 text-gray-400 hover:text-white bg-black/50 hover:bg-black/80 px-4 py-2 rounded-full backdrop-blur transition-all border border-gray-700">
+                  class="pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur transition-all border shadow-lg"
+                  :class="store.isNightMode 
+                    ? 'text-gray-400 hover:text-white bg-black/50 hover:bg-black/80 border-gray-700' 
+                    : 'text-gray-600 hover:text-gray-900 bg-white/50 hover:bg-white/80 border-white/50'">
              <span>←</span> <span class="text-sm font-bold uppercase">Back to Data</span>
           </button>
 
-          <div class="pointer-events-auto bg-melvor-panel border border-melvor-border p-4 rounded-xl shadow-2xl min-w-[200px] text-right backdrop-blur-md bg-opacity-90">
-             <h2 class="text-2xl font-bold text-white mb-1">{{ viewingProject.name }}</h2>
-             <div class="text-xs text-gray-500 font-bold uppercase tracking-wider mb-3">Level {{ viewingProject.level }} Ecosystem</div>
+          <div class="pointer-events-auto border p-4 rounded-xl shadow-2xl min-w-[200px] text-right backdrop-blur-md transition-colors"
+               :class="store.isNightMode 
+                 ? 'bg-melvor-panel/90 border-melvor-border text-white' 
+                 : 'bg-white/80 border-white/60 text-gray-800'">
+             <h2 class="text-2xl font-bold mb-1">{{ viewingProject.name }}</h2>
+             <div class="text-xs font-bold uppercase tracking-wider mb-3"
+                  :class="store.isNightMode ? 'text-gray-500' : 'text-gray-500'">Level {{ viewingProject.level }} Ecosystem</div>
              
              <div class="flex flex-col gap-2">
                  <button v-if="store.activeProjectId !== viewingProject.id" 
                          @click="setActiveAndStay"
-                         class="w-full py-2 bg-green-700 hover:bg-green-600 text-white text-xs font-bold uppercase rounded shadow-lg transition-transform hover:scale-105 active:scale-95">
+                         class="w-full py-2 text-white text-xs font-bold uppercase rounded shadow-lg transition-transform hover:scale-105 active:scale-95"
+                         :class="store.isNightMode ? 'bg-green-700 hover:bg-green-600' : 'bg-emerald-500 hover:bg-emerald-400'">
                     🚀 Set as Active Project
                  </button>
-                 <div v-else class="w-full py-2 bg-gray-800 text-green-500 text-xs font-bold uppercase rounded border border-green-900 flex items-center justify-center gap-2">
+                 <div v-else class="w-full py-2 text-xs font-bold uppercase rounded border flex items-center justify-center gap-2"
+                      :class="store.isNightMode 
+                        ? 'bg-gray-800 text-green-500 border-green-900' 
+                        : 'bg-white text-emerald-600 border-emerald-200 shadow-inner'">
                     <span class="animate-pulse">●</span> Currently Active
                  </div>
              </div>
           </div>
        </div>
 
-       <div class="flex-1 flex items-center justify-center relative overflow-hidden bg-gradient-to-b from-[#111] to-[#050505] cursor-grab active:cursor-grabbing select-none"
+       <div class="flex-1 flex items-center justify-center relative overflow-hidden cursor-grab active:cursor-grabbing select-none"
+            :class="store.isNightMode 
+              ? 'bg-gradient-to-b from-[#111] to-[#050505]' 
+              : 'bg-gradient-to-b from-sky-100 to-emerald-50/50'"
             @mousedown="startDrag" @mousemove="onDrag" @mouseup="stopDrag" @mouseleave="stopDrag">
           
-          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-green-900/10 blur-[100px] rounded-full pointer-events-none"></div>
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] blur-[100px] rounded-full pointer-events-none transition-colors duration-1000"
+               :class="store.isNightMode ? 'bg-green-900/10' : 'bg-yellow-200/40'"></div>
 
           <div class="relative transition-transform duration-100 ease-out"
                :style="{ transform: `scale(${zoomLevel}) rotateX(0deg) rotateZ(0deg)` }">
                
                <div class="w-[500px] h-[500px] bg-gradient-to-br from-[#2d4a3e] via-[#1a2e26] to-[#0f1f1a] 
-                           rounded-[60px] transform rotate-45 scale-y-50 shadow-[20px_20px_0px_#05110d] border-[8px] border-[#3d6153]
-                           relative z-0 group-island">
+                           rounded-[60px] transform rotate-45 scale-y-50 relative z-0 group-island"
+                    :class="store.isNightMode 
+                      ? 'shadow-[20px_20px_0px_#05110d] border-[8px] border-[#3d6153]' 
+                      : 'shadow-[20px_20px_0px_#1a332a] border-[8px] border-[#4a7a65]'">
                     <div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_transparent_0%,_#000_100%)]"></div>
                </div>
 
                <div class="absolute inset-0 w-[500px] h-[500px] z-10 pointer-events-none">
                   
                   <div v-if="islandTrees.length === 0" class="absolute inset-0 flex items-center justify-center z-50">
-                      <div class="bg-black/60 text-white px-4 py-2 rounded-full backdrop-blur text-xs font-bold animate-bounce transform -translate-y-10">
-                         Empty Island... Go plant some trees!
+                      <div class="px-4 py-2 rounded-full backdrop-blur text-xs font-bold animate-bounce transform -translate-y-10 border"
+                           :class="store.isNightMode 
+                             ? 'bg-black/60 text-white border-gray-700' 
+                             : 'bg-white/80 text-gray-800 border-white shadow-lg'">
+                          Empty Island... Go plant some trees!
                       </div>
                   </div>
 
@@ -139,15 +199,22 @@
                        
                        <div class="text-4xl filter drop-shadow-xl relative cursor-help pointer-events-auto" :title="tree.name">
                           {{ tree.icon }}
-                          <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-8 h-3 bg-black/40 blur-sm rounded-full -z-10 transform scale-y-50"></div>
+                          <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-8 h-3 blur-sm rounded-full -z-10 transform scale-y-50 transition-colors"
+                               :class="store.isNightMode ? 'bg-black/40' : 'bg-black/20'"></div>
                        </div>
                   </div>
                </div>
           </div>
 
           <div class="absolute bottom-8 right-8 flex flex-col gap-2 pointer-events-auto">
-             <button @click="zoomIn" class="w-10 h-10 bg-[#333] hover:bg-[#444] text-white rounded-lg font-bold shadow-lg border border-gray-600 active:scale-95 transition-transform">+</button>
-             <button @click="zoomOut" class="w-10 h-10 bg-[#333] hover:bg-[#444] text-white rounded-lg font-bold shadow-lg border border-gray-600 active:scale-95 transition-transform">-</button>
+             <button @click="zoomIn" class="w-10 h-10 rounded-lg font-bold shadow-lg border active:scale-95 transition-all"
+                     :class="store.isNightMode 
+                       ? 'bg-[#333] hover:bg-[#444] text-white border-gray-600' 
+                       : 'bg-white hover:bg-gray-100 text-gray-700 border-gray-300'">+</button>
+             <button @click="zoomOut" class="w-10 h-10 rounded-lg font-bold shadow-lg border active:scale-95 transition-all"
+                     :class="store.isNightMode 
+                       ? 'bg-[#333] hover:bg-[#444] text-white border-gray-600' 
+                       : 'bg-white hover:bg-gray-100 text-gray-700 border-gray-300'">-</button>
           </div>
 
        </div>
@@ -183,8 +250,7 @@ const generateIslandLayout = (project) => {
         const icon = treeInfo ? treeInfo.icon : '🌲'
         const name = treeInfo ? treeInfo.name : 'Unknown Tree'
         
-        // 限制最大渲染数量，防止几千棵树卡死页面
-        // 我们可以只渲染前 100 棵或者做按比例缩减
+        // 限制最大渲染数量
         const renderCount = Math.min(count, 50) 
         
         for (let i = 0; i < renderCount; i++) {
@@ -192,7 +258,6 @@ const generateIslandLayout = (project) => {
             let x = Math.random() * 80 + 10
             let y = Math.random() * 80 + 10
             
-            // 简单的抖动防止重叠过于死板
             x += (Math.random() - 0.5) * 5
             y += (Math.random() - 0.5) * 5
 
@@ -200,37 +265,29 @@ const generateIslandLayout = (project) => {
         }
     })
 
-    // 按 Y 轴排序 (虽然 CSS z-index 处理了遮挡，但 DOM 顺序也有助于优化)
+    // 按 Y 轴排序 (渲染层级)
     return trees.sort((a, b) => a.y - b.y)
 }
 
 // === 交互动作 ===
 
-// 打开 3D 视图
 const openInspection = (project) => {
-    // 先设置项目，然后生成布局
     viewingProject.value = project
     islandTrees.value = generateIslandLayout(project)
     zoomLevel.value = 1.0
-    
-    // 如果你想点进去就顺便选中它为 Active Project，可以解开下面这行
-    // store.selectProject(project.id)
 }
 
-// 关闭 3D 视图
 const closeInspection = () => {
     viewingProject.value = null
     islandTrees.value = []
 }
 
-// 在详情页激活项目
 const setActiveAndStay = () => {
     if (viewingProject.value) {
         store.selectProject(viewingProject.value.id)
     }
 }
 
-// 缩放逻辑
 const zoomIn = () => { if (zoomLevel.value < 2.0) zoomLevel.value += 0.2 }
 const zoomOut = () => { if (zoomLevel.value > 0.5) zoomLevel.value -= 0.2 }
 
@@ -245,7 +302,6 @@ const handleRename = (project) => {
 const handleDelete = (project) => {
     if (confirm(`Are you sure you want to delete "${project.name}"?\nThis action cannot be undone.`)) {
         store.deleteProject(project.id)
-        // 如果正在查看的项目被删除了，退回主界面
         if (viewingProject.value && viewingProject.value.id === project.id) {
             closeInspection()
         }
@@ -265,13 +321,13 @@ const stopDrag = () => {}
   width: 6px;
 }
 .custom-scrollbar::-webkit-scrollbar-track {
-  background: #1a1a1a; 
+  background: transparent; 
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #333; 
+  background: rgba(128, 128, 128, 0.4); 
   border-radius: 3px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #555; 
+  background: rgba(128, 128, 128, 0.6); 
 }
 </style>
