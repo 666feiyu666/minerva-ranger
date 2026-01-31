@@ -1,44 +1,55 @@
-# minerva-ranger
+# 🦉 密涅瓦的巡林官 (Minerva Ranger)
 
-This template should help get you started developing with Vue 3 in Vite.
+> 当 **Forest（专注森林）** 遇上 **Melvor Idle（梅尔沃放置）**：经营你的知识森林
 
-## Recommended IDE Setup
+![License](https://img.shields.io/badge/license-MIT-blue)
+![Vue](https://img.shields.io/badge/Vue-3.x-green)
+![Electron](https://img.shields.io/badge/Electron-Desktop-yellow)
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+## 📖 项目简介
 
-## Recommended Browser Setup
+**密涅瓦的巡林官**（Minerva Ranger）是一款旨在让“投入”变得更有趣的效率软件。
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+市面上的专注软件（如 Forest）通常只记录“时间投入”，通过简单的标签分类。而我们认为，真正的效率不仅包含**时间的投入**，更包含**阶段性的产出**。
 
-## Customize configuration
+受到挂机游戏《Melvor Idle（梅尔沃放置）》的启发，我们将游戏化的数值体系引入到项目管理中。在这里，你不仅是在“种树”，更是在经营你的知识森林——所谓“密涅瓦的巡林官”。
 
-See [Vite Configuration Reference](https://vite.dev/config/).
+## ✨ 核心理念与功能
 
-## Project Setup
+### 1. 项目制挂机 (Project-based Idle)
+不同于传统的“标签”分类，我们引入了**“项目 (Project)”**的概念。
+- 每个项目（如“学习叙事理论”、“撰写论文”）都是一个独立的任务线。
+- **挂机机制**：点击项目开始挂机（专注），对应游戏中的“技能训练”。
+- **经验收益**：专注时间转化为项目的**经验值 (XP)**，提升项目等级，解锁倍率加成。
 
-```sh
-npm install
-```
+### 2. 双重激励循环 (Dual Loop System)
+我们设计了独特的“时间-产出”双重货币体系，解决“只磨洋工不出活”的问题：
 
-### Compile and Hot-Reload for Development
+* **⏳ 时间投入 = 经验值 (XP)**
+    * 类似 Forest 的种树逻辑。投入时间越多，项目等级越高，不仅获得成就感，还能提升后续获取资源的效率。
+* **📝 知识产出 = 金币 (Coins)**
+    * **记录区 (Notebook)**：仅仅发呆是不够的。你需要提交 Markdown 格式的阶段性成果（笔记、文档、代码片段）。
+    * 系统会根据你的**字数/产出量**发放“货币”。你可以使用货币在商店购买新的树种和场景背景。
 
-```sh
-npm run dev
-```
+### 3. 巡林与商店 (Forest & Shop)
+利用你的专注成果来装扮你的世界：
+* **巡林功能**：你种植的树木会出现在特定的区域中，可视化你的努力。
+* **个性化商店**：使用“金币”购买稀有树种（垂柳、魔法树、黄金树等等）或特殊的场景背景。
+* **场景切换**：目前支持昼夜模式切换与默认“漂流瓶”背景，未来计划加入“中国园林”、“古希腊遗迹”、“哥特风”等多种沉浸式背景。
 
-### Compile and Minify for Production
+## 🗺️ 未来计划
+[ ] 云端同步：实现手机端与电脑端的数据互通（基于 Supabase）。
 
-```sh
-npm run build
-```
+[ ] 更多背景：引入漂流瓶、古典园林等多样化白噪音场景。
 
-### Lint with [ESLint](https://eslint.org/)
+[ ] 成就系统：解锁“专注达人”、“高产似母猪”等趣味成就。
 
-```sh
-npm run lint
-```
+## 🛠️ 技术栈
+
+本项目基于现代前端技术栈构建，封装为 Electron 桌面应用：
+
+- **Core**: [Vue 3](https://vuejs.org/) + [Vite](https://vitejs.dev/)
+- **Desktop**: [Electron](https://www.electronjs.org/)
+- **State Management**: [Pinia](https://pinia.vuejs.org/)
+- **Styling**: [TailwindCSS](https://tailwindcss.com/)
+
