@@ -14,7 +14,7 @@
                     </h2>
                     <p class="text-sm mt-1 transition-colors"
                        :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">
-                       管理你的生态数据，点击卡片进入 3D 视图。
+                       管理你的生态数据，点击卡片进入森林视图。
                     </p>
                 </div>
                 <div class="flex flex-col items-end">
@@ -83,13 +83,13 @@
                                   :class="store.isNightMode 
                                     ? 'bg-black/80 text-white border-green-500/50' 
                                     : 'bg-white/90 text-emerald-800 border-emerald-500/50'">
-                                Click to Inspect 3D View
+                                Click to View Bottle
                             </span>
                         </div>
 
                         <div v-if="!project.forest || Object.keys(project.forest).length === 0" class="h-full flex items-center justify-center text-sm italic"
                              :class="store.isNightMode ? 'text-gray-700' : 'text-gray-400'">
-                            Soil is empty...
+                            Bottle is empty...
                         </div>
                         
                         <div v-else class="flex flex-wrap gap-2 content-start opacity-100 group-hover:opacity-40 transition-opacity duration-300">
@@ -130,7 +130,7 @@
                   :class="store.isNightMode 
                     ? 'text-gray-400 hover:text-white bg-black/50 hover:bg-black/80 border-gray-700' 
                     : 'text-gray-600 hover:text-gray-900 bg-white/50 hover:bg-white/80 border-white/50'">
-             <span>←</span> <span class="text-sm font-bold uppercase">Back to Data</span>
+             <span>←</span> <span class="text-sm font-bold uppercase">Back</span>
           </button>
 
           <div class="pointer-events-auto border p-4 rounded-xl shadow-2xl min-w-[200px] text-right backdrop-blur-md transition-colors"
@@ -146,13 +146,13 @@
                          @click="setActiveAndStay"
                          class="w-full py-2 text-white text-xs font-bold uppercase rounded shadow-lg transition-transform hover:scale-105 active:scale-95"
                          :class="store.isNightMode ? 'bg-green-700 hover:bg-green-600' : 'bg-emerald-500 hover:bg-emerald-400'">
-                    🚀 Set as Active Project
+                    🚀 Set as Active
                  </button>
                  <div v-else class="w-full py-2 text-xs font-bold uppercase rounded border flex items-center justify-center gap-2"
                       :class="store.isNightMode 
                         ? 'bg-gray-800 text-green-500 border-green-900' 
                         : 'bg-white text-emerald-600 border-emerald-200 shadow-inner'">
-                    <span class="animate-pulse">●</span> Currently Active
+                    <span class="animate-pulse">●</span> Active
                  </div>
              </div>
           </div>
@@ -160,49 +160,43 @@
 
        <div class="flex-1 flex items-center justify-center relative overflow-hidden cursor-grab active:cursor-grabbing select-none"
             :class="store.isNightMode 
-              ? 'bg-gradient-to-b from-[#111] to-[#050505]' 
-              : 'bg-gradient-to-b from-sky-100 to-emerald-50/50'"
+              ? 'bg-gradient-to-b from-[#111] via-[#0d1510] to-[#050505]' 
+              : 'bg-gradient-to-b from-sky-100 via-emerald-50 to-white'"
             @mousedown="startDrag" @mousemove="onDrag" @mouseup="stopDrag" @mouseleave="stopDrag">
           
-          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] blur-[100px] rounded-full pointer-events-none transition-colors duration-1000"
-               :class="store.isNightMode ? 'bg-green-900/10' : 'bg-yellow-200/40'"></div>
+          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] blur-[100px] rounded-full pointer-events-none transition-colors duration-1000"
+               :class="store.isNightMode ? 'bg-green-900/20' : 'bg-yellow-200/40'"></div>
 
-          <div class="relative transition-transform duration-100 ease-out"
-               :style="{ transform: `scale(${zoomLevel}) rotateX(0deg) rotateZ(0deg)` }">
+          <div class="relative transition-transform duration-100 ease-out z-10"
+               :style="{ transform: `scale(${zoomLevel})` }">
                
-               <div class="w-[500px] h-[500px] bg-gradient-to-br from-[#2d4a3e] via-[#1a2e26] to-[#0f1f1a] 
-                           rounded-[60px] transform rotate-45 scale-y-50 relative z-0 group-island"
-                    :class="store.isNightMode 
-                      ? 'shadow-[20px_20px_0px_#05110d] border-[8px] border-[#3d6153]' 
-                      : 'shadow-[20px_20px_0px_#1a332a] border-[8px] border-[#4a7a65]'">
-                    <div class="absolute inset-0 opacity-20 bg-[radial-gradient(circle_at_center,_transparent_0%,_#000_100%)]"></div>
-               </div>
-
-               <div class="absolute inset-0 w-[500px] h-[500px] z-10 pointer-events-none">
+               <div class="w-[800px] h-[300px] bg-no-repeat bg-contain bg-center relative"
+                    :style="{ backgroundImage: `url(${bottleBg})` }">
                   
-                  <div v-if="islandTrees.length === 0" class="absolute inset-0 flex items-center justify-center z-50">
-                      <div class="px-4 py-2 rounded-full backdrop-blur text-xs font-bold animate-bounce transform -translate-y-10 border"
+                   <div v-if="islandTrees.length === 0" class="absolute inset-0 flex items-center justify-center z-50">
+                      <div class="px-4 py-2 rounded-full backdrop-blur text-xs font-bold animate-bounce border"
                            :class="store.isNightMode 
                              ? 'bg-black/60 text-white border-gray-700' 
                              : 'bg-white/80 text-gray-800 border-white shadow-lg'">
-                          Empty Island... Go plant some trees!
+                          Empty Bottle... Go plant some trees!
                       </div>
-                  </div>
+                   </div>
 
-                  <div v-for="(tree, index) in islandTrees" :key="index"
-                       class="absolute transform -translate-x-1/2 -translate-y-[90%] transition-all duration-500 ease-out hover:scale-125 hover:z-[1000] group"
-                       :style="{ 
-                          left: tree.x + '%', 
-                          top: tree.y + '%',
-                          zIndex: Math.floor(tree.y)
-                       }">
+                   <div v-for="(tree, index) in islandTrees" :key="index"
+                        class="absolute transform -translate-x-1/2 -translate-y-[95%] transition-all duration-500 ease-out hover:scale-125 hover:z-[1000] group"
+                        :style="{ 
+                           left: tree.x + '%', 
+                           top: tree.y + '%',
+                           zIndex: Math.floor(tree.y) // 深度排序
+                        }">
                        
-                       <div class="text-4xl filter drop-shadow-xl relative cursor-help pointer-events-auto" :title="tree.name">
+                       <div class="text-4xl filter drop-shadow-lg relative cursor-help pointer-events-auto" :title="tree.name">
                           {{ tree.icon }}
-                          <div class="absolute -bottom-2 left-1/2 -translate-x-1/2 w-8 h-3 blur-sm rounded-full -z-10 transform scale-y-50 transition-colors"
-                               :class="store.isNightMode ? 'bg-black/40' : 'bg-black/20'"></div>
+                          <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-1.5 blur-[2px] rounded-full -z-10 transition-colors"
+                               :class="store.isNightMode ? 'bg-black/70' : 'bg-black/40'"></div>
                        </div>
-                  </div>
+                   </div>
+
                </div>
           </div>
 
@@ -226,6 +220,8 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useGameStore } from '@/stores/gameStore'
+// 确保图片文件存在于 src/assets/forest_bg.png
+import bottleBg from '@/assets/forest_bg.png' 
 
 const store = useGameStore()
 
@@ -235,41 +231,66 @@ const totalTreesGlobal = computed(() => {
 })
 
 // === 状态管理 ===
-const viewingProject = ref(null) // 当前正在查看详情的项目，null 表示在画廊模式
+const viewingProject = ref(null) 
 const zoomLevel = ref(1.0)
 const islandTrees = ref([])
 
-// === 核心：生成 3D 坐标布局 ===
+// === 核心：生成 2D 瓶中布局 (修复版) ===
 const generateIslandLayout = (project) => {
     if (!project || !project.forest) return []
     const trees = []
     
-    // 遍历森林数据
+    // --- 定义严格的边界区域 (百分比) ---
+    // 根据横放瓶子的图像估算：
+    // X轴: 考虑到树木有宽度，且 CSS 中是居中锚点 (-translate-x-1/2)，
+    // 我们需要左右各留出一些余量，避免树木的一半卡在瓶子外面。
+    const BOUNDS = {
+        minX: 12, // 左侧瓶底内缘
+        maxX: 72, // 右侧瓶肩处
+        minY: 60, // 上方土壤表面 (树种在这里会向上生长)
+        maxY: 88  // 下方玻璃底部 (树种在这里看起来埋得较深)
+    }
+
+    // 定义最大的随机扰动量 (百分比)
+    // 这里的 2.5 表示坐标可以向正负方向各偏移最多 2.5%
+    const JITTER_AMOUNT = 2.5; 
+
+    // --- 计算安全的生成区域 ---
+    // 实际生成的基准区域必须比边界小，要减去两倍的扰动量，
+    // 这样即使加上最大的正向或负向扰动，最终结果也不会越界。
+    const safeWidth = (BOUNDS.maxX - BOUNDS.minX) - (JITTER_AMOUNT * 2);
+    const safeHeight = (BOUNDS.maxY - BOUNDS.minY) - (JITTER_AMOUNT * 2);
+
     Object.entries(project.forest).forEach(([treeId, count]) => {
         const treeInfo = store.TREE_TYPES.find(t => t.id === treeId)
         const icon = treeInfo ? treeInfo.icon : '🌲'
         const name = treeInfo ? treeInfo.name : 'Unknown Tree'
         
-        // 限制最大渲染数量
-        const renderCount = Math.min(count, 50) 
+        const renderCount = Math.min(count, 60) // 稍微增加了一点最大显示数量
         
         for (let i = 0; i < renderCount; i++) {
-            // 在 10% - 90% 的范围内随机生成
-            let x = Math.random() * 80 + 10
-            let y = Math.random() * 80 + 10
+            // 1. 生成基准坐标 (确保在安全区域内)
+            // 基准起始点 = 最小边界 + 一个扰动量
+            let baseX = Math.random() * safeWidth + (BOUNDS.minX + JITTER_AMOUNT);
+            let baseY = Math.random() * safeHeight + (BOUNDS.minY + JITTER_AMOUNT);
             
-            x += (Math.random() - 0.5) * 5
-            y += (Math.random() - 0.5) * 5
+            // 2. 计算扰动值 (范围在 -JITTER_AMOUNT 到 +JITTER_AMOUNT 之间)
+            const jitterX = (Math.random() - 0.5) * (JITTER_AMOUNT * 2);
+            const jitterY = (Math.random() - 0.5) * (JITTER_AMOUNT * 2);
 
-            trees.push({ id: treeId, icon, name, x, y })
+            // 3. 得出最终坐标 (数学上保证不会超出 BOUNDS)
+            let finalX = baseX + jitterX;
+            let finalY = baseY + jitterY;
+            
+            trees.push({ id: treeId, icon, name, x: finalX, y: finalY })
         }
     })
 
-    // 按 Y 轴排序 (渲染层级)
+    // 按 Y 轴排序 (确保下方的树遮挡上方的树，产生 2D 景深感)
     return trees.sort((a, b) => a.y - b.y)
 }
 
-// === 交互动作 ===
+// === 交互动作 (保持不变) ===
 
 const openInspection = (project) => {
     viewingProject.value = project
@@ -288,10 +309,10 @@ const setActiveAndStay = () => {
     }
 }
 
-const zoomIn = () => { if (zoomLevel.value < 2.0) zoomLevel.value += 0.2 }
-const zoomOut = () => { if (zoomLevel.value > 0.5) zoomLevel.value -= 0.2 }
+const zoomIn = () => { if (zoomLevel.value < 2.5) zoomLevel.value += 0.2 } // 稍微增加了最大缩放
+const zoomOut = () => { if (zoomLevel.value > 0.6) zoomLevel.value -= 0.2 }
 
-// 管理功能 (重命名/删除)
+// 管理功能 (重命名/删除) - 保持不变
 const handleRename = (project) => {
     const newName = prompt("Rename project:", project.name)
     if (newName && newName.trim() !== "") {
@@ -308,7 +329,7 @@ const handleDelete = (project) => {
     }
 }
 
-// 占位函数：未来可以做拖拽旋转
+// 拖拽逻辑 (暂留空)
 const startDrag = () => {}
 const onDrag = () => {}
 const stopDrag = () => {}
