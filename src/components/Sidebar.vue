@@ -29,7 +29,7 @@
     <div class="p-2 border-b shrink-0 space-y-1 transition-colors"
          :class="store.isNightMode ? 'border-white/10 bg-black/20' : 'border-gray-200/50 bg-white/40'">
        <button @click="store.openShop()" :class="navBtnClass('shop', 'text-yellow-500', 'bg-yellow-700', 'text-yellow-700', 'bg-yellow-100')">
-         <span class="text-xl">🛒</span><span>商店</span>
+         <span class="text-xl">🏪</span><span>商店</span>
        </button>
        <button @click="store.openForest()" :class="navBtnClass('forest', 'text-green-500', 'bg-green-800', 'text-green-700', 'bg-green-100')">
          <span class="text-xl">🧭</span><span>巡林</span>
