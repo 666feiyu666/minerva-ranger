@@ -21,8 +21,8 @@
        <div class="relative h-14 bg-[#0f0f0f] rounded border border-melvor-border overflow-hidden mt-4 group">
           
           <template v-if="store.activeProjectId === store.runningProjectId">
-              <div class="absolute top-0 left-0 h-full bg-gradient-to-r from-emerald-900 to-emerald-600 transition-all duration-1000 ease-linear" 
-                   :style="{ width: store.progressPercentage + '%' }">
+              <div class="absolute top-0 left-0 h-full bg-gradient-to-r from-emerald-900 to-emerald-600 transition-all duration-100 ease-linear" 
+                  :style="{ width: store.progressPercentage + '%' }">
               </div>
               <div class="absolute inset-0 flex items-center justify-between px-6 z-10">
                  <div class="flex items-center gap-3">
@@ -87,7 +87,11 @@ import { computed } from 'vue'
 import { useGameStore } from '@/stores/gameStore'
 const store = useGameStore()
 const yieldMultiplier = computed(() => store.getTreeYield(store.inventoryTrees[0], store.activeProject).multiplier)
-const formatTime = (s) => `${Math.floor(s / 60).toString().padStart(2, '0')}:${(s % 60).toString().padStart(2, '0')}`
+// 修改 formatTime，先用 Math.floor 取整，再取余
+const formatTime = (s) => {
+  const seconds = Math.floor(s) // [新增] 强制取整
+  return `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`
+}
 
 // 辅助判断：某棵树是否在【当前视图项目】中处于激活状态
 const isTreeActive = (treeId) => {

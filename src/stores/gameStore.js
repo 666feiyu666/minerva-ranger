@@ -122,25 +122,57 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  // === 6. 计时器与动作控制 ===
-  let intervalId = null
+// === 6. 计时器与动作控制 ===
+  let timerInterval = null
+  let lastTimestamp = 0
+
+  // [新增] 独立的 Tick 逻辑，职责单一，代码更干净
+  function gameTick() {
+    // 安全检查：如果没有树或不在运行，停止计时
+    if (!activeTree.value || !isRunning.value) {
+      stopTimer()
+      return
+    }
+
+    const now = Date.now()
+    // 计算精确的逝去时间 (秒)，处理浏览器后台降频问题
+    const delta = (now - lastTimestamp) / 1000
+    lastTimestamp = now
+
+    timer.value += delta
+
+    // 检查进度是否完成 (支持一次 Tick 完成多次生长)
+    if (timer.value >= activeTree.value.time) {
+      const finishedCycles = Math.floor(timer.value / activeTree.value.time)
+      
+      if (finishedCycles > 0) {
+        completeCycle(finishedCycles)
+        // 保留剩余的进度时间，而不是清零，防止时间亏损
+        timer.value %= activeTree.value.time
+      }
+    }
+  }
 
   function startTimer() {
-    stopTimer() 
+    if (isRunning.value) return // 防止重复启动
+    
     isRunning.value = true
-    intervalId = setInterval(() => {
-      if (!activeTree.value) { stopTimer(); return }
-      timer.value++ 
-      if (timer.value >= activeTree.value.time) {
-        completeCycle(1)
-        timer.value = timer.value % activeTree.value.time 
-      }
-    }, 1000)
+    lastTimestamp = Date.now()
+    
+    // 清除可能存在的旧定时器
+    if (timerInterval) clearInterval(timerInterval)
+    
+    // 设置为 100ms 刷新一次。
+    // 相比 1000ms，这能让进度条更丝滑，同时减少后台由于休眠导致的误差感知。
+    timerInterval = setInterval(gameTick, 100)
   }
 
   function stopTimer() {
-    if (intervalId) clearInterval(intervalId)
-    intervalId = null
+    isRunning.value = false
+    if (timerInterval) {
+      clearInterval(timerInterval)
+      timerInterval = null
+    }
   }
 
   function toggleAction() {
