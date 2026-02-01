@@ -37,3 +37,18 @@ __screenshots__/
 
 # Vite
 *.timestamp-*-*.mjs
+
+# =========================
+# Capacitor & Native Ignores
+# =========================
+
+# Capacitor General
+capacitor.config.json
+
+# Capacitor - Android
+# 忽略 Android 的构建输出和本地 SDK 路径配置
+android/*
+
+# Capacitor - iOS
+# 忽略 iOS 的用户特定数据和 CocoaPods 依赖包
+ios/*
