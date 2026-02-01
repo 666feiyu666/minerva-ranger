@@ -149,6 +149,83 @@
          <input ref="fileInput" type="file" accept=".json" class="hidden" @change="handleFileImport" />
       </div>
     </div>
+    <div class="pt-2 mt-2 border-t border-dashed"
+        :class="store.isNightMode ? 'border-gray-700' : 'border-gray-300'">
+        
+        <div v-if="!store.user">
+            <div v-if="!showLoginForm" class="flex flex-col gap-2">
+              <button @click="showLoginForm = true"
+                      class="w-full flex items-center justify-center gap-2 py-2 rounded transition-colors text-xs font-bold"
+                      :class="store.isNightMode ? 'bg-indigo-900/50 text-indigo-300 hover:bg-indigo-800' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'">
+                <span>📧</span> Email Login / Sign Up
+              </button>
+            </div>
+
+            <div v-else class="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
+              <div class="text-[10px] text-center opacity-60" :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">
+                Enter email & password to start
+              </div>
+
+              <input v-model="email" type="email" placeholder="Email (e.g. user@test.com)"
+                      class="w-full px-2 py-2 text-xs rounded border outline-none transition-colors"
+                      :class="store.isNightMode ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-black placeholder-gray-400'"/>
+              
+              <input v-model="password" type="password" placeholder="Password (min 6 chars)"
+                      class="w-full px-2 py-2 text-xs rounded border outline-none transition-colors"
+                      :class="store.isNightMode ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-black placeholder-gray-400'"/>
+
+              <div class="flex gap-2 mt-1">
+                  <button @click="handleEmailLogin"
+                          class="flex-1 py-1.5 rounded text-xs font-bold text-white bg-green-600 hover:bg-green-500 shadow-sm">
+                    Login
+                  </button>
+                  <button @click="handleEmailRegister"
+                          class="flex-1 py-1.5 rounded text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-sm">
+                    Sign Up
+                  </button>
+              </div>
+              
+              <button @click="showLoginForm = false" 
+                      class="text-[10px] underline text-center w-full mt-1 hover:opacity-80"
+                      :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
+                  Cancel
+              </button>
+            </div>
+        </div>
+
+        <div v-else class="flex flex-col gap-2">
+          <div class="flex items-center justify-between px-1">
+              <div class="text-[10px] truncate max-w-[120px] opacity-70" :title="store.user.email"
+                  :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">
+                {{ store.user.email }}
+              </div>
+              <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+          </div>
+          
+          <div class="flex gap-2">
+            <button @click="store.uploadSaveToCloud" 
+                    class="flex-1 text-[10px] py-1.5 rounded border font-bold transition-colors"
+                    :class="store.isNightMode 
+                      ? 'bg-green-900/30 border-green-800 text-green-400 hover:bg-green-800' 
+                      : 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'">
+                ⬆️ Upload
+            </button>
+            <button @click="store.downloadSaveFromCloud" 
+                    class="flex-1 text-[10px] py-1.5 rounded border font-bold transition-colors"
+                    :class="store.isNightMode 
+                      ? 'bg-blue-900/30 border-blue-800 text-blue-400 hover:bg-blue-800' 
+                      : 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100'">
+                ⬇️ Load
+            </button>
+          </div>
+
+          <button @click="store.logout" 
+                  class="w-full text-[10px] py-1 rounded hover:bg-red-500/10 hover:text-red-500 transition-colors"
+                  :class="store.isNightMode ? 'text-gray-600' : 'text-gray-400'">
+              Sign Out
+          </button>
+        </div>
+    </div>
   </aside>
 </template>
 
@@ -160,6 +237,20 @@ const isCreating = ref(false)
 const newProjectName = ref('')
 const inputRef = ref(null)
 const fileInput = ref(null)
+
+const showLoginForm = ref(false)
+const email = ref('')
+const password = ref('')
+
+const handleEmailLogin = async () => {
+    const success = await store.loginWithEmail(email.value, password.value)
+    if (success) showLoginForm.value = false
+}
+
+const handleEmailRegister = async () => {
+    const success = await store.registerWithEmail(email.value, password.value)
+    if (success) showLoginForm.value = false
+}
 
 const draggingIndex = ref(null)
 

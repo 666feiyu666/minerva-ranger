@@ -1,14 +1,15 @@
-// 修改前：
-// import { createRouter, createWebHistory } from 'vue-router'
-
-// 修改后：引入 createWebHashHistory
+// src/router/index.js
 import { createRouter, createWebHashHistory } from 'vue-router'
+import App from '../App.vue' // 或者指向你的主视图
 
 const router = createRouter({
-  // 修改前：history: createWebHistory(import.meta.env.BASE_URL),
-  // 修改后：
   history: createWebHashHistory(), 
-  routes: [],
+  routes: [
+    {
+      path: '/',
+      component: () => import('../App.vue') // 确保根路径有对应的组件
+    }
+  ],
 })
 
 export default router

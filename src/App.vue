@@ -82,7 +82,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import Sidebar from './components/Sidebar.vue'
 import IdleDashboard from './components/IdleDashboard.vue'
 import ShopView from './components/ShopView.vue'
@@ -94,6 +94,11 @@ import bgNight from '@/assets/bg-night.png'
 
 const store = useGameStore()
 const showMobileMenu = ref(false) // 控制手机端抽屉状态
+
+// [新增] 初始化认证
+onMounted(() => {
+  store.initAuth()
+})
 
 // ... 原有的 backgroundStyle ...
 const backgroundStyle = computed(() => {

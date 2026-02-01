@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
+import { supabase } from '@/supabase'
 
 export const useGameStore = defineStore('game', () => {
   // === 1. 基础配置 (不变) ===
@@ -260,6 +261,101 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
+// === [新增] 9. 云同步与认证逻辑 ===
+  const user = ref(null)
+
+  // 初始化认证监听
+  async function initAuth() {
+    // 获取当前会话
+    const { data: { session } } = await supabase.auth.getSession()
+    user.value = session?.user || null
+
+    // 监听登录/登出变化
+    supabase.auth.onAuthStateChange((_event, session) => {
+      user.value = session?.user || null
+    })
+  }
+
+  // [新增] 邮箱登录 (Email Login)
+  async function loginWithEmail(email, password) {
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    })
+    if (error) {
+      alert('登录失败: ' + error.message)
+      return false
+    }
+    return true
+  }
+
+  // [新增] 邮箱注册 (Email Register)
+  async function registerWithEmail(email, password) {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+    })
+    if (error) {
+      alert('注册失败: ' + error.message)
+      return false
+    }
+    // 因为我们在 Supabase 后台关闭了邮箱验证，注册成功通常会自动登录
+    // 如果开启了邮箱验证，这里可能需要提示用户“去查收邮件”
+    alert('注册成功！已自动登录。')
+    return true
+  }
+
+  // 登出
+  async function logout() {
+    const { error } = await supabase.auth.signOut()
+    if (error) alert(error.message)
+  }
+
+  // 上传存档到云端
+  async function uploadSaveToCloud() {
+    if (!user.value) return alert('请先登录！')
+    
+    const saveData = getSaveData()
+    
+    // 使用 upsert: 如果存在则更新，不存在则插入
+    const { error } = await supabase
+      .from('game_saves')
+      .upsert({ 
+        user_id: user.value.id, 
+        save_data: saveData,
+        updated_at: new Date()
+      }, { onConflict: 'user_id' })
+
+    if (error) {
+      console.error(error)
+      alert('云端保存失败: ' + error.message)
+    } else {
+      alert('☁️ 云端保存成功！')
+    }
+  }
+
+  // 从云端下载存档
+  async function downloadSaveFromCloud() {
+    if (!user.value) return alert('请先登录！')
+
+    const { data, error } = await supabase
+      .from('game_saves')
+      .select('save_data')
+      .single() // 只取一条
+
+    if (error) {
+      console.error(error)
+      alert('读取云存档失败 (可能是还没有存档): ' + error.message)
+      return
+    }
+
+    if (data && data.save_data) {
+      // 复用现有的导入逻辑
+      // 注意：这里需要先把 json 对象转回 string，因为 importSaveData 接收的是 string
+      importSaveData(JSON.stringify(data.save_data)) 
+    }
+  }
+
   function saveToLocalStorage() { localStorage.setItem(SAVE_KEY, JSON.stringify(getSaveData())) }
 
   function importSaveData(jsonString, silent = false) {
@@ -346,6 +442,9 @@ export const useGameStore = defineStore('game', () => {
     startAction, stopTimer, toggleAction, downloadSaveFile, importSaveData, cheatAddCoins, getTreeIcon,
     renameProject, deleteProject, reorderProjects,
     updateNoteTags,
-    toggleNightMode // 导出方法
+    toggleNightMode, // 导出方法
+
+    // [新增] 导出云同步相关
+    user, initAuth, loginWithEmail, registerWithEmail, logout, uploadSaveToCloud, downloadSaveFromCloud
   }
 })
