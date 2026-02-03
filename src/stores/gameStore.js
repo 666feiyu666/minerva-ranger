@@ -1,15 +1,20 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { supabase } from '@/supabase'
+import normalTreeImg from '@/assets/tree/normal_tree.png'
+import willowTreeImg from '@/assets/tree/willow_tree.png'
+import poplarTreeImg from '@/assets/tree/poplar_tree.png'
+import magicTreeImg from '@/assets/tree/magic_tree.png'
+import goldTreeImg from '@/assets/tree/gold_tree.png'
 
 export const useGameStore = defineStore('game', () => {
   // === 1. 基础配置 (不变) ===
   const TREE_TYPES = [
-    { id: 't1', name: '橡树', time: 25 * 60, xp: 100, price: 0, levelReq: 1, icon: '🌳', desc: '基础树种，适合新手' },
-    { id: 't2', name: '垂柳', time: 25 * 60, xp: 250, price: 500, levelReq: 5, icon: '🌲', desc: '优雅的垂柳，经验丰富' },
-    { id: 't3', name: '红豆杉', time: 25 * 60, xp: 600, price: 2500, levelReq: 15, icon: '🌴', desc: '稀有树木，极高收益' },
-    { id: 't4', name: '魔法树', time: 25 * 60, xp: 1500, price: 10000, levelReq: 30, icon: '✨', desc: '传说中的魔法植物' },
-    { id: 't5', name: '水晶树', time: 25 * 60, xp: 3000, price: 50000, levelReq: 50, icon: '💎', desc: '由纯净能量构成的树' },
+    { id: 't1', name: '橡树', time: 25 * 60, xp: 100, price: 0, levelReq: 1, icon: normalTreeImg, desc: '基础树种，适合新手' },
+    { id: 't2', name: '垂柳', time: 25 * 60, xp: 250, price: 500, levelReq: 5, icon: willowTreeImg, desc: '优雅的垂柳，经验丰富' },
+    { id: 't3', name: '杨树', time: 25 * 60, xp: 600, price: 2500, levelReq: 15, icon: poplarTreeImg, desc: '长得像火炬，有一点' },
+    { id: 't4', name: '魔法树', time: 25 * 60, xp: 1500, price: 10000, levelReq: 30, icon: magicTreeImg, desc: '传说中的魔法植物' },
+    { id: 't5', name: '金钱树', time: 25 * 60, xp: 3000, price: 50000, levelReq: 50, icon: goldTreeImg, desc: '能收获金钱吗？' },
   ]
 
   // === 2. 玩家数据 ===

@@ -55,7 +55,11 @@
                 {{ tree.desc }}
               </p>
             </div>
-            <div class="text-4xl filter drop-shadow-md group-hover:scale-110 transition-transform duration-300">{{ tree.icon }}</div>
+            <img 
+              :src="tree.icon" 
+              class="w-16 h-16 object-contain pixel-art group-hover:scale-110 transition-transform duration-300 filter drop-shadow-md"
+              alt="tree icon"
+            />
           </div>
 
           <div class="grid grid-cols-2 gap-2 mb-4 text-xs font-bold">

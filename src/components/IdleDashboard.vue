@@ -32,38 +32,48 @@
                 {{ store.activeProject?.name || '未选择项目' }}
               </h2>
               
-              <div class="flex items-center gap-3 mt-2">
-                 <span 
-                   class="px-2 py-0.5 rounded border font-bold text-xs transition-colors"
-                   :class="store.isNightMode 
-                     ? 'bg-blue-900/40 border-blue-800 text-blue-300' 
-                     : 'bg-blue-50 border-blue-200 text-blue-600'"
-                 >
-                   Lv. {{ store.activeProject?.level || 1 }}
-                 </span>
-                 
-                 <span 
-                   class="px-2 py-0.5 rounded border font-bold text-xs flex items-center gap-1 transition-colors"
-                   :class="store.isNightMode 
-                     ? 'bg-purple-900/40 border-purple-800 text-purple-300' 
-                     : 'bg-purple-50 border-purple-200 text-purple-600'"
-                 >
-                   <span>⏱️</span>
-                   {{ formatDuration(store.activeProject?.totalTimeSpent) }}
-                 </span>
+             <div class="flex items-center gap-3 mt-2">
+                  <span 
+                      class="px-2 py-0.5 rounded border font-bold text-xs transition-colors"
+                      :class="store.isNightMode 
+                      ? 'bg-blue-900/40 border-blue-800 text-blue-300' 
+                      : 'bg-blue-50 border-blue-200 text-blue-600'"
+                  >
+                      Lv. {{ store.activeProject?.level || 1 }}
+                  </span>
 
-                 <span 
-                   class="text-sm transition-colors"
-                   :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'"
-                 >
-                   XP Multiplier: 
-                   <span 
-                     class="font-bold"
-                     :class="store.isNightMode ? 'text-yellow-400' : 'text-yellow-600'"
-                   >
-                     x{{ yieldMultiplier }}
-                   </span>
-                 </span>
+                  <span 
+                      class="px-2 py-0.5 rounded border font-bold text-xs flex items-center gap-1 transition-colors"
+                      :class="store.isNightMode 
+                      ? 'bg-green-900/40 border-green-800 text-green-300' 
+                      : 'bg-green-50 border-green-200 text-emerald-600'"
+                  >
+                      <span>🌲</span>
+                      {{ store.activeProject?.totalTrees || 0 }}
+                  </span>
+                  
+                  <span 
+                      class="px-2 py-0.5 rounded border font-bold text-xs flex items-center gap-1 transition-colors"
+                      :class="store.isNightMode 
+                      ? 'bg-purple-900/40 border-purple-800 text-purple-300' 
+                      : 'bg-purple-50 border-purple-200 text-purple-600'"
+                  >
+                      <span>⏱️</span>
+                      {{ formatDuration(store.activeProject?.totalTimeSpent) }}
+                  </span>
+
+                  <span 
+                      class="text-sm transition-colors"
+                      :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'"
+                  >
+                      XP Multiplier: 
+                      <span 
+                      class="font-bold"
+                      :class="store.isNightMode ? 'text-yellow-400' : 'text-yellow-600'"
+                      >
+                      x{{ yieldMultiplier }}
+                      </span>
+                  </span>
               </div>
             </div>
           </div>
@@ -86,7 +96,13 @@
               
               <div class="absolute inset-0 flex items-center justify-between px-6 z-10">
                  <div class="flex items-center gap-3">
-                    <span v-if="store.isRunning" class="animate-bounce text-2xl filter drop-shadow-md">🌲</span>
+                    <img 
+                      v-if="store.isRunning && store.activeTree" 
+                      :src="store.activeTree.icon"
+                      class="h-8 w-8 object-contain pixel-art animate-bounce filter drop-shadow-md" 
+                    />
+                    <span v-else-if="store.activeTree" class="text-2xl">🌱</span>
+
                     <span 
                       class="font-bold text-lg tracking-wide drop-shadow-md transition-colors"
                       :class="store.isNightMode ? 'text-gray-200' : 'text-gray-800'"
@@ -140,8 +156,13 @@
              :class="getCardClass(tree.id)"
         >
            <div class="flex flex-col items-center text-center">
-              <div class="text-5xl mb-4 transform group-hover:scale-110 transition-transform filter drop-shadow-md">
-                {{ tree.icon }}
+              
+              <div class="mb-4 transform group-hover:scale-110 transition-transform filter drop-shadow-md h-16 flex items-center justify-center">
+                <img 
+                  :src="tree.icon" 
+                  class="h-full w-auto object-contain pixel-art" 
+                  alt="Tree Icon"
+                />
               </div>
               
               <h3 
@@ -188,7 +209,7 @@ import { useGameStore } from '@/stores/gameStore'
 
 const store = useGameStore()
 
-// 计算倍率 (做个防御性检查)
+// 计算倍率
 const yieldMultiplier = computed(() => {
   if (!store.inventoryTrees || store.inventoryTrees.length === 0) return 1
   return store.getTreeYield(store.inventoryTrees[0], store.activeProject).multiplier
@@ -214,20 +235,20 @@ const isTreeActive = (treeId) => {
 
 // === 动态样式逻辑 ===
 
-// 1. 卡片整体样式 (Day/Night 区分)
+// 1. 卡片整体样式
 const getCardClass = (treeId) => {
   const active = isTreeActive(treeId)
   
   if (active) {
     // 激活状态
     return store.isNightMode
-      ? 'border-green-500 bg-[#2a302a]/90 shadow-green-900/20'  // 夜间激活
-      : 'border-emerald-500 bg-emerald-50/90 shadow-emerald-100 ring-2 ring-emerald-500/20' // 白天激活
+      ? 'border-green-500 bg-[#2a302a]/90 shadow-green-900/20'  
+      : 'border-emerald-500 bg-emerald-50/90 shadow-emerald-100 ring-2 ring-emerald-500/20' 
   } else {
     // 普通状态
     return store.isNightMode
-      ? 'bg-[#1a1a1a]/80 border-gray-700 hover:border-gray-500 hover:bg-[#252525]' // 夜间普通
-      : 'bg-white/60 border-white/60 hover:border-emerald-300 hover:bg-white/90'   // 白天普通
+      ? 'bg-[#1a1a1a]/80 border-gray-700 hover:border-gray-500 hover:bg-[#252525]' 
+      : 'bg-white/60 border-white/60 hover:border-emerald-300 hover:bg-white/90'   
   }
 }
 
@@ -235,8 +256,8 @@ const getCardClass = (treeId) => {
 const getButtonClass = (tree) => {
   if (isTreeActive(tree.id)) {
       return store.isRunning 
-        ? 'bg-amber-500 text-white hover:bg-amber-600 hover:shadow-lg' // 暂停 (通用)
-        : 'bg-emerald-600 text-white hover:bg-emerald-500 animate-pulse hover:shadow-lg' // 继续 (通用)
+        ? 'bg-amber-500 text-white hover:bg-amber-600 hover:shadow-lg' 
+        : 'bg-emerald-600 text-white hover:bg-emerald-500 animate-pulse hover:shadow-lg' 
   }
   // 未激活状态
   return store.isNightMode
@@ -266,6 +287,12 @@ const handleButtonClick = (tree) => {
 </script>
 
 <style scoped>
+/* 像素风图片处理 */
+.pixel-art {
+  image-rendering: pixelated;
+  image-rendering: crisp-edges;
+}
+
 /* 滚动条样式适配 */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;

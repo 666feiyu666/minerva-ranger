@@ -14,341 +14,297 @@
                     </h2>
                     <p class="text-sm mt-1 transition-colors"
                        :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">
-                       管理你的生态数据，点击卡片进入森林视图。
+                       点击卡片进入森林视图 (Terraria Mode)
                     </p>
                 </div>
                 <div class="flex flex-col items-end">
                     <div class="text-2xl font-bold transition-colors"
                          :class="store.isNightMode ? 'text-white' : 'text-gray-800'">
-                        {{ totalTreesGlobal }} <span :class="store.isNightMode ? 'text-green-500' : 'text-emerald-600'">Trees Planted</span>
+                        {{ totalTreesGlobal }} <span :class="store.isNightMode ? 'text-green-500' : 'text-emerald-600'">Trees</span>
                     </div>
-                    <div class="text-xs" :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">Global Ecosystem</div>
                 </div>
             </div>
         </div>
 
         <div class="flex-1 overflow-y-auto p-6 pt-2 custom-scrollbar">
-            
-            <div v-if="store.projects.length === 0" class="flex flex-col items-center justify-center h-64 text-gray-600">
-                <div class="text-4xl mb-2">🏜️</div>
-                <p>No forests found. Start a project to plant trees!</p>
-            </div>
-
             <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">
                 <div v-for="project in store.projects" :key="project.id" 
                     class="border rounded-lg overflow-hidden flex flex-col transition-all shadow-lg group relative cursor-pointer backdrop-blur-sm"
                     :class="store.isNightMode 
-                      ? 'bg-[#1a1a1a]/80 border-gray-700 hover:border-green-500 hover:shadow-green-900/20' 
-                      : 'bg-white/60 border-white/60 hover:bg-white/90 hover:shadow-xl hover:-translate-y-1 hover:border-emerald-300'"
+                      ? 'bg-[#1a1a1a]/80 border-gray-700 hover:border-green-500' 
+                      : 'bg-white/60 border-white/60 hover:bg-white/90 hover:border-emerald-300'"
                     @click="openInspection(project)">
                     
                     <div class="p-4 border-b flex justify-between items-center transition-colors"
-                         :class="store.isNightMode 
-                           ? 'bg-[#202020]/50 border-gray-700 group-hover:bg-[#252525]/80' 
-                           : 'bg-white/40 border-gray-100 group-hover:bg-white/60'">
-                        <div class="flex items-center gap-3">
-                            <div class="text-2xl group-hover:scale-110 transition-transform">{{ project.icon }}</div>
-                            <div>
-                                <h3 class="font-bold transition-colors"
-                                    :class="store.isNightMode ? 'text-gray-200' : 'text-gray-800'">
-                                    {{ project.name }}
-                                </h3>
-                                <div class="text-xs font-bold"
-                                     :class="store.isNightMode ? 'text-blue-400' : 'text-blue-600'">
-                                     Level {{ project.level }}
-                                </div>
-                            </div>
-                        </div>
+                         :class="store.isNightMode ? 'bg-[#202020]/50 border-gray-700' : 'bg-white/40 border-gray-100'">
                         
-                        <div class="flex items-center gap-1 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
-                            <button @click.stop="handleRename(project)" 
-                                    class="p-2 rounded transition-colors"
-                                    :class="store.isNightMode ? 'text-gray-400 hover:bg-gray-700 hover:text-white' : 'text-gray-400 hover:bg-gray-200 hover:text-gray-700'"
-                                    title="Rename">
-                                ✏️
-                            </button>
-                            <button @click.stop="handleDelete(project)" 
-                                    class="p-2 rounded transition-colors"
-                                    :class="store.isNightMode ? 'text-gray-400 hover:bg-red-900/50 hover:text-red-400' : 'text-gray-400 hover:bg-red-100 hover:text-red-600'"
-                                    title="Delete">
-                                🗑️
-                            </button>
+                        <div class="flex items-center gap-3">
+                            <div class="text-2xl">{{ project.icon }}</div>
+                            <h3 class="font-bold" :class="store.isNightMode ? 'text-gray-200' : 'text-gray-800'">
+                                {{ project.name }}
+                            </h3>
+                        </div>
+
+                        <div class="px-2 py-1 rounded text-xs font-bold border transition-colors flex items-center gap-1"
+                             :class="store.isNightMode 
+                             ? 'bg-green-900/30 text-green-400 border-green-800' 
+                             : 'bg-green-50 text-emerald-600 border-green-200'">
+                            <span>🌲</span>
+                            <span>{{ project.totalTrees }}</span>
                         </div>
                     </div>
                     
-                    <div class="p-4 flex-1 min-h-[120px] relative transition-colors"
+                    <div class="p-4 flex-1 min-h-[120px] relative transition-colors flex flex-col justify-center"
                          :class="store.isNightMode ? 'bg-[#151515]/80' : 'bg-gray-50/50'">
-                        <div class="absolute inset-0 flex items-center justify-center transition-opacity pointer-events-none opacity-0 group-hover:opacity-100 z-10">
-                            <span class="px-3 py-1 rounded-full border backdrop-blur font-bold uppercase tracking-wider text-xs shadow-xl"
-                                  :class="store.isNightMode 
-                                    ? 'bg-black/80 text-white border-green-500/50' 
-                                    : 'bg-white/90 text-emerald-800 border-emerald-500/50'">
-                                Click to View Bottle
-                            </span>
-                        </div>
-
-                        <div v-if="!project.forest || Object.keys(project.forest).length === 0" class="h-full flex items-center justify-center text-sm italic"
-                             :class="store.isNightMode ? 'text-gray-700' : 'text-gray-400'">
-                            Bottle is empty...
-                        </div>
-                        
-                        <div v-else class="flex flex-wrap gap-2 content-start opacity-100 group-hover:opacity-40 transition-opacity duration-300">
-                            <div v-for="(count, treeId) in project.forest" :key="treeId" 
-                                class="flex items-center gap-1 border px-2 py-1 rounded-full text-xs"
-                                :class="store.isNightMode 
-                                  ? 'bg-[#252525] border-[#333] text-gray-300' 
-                                  : 'bg-white border-gray-200 text-gray-600 shadow-sm'"
-                                title="Trees planted">
-                                <span class="text-lg">{{ store.getTreeIcon(treeId) }}</span>
-                                <span class="font-bold">x{{ count }}</span>
+                         
+                         <div v-if="getProjectTreeStats(project).length > 0" 
+                              class="grid grid-cols-3 gap-2 w-full">
+                            
+                            <div v-for="tree in getProjectTreeStats(project)" :key="tree.id"
+                                 class="flex flex-col items-center p-2 rounded border transition-colors"
+                                 :class="store.isNightMode 
+                                   ? 'bg-black/40 border-gray-700' 
+                                   : 'bg-white border-gray-200 shadow-sm'">
+                               
+                               <img :src="tree.icon" class="w-8 h-8 object-contain pixel-art mb-1" />
+                               
+                               <span class="text-xs font-bold"
+                                     :class="store.isNightMode ? 'text-gray-300' : 'text-gray-700'">
+                                 x{{ tree.count }}
+                               </span>
                             </div>
-                        </div>
-                    </div>
+                         </div>
 
-                    <div class="p-2 border-t flex justify-between items-center px-4 transition-colors"
-                         :class="store.isNightMode ? 'bg-[#1a1a1a] border-gray-700' : 'bg-white/40 border-gray-100'">
-                        <div class="text-[10px] uppercase tracking-widest"
-                             :class="store.isNightMode ? 'text-gray-600' : 'text-gray-400'">
-                            {{ Object.keys(project.forest || {}).length }} Species
-                        </div>
-                        <div class="text-sm font-mono font-bold"
-                             :class="store.isNightMode ? 'text-green-500' : 'text-emerald-600'">
-                            {{ project.totalTrees }} 🌲
-                        </div>
+                         <div v-else class="flex flex-col items-center justify-center opacity-50 h-full">
+                             <span class="text-2xl mb-2">🌱</span>
+                             <span class="text-xs uppercase tracking-widest font-bold">No Trees Yet</span>
+                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <div v-else class="absolute inset-0 z-50 flex flex-col animate-in fade-in zoom-in duration-300 transition-colors"
-         :class="store.isNightMode ? 'bg-[#0a0a0a]/95' : 'bg-[#e0f2fe]/95'">
-       
-       <div class="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-50 pointer-events-none">
-          <button @click="closeInspection" 
-                  class="pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur transition-all border shadow-lg"
-                  :class="store.isNightMode 
-                    ? 'text-gray-400 hover:text-white bg-black/50 hover:bg-black/80 border-gray-700' 
-                    : 'text-gray-600 hover:text-gray-900 bg-white/50 hover:bg-white/80 border-white/50'">
-             <span>←</span> <span class="text-sm font-bold uppercase">Back</span>
-          </button>
+    <div v-else class="absolute inset-0 z-50 flex flex-col animate-in fade-in zoom-in duration-300 overflow-hidden bg-black">
+     
+        <div class="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-[100] pointer-events-none">
+            <button @click="closeInspection" 
+                    class="pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur transition-all border shadow-lg group"
+                    :class="store.isNightMode 
+                    ? 'text-gray-200 bg-black/50 border-gray-700 hover:bg-black/70' 
+                    : 'text-gray-700 bg-white/50 border-white/50 hover:bg-white/80'">
+            <span>←</span> <span class="text-sm font-bold uppercase group-hover:pl-1 transition-all">Back</span>
+            </button>
 
-          <div class="pointer-events-auto border p-4 rounded-xl shadow-2xl min-w-[200px] text-right backdrop-blur-md transition-colors"
-               :class="store.isNightMode 
-                 ? 'bg-melvor-panel/90 border-melvor-border text-white' 
-                 : 'bg-white/80 border-white/60 text-gray-800'">
-             <h2 class="text-2xl font-bold mb-1">{{ viewingProject.name }}</h2>
-             <div class="text-xs font-bold uppercase tracking-wider mb-3"
-                  :class="store.isNightMode ? 'text-gray-500' : 'text-gray-500'">Level {{ viewingProject.level }} Ecosystem</div>
-             
-             <div class="flex flex-col gap-2">
-                 <button v-if="store.activeProjectId !== viewingProject.id" 
-                         @click="setActiveAndStay"
-                         class="w-full py-2 text-white text-xs font-bold uppercase rounded shadow-lg transition-transform hover:scale-105 active:scale-95"
-                         :class="store.isNightMode ? 'bg-green-700 hover:bg-green-600' : 'bg-emerald-500 hover:bg-emerald-400'">
-                    🚀 Set as Active
-                 </button>
-                 <div v-else class="w-full py-2 text-xs font-bold uppercase rounded border flex items-center justify-center gap-2"
-                      :class="store.isNightMode 
-                        ? 'bg-gray-800 text-green-500 border-green-900' 
-                        : 'bg-white text-emerald-600 border-emerald-200 shadow-inner'">
-                    <span class="animate-pulse">●</span> Active
-                 </div>
-             </div>
-          </div>
-       </div>
+            <div class="pointer-events-auto border p-4 rounded-xl shadow-2xl backdrop-blur-md transition-colors min-w-[200px]"
+                :class="store.isNightMode 
+                ? 'bg-gray-900/80 border-gray-700 text-white' 
+                : 'bg-white/80 border-white/60 text-gray-800'">
+                
+                <div class="flex justify-between items-start mb-1">
+                    <h2 class="text-xl font-bold">{{ viewingProject.name }}</h2>
+                    <span class="text-sm font-bold flex items-center gap-1"
+                          :class="store.isNightMode ? 'text-green-400' : 'text-emerald-600'">
+                        🌲 {{ viewingProject.totalTrees }}
+                    </span>
+                </div>
 
-       <div class="flex-1 flex items-center justify-center relative overflow-hidden cursor-grab active:cursor-grabbing select-none"
-            :class="store.isNightMode 
-              ? 'bg-gradient-to-b from-[#111] via-[#0d1510] to-[#050505]' 
-              : 'bg-gradient-to-b from-sky-100 via-emerald-50 to-white'"
-            @mousedown="startDrag" @mousemove="onDrag" @mouseup="stopDrag" @mouseleave="stopDrag">
-          
-          <div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] blur-[100px] rounded-full pointer-events-none transition-colors duration-1000"
-               :class="store.isNightMode ? 'bg-green-900/20' : 'bg-yellow-200/40'"></div>
+                <div class="text-[10px] text-right opacity-70 mt-1 flex items-center justify-end gap-1">
+                    <span>🖱️/✋</span> Scroll horizontally
+                </div>
+                <button v-if="store.activeProjectId !== viewingProject.id" 
+                        @click="setActiveAndStay"
+                        class="mt-2 w-full py-1.5 text-white text-[10px] font-bold uppercase rounded shadow bg-emerald-500 hover:bg-emerald-400">
+                    Set Active
+                </button>
+            </div>
+        </div>
 
-          <div class="relative transition-transform duration-100 ease-out z-10"
-               :style="{ transform: `scale(${zoomLevel})` }">
-               
-               <div class="w-[800px] h-[300px] bg-no-repeat bg-contain bg-center relative"
-                    :style="{ backgroundImage: `url(${bottleBg})` }">
-                  
-                   <div v-if="islandTrees.length === 0" class="absolute inset-0 flex items-center justify-center z-50">
-                      <div class="px-4 py-2 rounded-full backdrop-blur text-xs font-bold animate-bounce border"
-                           :class="store.isNightMode 
-                             ? 'bg-black/60 text-white border-gray-700' 
-                             : 'bg-white/80 text-gray-800 border-white shadow-lg'">
-                          Empty Bottle... Go plant some trees!
-                      </div>
-                   </div>
-
-                   <div v-for="(tree, index) in islandTrees" :key="index"
-                        class="absolute transform -translate-x-1/2 -translate-y-[95%] transition-all duration-500 ease-out hover:scale-125 hover:z-[1000] group"
+        <div class="flex-1 relative w-full h-full overflow-hidden">
+            
+            <div class="absolute inset-0 overflow-x-auto overflow-y-hidden custom-scrollbar z-10" 
+                 ref="scrollContainer"
+                 @wheel.prevent="handleWheel">
+                
+                <div class="relative h-full flex items-end transition-all duration-300 min-w-full"
+                     :style="dynamicWorldStyle">
+                
+                    <div class="absolute inset-0 z-0 pixel-art pointer-events-none"
                         :style="{ 
-                           left: tree.x + '%', 
-                           top: tree.y + '%',
-                           zIndex: Math.floor(tree.y) // 深度排序
+                            backgroundImage: `url(${store.isNightMode ? bgForestNight : bgForestDay})`,
+                            backgroundRepeat: 'repeat-x', 
+                            backgroundPosition: 'bottom left',
+                            backgroundSize: 'auto 100%' 
                         }">
-                       
-                       <div class="text-4xl filter drop-shadow-lg relative cursor-help pointer-events-auto" :title="tree.name">
-                          {{ tree.icon }}
-                          <div class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-6 h-1.5 blur-[2px] rounded-full -z-10 transition-colors"
-                               :class="store.isNightMode ? 'bg-black/70' : 'bg-black/40'"></div>
-                       </div>
-                   </div>
+                    </div>
 
-               </div>
-          </div>
+                    <div class="absolute bottom-0 left-0 right-0 z-20 pixel-art pointer-events-none"
+                        :style="{ 
+                            height: '64px',
+                            backgroundImage: `url(${normalLandImg})`,
+                            backgroundRepeat: 'repeat-x', 
+                            backgroundPosition: 'bottom left',
+                            backgroundSize: 'auto 100%', 
+                            filter: store.isNightMode ? 'brightness(0.6)' : 'none'
+                        }">
+                    </div>
 
-          <div class="absolute bottom-8 right-8 flex flex-col gap-2 pointer-events-auto">
-             <button @click="zoomIn" class="w-10 h-10 rounded-lg font-bold shadow-lg border active:scale-95 transition-all"
-                     :class="store.isNightMode 
-                       ? 'bg-[#333] hover:bg-[#444] text-white border-gray-600' 
-                       : 'bg-white hover:bg-gray-100 text-gray-700 border-gray-300'">+</button>
-             <button @click="zoomOut" class="w-10 h-10 rounded-lg font-bold shadow-lg border active:scale-95 transition-all"
-                     :class="store.isNightMode 
-                       ? 'bg-[#333] hover:bg-[#444] text-white border-gray-600' 
-                       : 'bg-white hover:bg-gray-100 text-gray-700 border-gray-300'">-</button>
-          </div>
+                    <div class="shrink-0 w-10 h-10"></div>
 
-       </div>
+                    <div class="flex items-end relative z-30 mb-[48px]"> 
+                        <div v-if="flatForest.length === 0" class="w-[200px] flex flex-col items-center justify-center opacity-60 mb-10 ml-10">
+                            <div class="text-4xl animate-bounce mb-2">🌱</div>
+                            <span class="bg-black/40 text-white px-3 py-1 rounded text-xs whitespace-nowrap">Empty world... Plant something!</span>
+                        </div>
+
+                        <div v-for="(tree, index) in flatForest" :key="index"
+                            class="relative flex flex-col items-center group transition-all duration-300 hover:scale-105 origin-bottom shrink-0"
+                            :style="{ width: '120px', marginRight: '-30px' }">
+                            <img :src="normalTreeImg" 
+                                class="w-auto h-[180px] object-contain pixel-art drop-shadow-2xl cursor-pointer"
+                                :class="store.isNightMode ? 'brightness-75' : ''"
+                                :title="tree.name" />
+                        </div>
+                    </div>
+
+                    <div class="shrink-0 w-[50vw] h-[200px] flex items-end pb-20 pl-20 opacity-30 group pointer-events-none">
+                         <div class="border-l-4 border-dashed border-white/20 h-48 flex flex-col justify-end pl-4">
+                             <span class="text-xl font-bold uppercase tracking-widest text-white/50 drop-shadow-lg whitespace-nowrap">
+                                 Future Territory
+                             </span>
+                         </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
     </div>
-
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, nextTick } from 'vue'
 import { useGameStore } from '@/stores/gameStore'
-// 确保图片文件存在于 src/assets/forest_bg.png
-import bottleBg from '@/assets/forest_bg.png' 
 
 const store = useGameStore()
 
-// === 全局数据 ===
-const totalTreesGlobal = computed(() => {
-    return store.projects.reduce((sum, p) => sum + p.totalTrees, 0)
-})
+// 素材导入
+import normalLandImg from '@/assets/land/normal_land.png'
+import normalTreeImg from '@/assets/tree/normal_tree.png'
+import bgForestDay from '@/assets/background/normal_background_day.png'
+import bgForestNight from '@/assets/background/normal_background_night.png'
 
-// === 状态管理 ===
 const viewingProject = ref(null) 
-const zoomLevel = ref(1.0)
-const islandTrees = ref([])
+const scrollContainer = ref(null)
+const totalTreesGlobal = computed(() => store.projects.reduce((sum, p) => sum + p.totalTrees, 0))
 
-// === 核心：生成 2D 瓶中布局 (修复版) ===
-const generateIslandLayout = (project) => {
-    if (!project || !project.forest) return []
-    const trees = []
-    
-    // --- 定义严格的边界区域 (百分比) ---
-    // 根据横放瓶子的图像估算：
-    // X轴: 考虑到树木有宽度，且 CSS 中是居中锚点 (-translate-x-1/2)，
-    // 我们需要左右各留出一些余量，避免树木的一半卡在瓶子外面。
-    const BOUNDS = {
-        minX: 12, // 左侧瓶底内缘
-        maxX: 60, // 右侧瓶肩处
-        minY: 62, // 上方土壤表面 (树种在这里会向上生长)
-        maxY: 88  // 下方玻璃底部 (树种在这里看起来埋得较深)
-    }
-
-    // 定义最大的随机扰动量 (百分比)
-    // 这里的 2.5 表示坐标可以向正负方向各偏移最多 2.5%
-    const JITTER_AMOUNT = 2.5; 
-
-    // --- 计算安全的生成区域 ---
-    // 实际生成的基准区域必须比边界小，要减去两倍的扰动量，
-    // 这样即使加上最大的正向或负向扰动，最终结果也不会越界。
-    const safeWidth = (BOUNDS.maxX - BOUNDS.minX) - (JITTER_AMOUNT * 2);
-    const safeHeight = (BOUNDS.maxY - BOUNDS.minY) - (JITTER_AMOUNT * 2);
-
-    Object.entries(project.forest).forEach(([treeId, count]) => {
-        const treeInfo = store.TREE_TYPES.find(t => t.id === treeId)
-        const icon = treeInfo ? treeInfo.icon : '🌲'
-        const name = treeInfo ? treeInfo.name : 'Unknown Tree'
-        
-        const renderCount = Math.min(count, 60) // 稍微增加了一点最大显示数量
-        
-        for (let i = 0; i < renderCount; i++) {
-            // 1. 生成基准坐标 (确保在安全区域内)
-            // 基准起始点 = 最小边界 + 一个扰动量
-            let baseX = Math.random() * safeWidth + (BOUNDS.minX + JITTER_AMOUNT);
-            let baseY = Math.random() * safeHeight + (BOUNDS.minY + JITTER_AMOUNT);
-            
-            // 2. 计算扰动值 (范围在 -JITTER_AMOUNT 到 +JITTER_AMOUNT 之间)
-            const jitterX = (Math.random() - 0.5) * (JITTER_AMOUNT * 2);
-            const jitterY = (Math.random() - 0.5) * (JITTER_AMOUNT * 2);
-
-            // 3. 得出最终坐标 (数学上保证不会超出 BOUNDS)
-            let finalX = baseX + jitterX;
-            let finalY = baseY + jitterY;
-            
-            trees.push({ id: treeId, icon, name, x: finalX, y: finalY })
-        }
+// [新增] 获取项目内具体的树木统计
+const getProjectTreeStats = (project) => {
+  if (!project.forest) return []
+  // 遍历 forest 对象 { t1: 5, t2: 3 }
+  return Object.entries(project.forest)
+    .map(([id, count]) => {
+      const treeType = store.TREE_TYPES.find(t => t.id === id)
+      return treeType ? { ...treeType, count } : null
     })
-
-    // 按 Y 轴排序 (确保下方的树遮挡上方的树，产生 2D 景深感)
-    return trees.sort((a, b) => a.y - b.y)
+    .filter(item => item && item.count > 0) // 过滤掉无效或数量为0的
+    .sort((a, b) => b.xp - a.xp) // 按高级程度排序，高级树排前面
 }
 
-// === 交互动作 (保持不变) ===
+// 将森林数据展平为数组
+const flatForest = computed(() => {
+  if (!viewingProject.value || !viewingProject.value.forest) return []
+  const list = []
+  Object.entries(viewingProject.value.forest).forEach(([treeId, count]) => {
+    const treeData = store.TREE_TYPES.find(t => t.id === treeId)
+    if (!treeData) return
+    for (let i = 0; i < count; i++) {
+      list.push({
+        ...treeData, 
+        instanceId: `${treeId}-${i}`
+      })
+    }
+  })
+  // 这里暂时不随机打乱，保证每次进入顺序一致，如果需要随机可自行加上 .sort
+  return list
+})
+
+// === 核心逻辑：动态计算世界宽度 ===
+// 根据树的数量计算总宽度，确保容器能容纳所有内容
+const dynamicWorldStyle = computed(() => {
+  const treeWidth = 90 // 树的有效宽度 (120px - 30px overlap)
+  const startPadding = 40 // 起始 padding
+  const endSpacer = window.innerWidth * 0.5 // 终点留白 (50vw)
+  
+  // 计算内容所需的总像素宽度
+  const contentWidth = startPadding + (flatForest.value.length * treeWidth) + endSpacer
+  
+  // 确保至少占满一屏
+  return {
+    width: `${Math.max(window.innerWidth, contentWidth)}px` 
+  }
+})
 
 const openInspection = (project) => {
     viewingProject.value = project
-    islandTrees.value = generateIslandLayout(project)
-    zoomLevel.value = 1.0
-}
-
-const closeInspection = () => {
-    viewingProject.value = null
-    islandTrees.value = []
-}
-
-const setActiveAndStay = () => {
-    if (viewingProject.value) {
-        store.selectProject(viewingProject.value.id)
-    }
-}
-
-const zoomIn = () => { if (zoomLevel.value < 2.5) zoomLevel.value += 0.2 } // 稍微增加了最大缩放
-const zoomOut = () => { if (zoomLevel.value > 0.6) zoomLevel.value -= 0.2 }
-
-// 管理功能 (重命名/删除) - 保持不变
-const handleRename = (project) => {
-    const newName = prompt("Rename project:", project.name)
-    if (newName && newName.trim() !== "") {
-        store.renameProject(project.id, newName.trim())
-    }
-}
-
-const handleDelete = (project) => {
-    if (confirm(`Are you sure you want to delete "${project.name}"?\nThis action cannot be undone.`)) {
-        store.deleteProject(project.id)
-        if (viewingProject.value && viewingProject.value.id === project.id) {
-            closeInspection()
+    // 打开时自动滚动到最左侧 (初始位置)
+    nextTick(() => { 
+        if (scrollContainer.value) {
+            scrollContainer.value.scrollLeft = 0
         }
-    }
+    })
 }
 
-// 拖拽逻辑 (暂留空)
-const startDrag = () => {}
-const onDrag = () => {}
-const stopDrag = () => {}
+const closeInspection = () => { viewingProject.value = null }
+const setActiveAndStay = () => { if (viewingProject.value) store.selectProject(viewingProject.value.id) }
 
+// 🖱️ 优化的滚轮处理
+const handleWheel = (e) => {
+    if (!scrollContainer.value) return;
+    
+    // 不同的设备 deltaY 的值差异很大。
+    // 触摸板通常较小，普通鼠标滚轮较大。
+    const scrollSpeed = 1.5; 
+    let delta = e.deltaY * scrollSpeed;
+
+    // 支持横向滚动设备 (e.deltaX)
+    if (e.deltaX) {
+        delta += e.deltaX * scrollSpeed;
+    }
+
+    scrollContainer.value.scrollLeft += delta;
+}
 </script>
 
 <style scoped>
-/* 自定义滚动条样式 */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
+.pixel-art {
+  image-rendering: pixelated; 
+  image-rendering: crisp-edges;
 }
+
+/* === 修改这里：让滚动条可见且美观 === */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px; /* 纵向滚动条宽度 */
+  height: 6px; /* 横向滚动条高度 (用于森林内部滚动) */
+}
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent; 
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(128, 128, 128, 0.4); 
-  border-radius: 3px;
+  background-color: rgba(156, 163, 175, 0.3); /* 半透明灰色 */
+  border-radius: 20px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(128, 128, 128, 0.6); 
+  background-color: rgba(156, 163, 175, 0.5); /* 鼠标悬停变深 */
+}
+
+/* Firefox 适配 */
+.custom-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
 }
 </style>
