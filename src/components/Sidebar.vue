@@ -45,7 +45,7 @@
       <span class="text-[10px]" :class="store.isNightMode ? 'text-gray-600' : 'text-gray-400/80'">Drag to reorder</span>
     </div>
     
-    <div class="flex-1 overflow-y-auto p-2 custom-scrollbar">
+    <div class="flex-1 overflow-y-auto p-2 custom-scrollbar overflow-x-visible">
        <div v-if="store.projects.length === 0" class="p-4 text-center text-sm mt-4"
             :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
         <p>暂无项目</p>
@@ -54,23 +54,22 @@
       <div 
         v-for="(project, index) in store.projects" 
         :key="project.id"
-        draggable="true"
+        :draggable="editingId !== project.id" 
         @dragstart="handleDragStart(index, $event)"
         @dragover.prevent="handleDragOver($event)"
         @dragenter.prevent
         @drop.prevent="handleDrop(index)"
         @dragend="handleDragEnd"
         @click="store.selectProject(project.id)"
-        class="pb-1" 
+        class="pb-1 relative transition-all" 
+        :class="{ 'z-50': activeMenuId === project.id }" 
       >
         <div 
-            class="group w-full flex items-center p-2 rounded-md border-l-4 transition-all relative cursor-pointer backdrop-blur-sm"
+            class="group w-full flex items-center p-2 rounded-md border-l-4 transition-all relative cursor-pointer backdrop-blur-sm pr-8"
             :class="[
-              // 激活状态
               isActive(project.id) 
                 ? (store.isNightMode ? 'bg-[#353535] border-green-500' : 'bg-emerald-50 border-emerald-500 shadow-sm') 
                 : (store.isNightMode ? 'border-transparent hover:bg-[#2a2a2a]' : 'border-transparent hover:bg-white/60'),
-              // 拖拽状态
               draggingIndex === index ? 'opacity-30 border-dashed border-gray-500' : ''
             ]"
         >
@@ -81,23 +80,72 @@
             
             <div class="mr-3 ml-3 text-2xl transition-transform group-hover:scale-105 select-none pointer-events-none">{{ project.icon }}</div>
             
-            <div class="text-left flex-1 min-w-0 pointer-events-none">
-                <div class="font-bold text-sm truncate" 
-                     :class="isActive(project.id) 
-                        ? (store.isNightMode ? 'text-white' : 'text-emerald-900') 
-                        : (store.isNightMode ? 'text-gray-400' : 'text-gray-600')">
-                    {{ project.name }}
+            <div class="text-left flex-1 min-w-0">
+                <div v-if="editingId === project.id" class="mr-2" @click.stop>
+                    <input 
+                        ref="renameInput"
+                        v-model="editName"
+                        @blur="confirmRename"
+                        @keyup.enter="confirmRename"
+                        @keyup.esc="cancelRename"
+                        type="text"
+                        class="w-full text-sm px-1 py-0.5 rounded outline-none border border-blue-500 bg-transparent"
+                        :class="store.isNightMode ? 'text-white' : 'text-gray-900'"
+                    />
                 </div>
-                <div class="text-[10px] flex justify-between mt-1"
-                     :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
-                    <span>Lv. {{ project.level }}</span>
-                    <span>{{ project.totalTrees }} 🌲</span>
-                </div>
-                <div class="w-full h-1 mt-1 rounded-full overflow-hidden"
-                     :class="store.isNightMode ? 'bg-gray-700' : 'bg-gray-200'">
-                    <div class="bg-blue-500 h-full transition-all" :style="{ width: (project.currentXP / project.nextLevelXP) * 100 + '%' }"></div>
+
+                <div v-else class="pointer-events-none">
+                    <div class="font-bold text-sm truncate" 
+                         :class="isActive(project.id) 
+                            ? (store.isNightMode ? 'text-white' : 'text-emerald-900') 
+                            : (store.isNightMode ? 'text-gray-400' : 'text-gray-600')">
+                        {{ project.name }}
+                    </div>
+                    <div class="text-[10px] flex justify-between mt-1"
+                         :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
+                        <span>Lv. {{ project.level }}</span>
+                        <span>{{ project.totalTrees }} 🌲</span>
+                    </div>
+                    <div class="w-full h-1 mt-1 rounded-full overflow-hidden"
+                         :class="store.isNightMode ? 'bg-gray-700' : 'bg-gray-200'">
+                        <div class="bg-blue-500 h-full transition-all" :style="{ width: (project.currentXP / project.nextLevelXP) * 100 + '%' }"></div>
+                    </div>
                 </div>
             </div>
+
+            <button 
+                @click.stop="toggleMenu(project.id)"
+                class="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 rounded-full opacity-0 group-hover:opacity-100 transition-all z-10"
+                :class="[
+                   activeMenuId === project.id ? 'opacity-100 bg-black/10 dark:bg-white/10' : '',
+                   store.isNightMode ? 'text-gray-400 hover:text-white hover:bg-white/10' : 'text-gray-400 hover:text-gray-800 hover:bg-black/5'
+                ]"
+                title="More Options"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+            </button>
+
+            <div v-if="activeMenuId === project.id" 
+                 class="absolute right-0 top-full mt-1 w-32 rounded-lg shadow-xl border z-50 overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col py-1"
+                 :class="store.isNightMode ? 'bg-[#252525] border-gray-700' : 'bg-white border-gray-200'"
+                 @click.stop
+            >
+                <button @click="startRename(project)" 
+                        class="text-left px-3 py-2 text-xs font-bold flex items-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-t"
+                        :class="[
+                           store.isNightMode ? 'border-gray-700 text-blue-400' : 'border-gray-100 text-blue-600'
+                        ]">
+                   <span>✏️</span> 重命名
+                </button>
+                <button @click="handleDelete(project)" 
+                        class="text-left px-3 py-2 text-xs font-bold flex items-center gap-2 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors border-t"
+                        :class="[
+                          store.isNightMode ? 'text-red-400 border-gray-700' : 'text-red-600 border-gray-100'
+                        ]">
+                   <span>🗑️</span> 删除
+                </button>
+            </div>
+
         </div>
       </div>
     </div>
@@ -149,6 +197,7 @@
          <input ref="fileInput" type="file" accept=".json" class="hidden" @change="handleFileImport" />
       </div>
     </div>
+    
     <div class="pt-2 mt-2 border-t border-dashed"
         :class="store.isNightMode ? 'border-gray-700' : 'border-gray-300'">
         
@@ -230,7 +279,7 @@
 </template>
 
 <script setup>
-import { ref, nextTick } from 'vue'
+import { ref, nextTick, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from '@/stores/gameStore'
 const store = useGameStore()
 const isCreating = ref(false)
@@ -242,6 +291,58 @@ const showLoginForm = ref(false)
 const email = ref('')
 const password = ref('')
 
+// === 菜单与重命名逻辑 ===
+const activeMenuId = ref(null)
+const editingId = ref(null)
+const editName = ref('')
+const renameInput = ref(null)
+
+const closeMenu = () => { activeMenuId.value = null }
+onMounted(() => document.addEventListener('click', closeMenu))
+onUnmounted(() => document.removeEventListener('click', closeMenu))
+
+const toggleMenu = (id) => {
+    activeMenuId.value = activeMenuId.value === id ? null : id
+}
+
+const handleReset = (project) => {
+    if (confirm(`确定要清空 "${project.name}" 的所有种树进度吗？\n（此操作无法撤销）`)) {
+        store.resetProjectProgress(project.id)
+        activeMenuId.value = null
+    }
+}
+
+const startRename = (project) => {
+    editingId.value = project.id
+    editName.value = project.name
+    activeMenuId.value = null 
+    nextTick(() => {
+        if (renameInput.value && renameInput.value.length > 0) {
+           const input = renameInput.value.find(el => el && el.offsetParent !== null)
+           if (input) input.focus()
+        }
+    })
+}
+
+const confirmRename = () => {
+    if (editingId.value && editName.value.trim()) {
+        store.renameProject(editingId.value, editName.value)
+    }
+    cancelRename()
+}
+
+const cancelRename = () => {
+    editingId.value = null
+    editName.value = ''
+}
+
+const handleDelete = (project) => {
+    if (confirm(`确定要删除项目 "${project.name}" 吗？\n删除后无法恢复！`)) {
+        store.deleteProject(project.id)
+    }
+    activeMenuId.value = null
+}
+
 const handleEmailLogin = async () => {
     const success = await store.loginWithEmail(email.value, password.value)
     if (success) showLoginForm.value = false
@@ -252,9 +353,14 @@ const handleEmailRegister = async () => {
     if (success) showLoginForm.value = false
 }
 
+// === 拖拽逻辑 ===
 const draggingIndex = ref(null)
 
 const handleDragStart = (index, event) => {
+    if (editingId.value !== null) {
+        event.preventDefault()
+        return
+    }
     draggingIndex.value = index
     event.dataTransfer.effectAllowed = 'move'
     event.dataTransfer.dropEffect = 'move'
@@ -277,19 +383,15 @@ const handleDragEnd = () => {
     draggingIndex.value = null
 }
 
-// [修改] 增加白天模式的颜色参数
+// === 样式辅助 ===
 const navBtnClass = (view, nightText, nightBg, dayText, dayBg) => {
     const isActive = store.activeView === view
     const isNight = store.isNightMode
-    
-    // 基础样式
     const base = 'w-full flex items-center gap-3 p-3 rounded-md transition-all font-bold uppercase tracking-wide text-sm'
     
     if (isActive) {
-        // 选中状态
         return [base, isNight ? `${nightBg} text-white` : `${dayBg} ${dayText} shadow-md ring-1 ring-black/5`]
     } else {
-        // 未选中状态
         return [base, isNight 
           ? `bg-[#333] ${nightText} hover:bg-[#3a3a3a]` 
           : `bg-white/50 text-gray-500 hover:bg-white/80`]

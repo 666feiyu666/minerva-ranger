@@ -77,6 +77,56 @@
          </button>
       </div>
 
+      <Transition name="fade">
+        <div v-if="store.offlineEarnings" class="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div class="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
+          
+          <div class="relative rounded-2xl shadow-2xl p-6 max-w-sm w-full border overflow-hidden animate-in zoom-in duration-300"
+               :class="store.isNightMode ? 'bg-[#1a1a1a] text-gray-200 border-gray-700' : 'bg-white text-gray-800 border-gray-200'">
+              
+              <div class="text-center mb-6">
+                <div class="text-4xl mb-2 animate-bounce">🌱</div>
+                <h2 class="text-xl font-bold mb-2">欢迎回来!</h2>
+                <p class="text-sm opacity-70">
+                  你离开了 
+                  <span class="font-bold text-blue-500">{{ formatDuration(store.offlineEarnings.secondsPassed) }}</span>
+                </p>
+              </div>
+
+              <div class="rounded-xl p-4 mb-6 flex justify-between items-center border"
+                   :class="store.isNightMode ? 'bg-gray-900/50 border-gray-700' : 'bg-gray-50 border-gray-200'">
+                 <div class="flex items-center gap-3">
+                    <img :src="store.offlineEarnings.tree.icon" class="w-10 h-10 object-contain pixel-art shadow-sm">
+                    <div class="text-left">
+                       <div class="font-bold text-sm">{{ store.offlineEarnings.tree.name }}</div>
+                       <div class="text-xs text-green-500 font-bold">+ {{ store.offlineEarnings.completedCycles }} 棵</div>
+                    </div>
+                 </div>
+                 <div class="text-right">
+                    <div class="text-xs opacity-60">获得经验</div>
+                    <div class="font-bold text-blue-500">
+                      +{{ store.offlineEarnings.completedCycles * store.offlineEarnings.tree.xp }} XP
+                    </div>
+                 </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <button @click="store.discardOfflineEarnings()" 
+                        class="py-3 rounded-xl border font-bold text-xs transition-colors"
+                        :class="store.isNightMode 
+                          ? 'border-gray-600 hover:bg-red-900/20 text-gray-400 hover:text-red-400' 
+                          : 'border-gray-300 hover:bg-red-50 text-gray-500 hover:text-red-500'">
+                   🗑️ 没在工作 (丢弃)
+                </button>
+                <button @click="store.claimOfflineEarnings()" 
+                        class="py-3 rounded-xl bg-green-600 text-white font-bold text-xs shadow-lg hover:bg-green-500 hover:scale-105 transition-all">
+                   ✅ 收下成果
+                </button>
+              </div>
+          </div>
+        </div>
+      </Transition>
+
     </main>
   </div>
 </template>
@@ -93,20 +143,18 @@ import bgDay from '@/assets/bg-day.png'
 import bgNight from '@/assets/bg-night.png'
 
 const store = useGameStore()
-const showMobileMenu = ref(false) // 控制手机端抽屉状态
+const showMobileMenu = ref(false) 
 
-// [新增] 初始化认证
+// 初始化认证
 onMounted(() => {
   store.initAuth()
 })
 
-// ... 原有的 backgroundStyle ...
 const backgroundStyle = computed(() => {
   const img = store.isNightMode ? bgNight : bgDay
   return { backgroundImage: `url(${img})`, backgroundSize: 'cover', backgroundPosition: 'center bottom' }
 })
 
-// 底部导航栏样式辅助函数
 const bottomNavClass = (view) => {
   const isActive = store.activeView === view
   const base = "flex flex-col items-center justify-center w-full h-full transition-all active:scale-95 "
@@ -117,6 +165,14 @@ const bottomNavClass = (view) => {
   const inactiveColor = store.isNightMode ? 'text-gray-500' : 'text-gray-400'
   
   return base + (isActive ? activeColor : inactiveColor)
+}
+
+// [新增] 格式化时间辅助函数 (用于弹窗)
+const formatDuration = (seconds) => {
+  if (!seconds) return '0m'
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  return h > 0 ? `${h}h ${m}m` : `${m}m`
 }
 </script>
 
@@ -129,6 +185,16 @@ const bottomNavClass = (view) => {
 .slide-fade-enter-from,
 .slide-fade-leave-to {
   transform: translateX(-100%);
+  opacity: 0;
+}
+
+/* [新增] 弹窗淡入淡出动画 */
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
   opacity: 0;
 }
 </style>

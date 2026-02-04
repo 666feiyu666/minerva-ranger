@@ -34,8 +34,10 @@ export const useGameStore = defineStore('game', () => {
   const isRunning = ref(false)
   const timer = ref(0)          
   
-  // [新增] 夜间模式状态 (默认 false = 白天)
   const isNightMode = ref(false)
+  
+  // [新增] 离线收益暂存区 (如果为 null 表示没有离线收益)
+  const offlineEarnings = ref(null)
 
   // === 4. 计算属性 ===
   const globalLevel = computed(() => Math.floor(Math.sqrt(globalXP.value / 100)) + 1)
@@ -126,7 +128,6 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  // [新增] 切换日夜模式
   function toggleNightMode() {
     isNightMode.value = !isNightMode.value
   }
@@ -245,7 +246,7 @@ export const useGameStore = defineStore('game', () => {
     projects.value.splice(insertIndex, 0, itemToMove)
   }
 
-  // === 8. 持久化 ===
+  // === 8. 持久化与离线逻辑 ===
   const SAVE_KEY = 'minerva_save_v1'
 
   function getSaveData() {
@@ -262,106 +263,110 @@ export const useGameStore = defineStore('game', () => {
       activeTreeId: activeTreeId.value,
       isRunning: isRunning.value,
       timer: timer.value,
-      isNightMode: isNightMode.value // [新增] 保存日夜模式
+      isNightMode: isNightMode.value 
     }
   }
 
-// === [新增] 9. 云同步与认证逻辑 ===
+  // [新增] 领取离线收益
+  function claimOfflineEarnings() {
+    if (!offlineEarnings.value) return
+
+    const { projectId, tree, secondsPassed, completedCycles, newTimer } = offlineEarnings.value
+    const project = projects.value.find(p => p.id === projectId)
+
+    if (project) {
+        // 1. [修复Bug] 补上离线流逝的时间到项目总时长
+        if (!project.totalTimeSpent) project.totalTimeSpent = 0
+        project.totalTimeSpent += secondsPassed
+
+        // 2. 结算树木和XP
+        if (completedCycles > 0) {
+             const oldRunning = runningProjectId.value
+             
+             // 临时切换上下文以利用 completeCycle
+             runningProjectId.value = projectId
+             activeTreeId.value = tree.id 
+             
+             completeCycle(completedCycles)
+             
+             runningProjectId.value = oldRunning
+        }
+    }
+
+    // 3. 恢复计时器和状态
+    timer.value = newTimer
+    // 可以选择自动开始，或者保持暂停让用户点
+    // 这里我们选择：如果离线前是跑着的，领完收益继续跑
+    isRunning.value = true 
+    startTimer()
+
+    offlineEarnings.value = null
+    saveToLocalStorage()
+  }
+
+  // [新增] 丢弃离线收益
+  function discardOfflineEarnings() {
+    // 仅仅清空暂存区，不做任何数据变更
+    // 计时器保持在离线前的进度（或者重置，看喜好，这里保持进度但不增加树）
+    offlineEarnings.value = null
+    isRunning.value = false // 保持暂停状态
+    saveToLocalStorage()
+  }
+
+  // === 9. 云同步与认证逻辑 ===
   const user = ref(null)
 
-  // 初始化认证监听
   async function initAuth() {
-    // 获取当前会话
     const { data: { session } } = await supabase.auth.getSession()
     user.value = session?.user || null
-
-    // 监听登录/登出变化
     supabase.auth.onAuthStateChange((_event, session) => {
       user.value = session?.user || null
     })
   }
 
-  // [新增] 邮箱登录 (Email Login)
   async function loginWithEmail(email, password) {
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password
-    })
-    if (error) {
-      alert('登录失败: ' + error.message)
-      return false
-    }
+    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    if (error) { alert('登录失败: ' + error.message); return false }
     return true
   }
 
-  // [新增] 邮箱注册 (Email Register)
   async function registerWithEmail(email, password) {
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    })
-    if (error) {
-      alert('注册失败: ' + error.message)
-      return false
-    }
-    // 因为我们在 Supabase 后台关闭了邮箱验证，注册成功通常会自动登录
-    // 如果开启了邮箱验证，这里可能需要提示用户“去查收邮件”
+    const { error } = await supabase.auth.signUp({ email, password })
+    if (error) { alert('注册失败: ' + error.message); return false }
     alert('注册成功！已自动登录。')
     return true
   }
 
-  // 登出
   async function logout() {
     const { error } = await supabase.auth.signOut()
     if (error) alert(error.message)
   }
 
-  // 上传存档到云端
   async function uploadSaveToCloud() {
     if (!user.value) return alert('请先登录！')
-    
     const saveData = getSaveData()
-    
-    // 使用 upsert: 如果存在则更新，不存在则插入
-    const { error } = await supabase
-      .from('game_saves')
-      .upsert({ 
+    const { error } = await supabase.from('game_saves').upsert({ 
         user_id: user.value.id, 
         save_data: saveData,
         updated_at: new Date()
       }, { onConflict: 'user_id' })
-
-    if (error) {
-      console.error(error)
-      alert('云端保存失败: ' + error.message)
-    } else {
-      alert('☁️ 云端保存成功！')
-    }
+    if (error) { console.error(error); alert('云端保存失败: ' + error.message) } 
+    else { alert('☁️ 云端保存成功！') }
   }
 
-  // 从云端下载存档
   async function downloadSaveFromCloud() {
     if (!user.value) return alert('请先登录！')
-
-    const { data, error } = await supabase
-      .from('game_saves')
-      .select('save_data')
-      .single() // 只取一条
-
-    if (error) {
-      console.error(error)
-      alert('读取云存档失败 (可能是还没有存档): ' + error.message)
-      return
-    }
-
-    if (data && data.save_data) {
-      // 复用现有的导入逻辑
-      // 注意：这里需要先把 json 对象转回 string，因为 importSaveData 接收的是 string
-      importSaveData(JSON.stringify(data.save_data)) 
-    }
+    const { data, error } = await supabase.from('game_saves').select('save_data').single()
+    if (error) { console.error(error); alert('读取云存档失败: ' + error.message); return }
+    if (data && data.save_data) { importSaveData(JSON.stringify(data.save_data)) }
   }
 
-  function saveToLocalStorage() { localStorage.setItem(SAVE_KEY, JSON.stringify(getSaveData())) }
+  function saveToLocalStorage() { 
+    // 只有在没有未处理的离线收益时才自动保存，避免弹窗还没点就覆盖了
+    if (!offlineEarnings.value) {
+        localStorage.setItem(SAVE_KEY, JSON.stringify(getSaveData())) 
+    }
+  }
 
   function importSaveData(jsonString, silent = false) {
     try {
@@ -378,37 +383,55 @@ export const useGameStore = defineStore('game', () => {
       }))
       
       activeProjectId.value = data.activeProjectId || null
-      runningProjectId.value = data.runningProjectId || data.activeProjectId || null 
+      
+      const savedRunningProjectId = data.runningProjectId || data.activeProjectId || null 
+      
       activeTreeId.value = data.activeTreeId || null
       timer.value = data.timer || 0
-      isNightMode.value = data.isNightMode || false // [新增] 读取日夜模式
+      isNightMode.value = data.isNightMode || false 
       
       const wasRunning = data.isRunning || false
-      const lastSave = data.timestamp || Date.now() // 注意：这里使用了 data.timestamp 或当前时间
+      const lastSave = data.timestamp || Date.now()
 
-      if (wasRunning && activeTreeId.value && runningProjectId.value) {
+      // [修改] 离线收益计算逻辑
+      if (wasRunning && activeTreeId.value && savedRunningProjectId) {
         const now = Date.now()
         const secondsPassed = Math.floor((now - lastSave) / 1000)
-        if (secondsPassed > 0) {
+        
+        // 只有离线超过 30 秒才触发弹窗，否则视为刷新页面，直接继续
+        if (secondsPassed > 30) {
           const tree = TREE_TYPES.find(t => t.id === activeTreeId.value)
           if (tree) {
              const totalTime = timer.value + secondsPassed
              const cycleTime = tree.time
              const completedCycles = Math.floor(totalTime / cycleTime)
              const remainingTime = totalTime % cycleTime
-             if (completedCycles > 0) completeCycle(completedCycles)
-             timer.value = remainingTime
+             
+             // 存入暂存区，暂停游戏，等待用户决定
+             offlineEarnings.value = {
+                 projectId: savedRunningProjectId,
+                 tree,
+                 secondsPassed,     // 离线时长（用于修复时间统计）
+                 completedCycles,   // 种了多少树
+                 newTimer: remainingTime 
+             }
+             
+             runningProjectId.value = savedRunningProjectId
+             isRunning.value = false // 暂停，等用户选
           }
+        } else {
+          // 时间很短，直接恢复
+          runningProjectId.value = savedRunningProjectId
+          startTimer()
         }
-        startTimer()
       } else {
         isRunning.value = false
+        runningProjectId.value = savedRunningProjectId
       }
-      if (!silent) { alert('存档读取成功！'); saveToLocalStorage() }
+      if (!silent) { saveToLocalStorage() }
     } catch (e) { console.error(e); if (!silent) alert('存档损坏') }
   }
 
-  // [修改] 监听 isNightMode 的变化以自动保存
   watch([coins, globalXP, unlockedTreeIds, projects, notebook, activeProjectId, runningProjectId, activeTreeId, isRunning, timer, isNightMode], () => { saveToLocalStorage() }, { deep: true })
   
   function loadGame() { const saved = localStorage.getItem(SAVE_KEY); if (saved) importSaveData(saved, true) }
@@ -440,16 +463,18 @@ export const useGameStore = defineStore('game', () => {
     projects, globalXP, globalLevel, globalLevelProgress, coins, unlockedTreeIds, activeView, notebook,
     activeProjectId, activeProject, runningProjectId, runningProject, 
     activeTreeId, activeTree, timer, maxTime, isRunning, progressPercentage, 
-    isNightMode, // 导出状态
-    TREE_TYPES, inventoryTrees,
+    isNightMode, TREE_TYPES, inventoryTrees,
+    user, offlineEarnings, // 导出新状态
+    
     getTreeYield, buyTree, createProject, selectProject, 
     openShop, openForest, openNotebook, uploadNote,
     startAction, stopTimer, toggleAction, downloadSaveFile, importSaveData, cheatAddCoins, getTreeIcon,
     renameProject, deleteProject, reorderProjects,
     updateNoteTags,
-    toggleNightMode, // 导出方法
-
-    // [新增] 导出云同步相关
-    user, initAuth, loginWithEmail, registerWithEmail, logout, uploadSaveToCloud, downloadSaveFromCloud
+    toggleNightMode, 
+    initAuth, loginWithEmail, registerWithEmail, logout, uploadSaveToCloud, downloadSaveFromCloud,
+    
+    // 导出新方法
+    claimOfflineEarnings, discardOfflineEarnings
   }
 })
