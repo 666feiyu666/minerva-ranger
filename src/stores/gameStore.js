@@ -21,6 +21,8 @@ export const useGameStore = defineStore('game', () => {
   const coins = ref(0)
   const unlockedTreeIds = ref(['t1'])
   const globalXP = ref(0)
+  
+  const themes = ref([]) // [新增] 主题(领域)数组
   const projects = ref([]) 
   const notebook = ref([]) 
   
@@ -36,7 +38,6 @@ export const useGameStore = defineStore('game', () => {
   
   const isNightMode = ref(false)
   
-  // [新增] 离线收益暂存区 (如果为 null 表示没有离线收益)
   const offlineEarnings = ref(null)
 
   // === 4. 计算属性 ===
@@ -108,24 +109,29 @@ export const useGameStore = defineStore('game', () => {
     if (earnedCoins <= 0) { alert("笔记内容太短了！"); return }
     
     coins.value += earnedCoins
-    
     const tags = Array.isArray(projectIds) ? projectIds : (projectIds ? [projectIds] : [])
-
     notebook.value.unshift({ 
-      id: Date.now(), 
-      projectIds: tags, 
-      title, 
-      wordCount, 
-      coins: earnedCoins, 
-      date: new Date().toLocaleString() 
+      id: Date.now(), projectIds: tags, title, wordCount, coins: earnedCoins, date: new Date().toLocaleString() 
     })
+  }
+
+  function renameNote(noteId, newTitle) {
+    const note = notebook.value.find(n => n.id === noteId)
+    if (note) note.title = newTitle
+  }
+
+  function deleteNote(noteId) {
+    const index = notebook.value.findIndex(n => n.id === noteId)
+    if (index !== -1) {
+      const note = notebook.value[index]
+      if (note.coins > 0) coins.value = Math.max(0, coins.value - note.coins)
+      notebook.value.splice(index, 1)
+    }
   }
 
   function updateNoteTags(noteId, newProjectIds) {
     const note = notebook.value.find(n => n.id === noteId)
-    if (note) {
-        note.projectIds = [...newProjectIds]
-    }
+    if (note) note.projectIds = [...newProjectIds]
   }
 
   function toggleNightMode() {
@@ -145,7 +151,6 @@ export const useGameStore = defineStore('game', () => {
     const now = Date.now()
     const delta = (now - lastTimestamp) / 1000
     lastTimestamp = now
-
     timer.value += delta
 
     if (runningProject.value) {
@@ -155,7 +160,6 @@ export const useGameStore = defineStore('game', () => {
 
     if (timer.value >= activeTree.value.time) {
       const finishedCycles = Math.floor(timer.value / activeTree.value.time)
-      
       if (finishedCycles > 0) {
         completeCycle(finishedCycles)
         timer.value %= activeTree.value.time
@@ -165,10 +169,8 @@ export const useGameStore = defineStore('game', () => {
 
   function startTimer() {
     if (isRunning.value) return 
-    
     isRunning.value = true
     lastTimestamp = Date.now()
-    
     if (timerInterval) clearInterval(timerInterval)
     timerInterval = setInterval(gameTick, 100)
   }
@@ -184,8 +186,7 @@ export const useGameStore = defineStore('game', () => {
   function toggleAction() {
     if (activeProjectId.value !== runningProjectId.value) return
     if (isRunning.value) { 
-      isRunning.value = false; 
-      stopTimer() 
+      isRunning.value = false; stopTimer() 
     } else { 
       if (activeTreeId.value && runningProjectId.value) startTimer() 
     }
@@ -193,27 +194,47 @@ export const useGameStore = defineStore('game', () => {
 
   function startAction(treeId) {
     if (!activeProjectId.value || !unlockedTreeIds.value.includes(treeId)) return
-    
     if (runningProjectId.value !== activeProjectId.value) {
         stopTimer()
         runningProjectId.value = activeProjectId.value 
         timer.value = 0 
     }
-
     if (activeTreeId.value !== treeId) { 
-        activeTreeId.value = treeId; 
-        timer.value = 0 
+        activeTreeId.value = treeId; timer.value = 0 
     }
-    
     startTimer()
   }
 
   // === 7. 管理功能 ===
+  
+  // [新增] 主题操作
+  function createTheme(name) {
+    themes.value.push({ id: `theme_${Date.now()}`, name })
+  }
+  
+  function renameTheme(id, newName) {
+    const theme = themes.value.find(t => t.id === id)
+    if (theme) theme.name = newName
+  }
+
+  function deleteTheme(id) {
+    projects.value.forEach(p => { if (p.themeId === id) p.themeId = null })
+    themes.value = themes.value.filter(t => t.id !== id)
+  }
+
+  // [修改] 项目操作
+  function createProject(name, themeId = null) { 
+    const newProj = { 
+        id: Date.now(), name, icon: '📁', level: 1, currentXP: 0, nextLevelXP: 100, 
+        totalTrees: 0, totalTimeSpent: 0, forest: {}, themeId 
+    }; 
+    projects.value.push(newProj); 
+    selectProject(newProj.id) 
+  }
+
   function renameProject(id, newName) {
     const project = projects.value.find(p => p.id === id)
-    if (project) {
-        project.name = newName
-    }
+    if (project) project.name = newName
   }
 
   function deleteProject(id) {
@@ -227,23 +248,12 @@ export const useGameStore = defineStore('game', () => {
         activeProjectId.value = null
         activeView.value = 'forest'
     }
-    
     projects.value = projects.value.filter(p => p.id !== id)
   }
 
+  // 移出原有的拖拽排序，目前用 themeId 进行归类，此方法可作废但暂且保留防报错
   function reorderProjects(fromIndex, toIndex) {
-    if (fromIndex < 0 || fromIndex >= projects.value.length || toIndex < 0 || toIndex >= projects.value.length) return
-    if (fromIndex === toIndex) return
-
-    const itemToMove = projects.value[fromIndex]
-    projects.value.splice(fromIndex, 1)
-
-    let insertIndex = toIndex
-    if (fromIndex < toIndex) {
-        insertIndex -= 1
-    }
-
-    projects.value.splice(insertIndex, 0, itemToMove)
+    // Legacy support, now we drag to themes instead
   }
 
   // === 8. 持久化与离线逻辑 ===
@@ -256,6 +266,7 @@ export const useGameStore = defineStore('game', () => {
       coins: coins.value,
       globalXP: globalXP.value,
       unlockedTreeIds: unlockedTreeIds.value,
+      themes: themes.value, // [新增]
       projects: projects.value, 
       notebook: notebook.value,
       activeProjectId: activeProjectId.value,
@@ -267,49 +278,31 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  // [新增] 领取离线收益
   function claimOfflineEarnings() {
     if (!offlineEarnings.value) return
-
     const { projectId, tree, secondsPassed, completedCycles, newTimer } = offlineEarnings.value
     const project = projects.value.find(p => p.id === projectId)
-
     if (project) {
-        // 1. [修复Bug] 补上离线流逝的时间到项目总时长
         if (!project.totalTimeSpent) project.totalTimeSpent = 0
         project.totalTimeSpent += secondsPassed
-
-        // 2. 结算树木和XP
         if (completedCycles > 0) {
              const oldRunning = runningProjectId.value
-             
-             // 临时切换上下文以利用 completeCycle
              runningProjectId.value = projectId
              activeTreeId.value = tree.id 
-             
              completeCycle(completedCycles)
-             
              runningProjectId.value = oldRunning
         }
     }
-
-    // 3. 恢复计时器和状态
     timer.value = newTimer
-    // 可以选择自动开始，或者保持暂停让用户点
-    // 这里我们选择：如果离线前是跑着的，领完收益继续跑
     isRunning.value = true 
     startTimer()
-
     offlineEarnings.value = null
     saveToLocalStorage()
   }
 
-  // [新增] 丢弃离线收益
   function discardOfflineEarnings() {
-    // 仅仅清空暂存区，不做任何数据变更
-    // 计时器保持在离线前的进度（或者重置，看喜好，这里保持进度但不增加树）
     offlineEarnings.value = null
-    isRunning.value = false // 保持暂停状态
+    isRunning.value = false 
     saveToLocalStorage()
   }
 
@@ -346,9 +339,7 @@ export const useGameStore = defineStore('game', () => {
     if (!user.value) return alert('请先登录！')
     const saveData = getSaveData()
     const { error } = await supabase.from('game_saves').upsert({ 
-        user_id: user.value.id, 
-        save_data: saveData,
-        updated_at: new Date()
+        user_id: user.value.id, save_data: saveData, updated_at: new Date()
       }, { onConflict: 'user_id' })
     if (error) { console.error(error); alert('云端保存失败: ' + error.message) } 
     else { alert('☁️ 云端保存成功！') }
@@ -362,7 +353,6 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function saveToLocalStorage() { 
-    // 只有在没有未处理的离线收益时才自动保存，避免弹窗还没点就覆盖了
     if (!offlineEarnings.value) {
         localStorage.setItem(SAVE_KEY, JSON.stringify(getSaveData())) 
     }
@@ -374,18 +364,19 @@ export const useGameStore = defineStore('game', () => {
       coins.value = data.coins || 0
       globalXP.value = data.globalXP || 0
       unlockedTreeIds.value = data.unlockedTreeIds || ['t1']
-      projects.value = (data.projects || []).map(p => ({ ...p, forest: p.forest || {}, totalTimeSpent: p.totalTimeSpent || 0 }))
+      
+      themes.value = data.themes || [] // [新增]
+      projects.value = (data.projects || []).map(p => ({ 
+          ...p, themeId: p.themeId || null, forest: p.forest || {}, totalTimeSpent: p.totalTimeSpent || 0 
+      }))
       
       const rawNotebook = data.notebook || []
       notebook.value = rawNotebook.map(note => ({
-        ...note,
-        projectIds: note.projectIds || (note.projectId ? [note.projectId] : [])
+        ...note, projectIds: note.projectIds || (note.projectId ? [note.projectId] : [])
       }))
       
       activeProjectId.value = data.activeProjectId || null
-      
       const savedRunningProjectId = data.runningProjectId || data.activeProjectId || null 
-      
       activeTreeId.value = data.activeTreeId || null
       timer.value = data.timer || 0
       isNightMode.value = data.isNightMode || false 
@@ -393,12 +384,10 @@ export const useGameStore = defineStore('game', () => {
       const wasRunning = data.isRunning || false
       const lastSave = data.timestamp || Date.now()
 
-      // [修改] 离线收益计算逻辑
       if (wasRunning && activeTreeId.value && savedRunningProjectId) {
         const now = Date.now()
         const secondsPassed = Math.floor((now - lastSave) / 1000)
         
-        // 只有离线超过 30 秒才触发弹窗，否则视为刷新页面，直接继续
         if (secondsPassed > 30) {
           const tree = TREE_TYPES.find(t => t.id === activeTreeId.value)
           if (tree) {
@@ -407,20 +396,13 @@ export const useGameStore = defineStore('game', () => {
              const completedCycles = Math.floor(totalTime / cycleTime)
              const remainingTime = totalTime % cycleTime
              
-             // 存入暂存区，暂停游戏，等待用户决定
              offlineEarnings.value = {
-                 projectId: savedRunningProjectId,
-                 tree,
-                 secondsPassed,     // 离线时长（用于修复时间统计）
-                 completedCycles,   // 种了多少树
-                 newTimer: remainingTime 
+                 projectId: savedRunningProjectId, tree, secondsPassed, completedCycles, newTimer: remainingTime 
              }
-             
              runningProjectId.value = savedRunningProjectId
-             isRunning.value = false // 暂停，等用户选
+             isRunning.value = false 
           }
         } else {
-          // 时间很短，直接恢复
           runningProjectId.value = savedRunningProjectId
           startTimer()
         }
@@ -432,7 +414,8 @@ export const useGameStore = defineStore('game', () => {
     } catch (e) { console.error(e); if (!silent) alert('存档损坏') }
   }
 
-  watch([coins, globalXP, unlockedTreeIds, projects, notebook, activeProjectId, runningProjectId, activeTreeId, isRunning, timer, isNightMode], () => { saveToLocalStorage() }, { deep: true })
+  // [修改] watch 列表加入 themes
+  watch([coins, globalXP, unlockedTreeIds, themes, projects, notebook, activeProjectId, runningProjectId, activeTreeId, isRunning, timer, isNightMode], () => { saveToLocalStorage() }, { deep: true })
   
   function loadGame() { const saved = localStorage.getItem(SAVE_KEY); if (saved) importSaveData(saved, true) }
   loadGame()
@@ -450,22 +433,21 @@ export const useGameStore = defineStore('game', () => {
     document.body.removeChild(a)
     URL.revokeObjectURL(url)
   }
-  function buyTree(tree) { if (unlockedTreeIds.value.includes(tree.id)) return; if (coins.value >= tree.price) { coins.value -= tree.price; unlockedTreeIds.value.push(tree.id) } }
-  function createProject(name) { const newProj = { id: Date.now(), name, icon: '📁', level: 1, currentXP: 0, nextLevelXP: 100, totalTrees: 0, totalTimeSpent: 0, forest: {} }; projects.value.push(newProj); selectProject(newProj.id) }
   function selectProject(id) { activeProjectId.value = id; activeView.value = 'dashboard' }
-  
   function openShop() { activeView.value = 'shop' }
   function openForest() { activeView.value = 'forest' }
   function openNotebook() { activeView.value = 'notebook' }
+  function buyTree(tree) { if (unlockedTreeIds.value.includes(tree.id)) return; if (coins.value >= tree.price) { coins.value -= tree.price; unlockedTreeIds.value.push(tree.id) } }
   function cheatAddCoins() { coins.value += 1000; globalXP.value += 1000 }
 
   return { 
-    projects, globalXP, globalLevel, globalLevelProgress, coins, unlockedTreeIds, activeView, notebook,
+    themes, projects, globalXP, globalLevel, globalLevelProgress, coins, unlockedTreeIds, activeView, notebook,
     activeProjectId, activeProject, runningProjectId, runningProject, 
     activeTreeId, activeTree, timer, maxTime, isRunning, progressPercentage, 
     isNightMode, TREE_TYPES, inventoryTrees,
-    user, offlineEarnings, // 导出新状态
+    user, offlineEarnings,
     
+    createTheme, renameTheme, deleteTheme,
     getTreeYield, buyTree, createProject, selectProject, 
     openShop, openForest, openNotebook, uploadNote,
     startAction, stopTimer, toggleAction, downloadSaveFile, importSaveData, cheatAddCoins, getTreeIcon,
@@ -473,8 +455,6 @@ export const useGameStore = defineStore('game', () => {
     updateNoteTags,
     toggleNightMode, 
     initAuth, loginWithEmail, registerWithEmail, logout, uploadSaveToCloud, downloadSaveFromCloud,
-    
-    // 导出新方法
-    claimOfflineEarnings, discardOfflineEarnings
+    claimOfflineEarnings, discardOfflineEarnings, renameNote, deleteNote
   }
 })

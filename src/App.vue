@@ -1,3 +1,7 @@
+{
+type: uploaded file
+fileName: src/App.vue
+fullContent:
 <template>
   <div 
     class="flex h-screen w-screen font-sans overflow-hidden transition-colors duration-500"
@@ -18,7 +22,7 @@
     </Transition>
 
     <main 
-      class="flex-1 flex flex-col relative transition-all duration-500 ease-in-out bg-no-repeat bg-bottom"
+      class="flex-1 flex flex-col relative transition-all duration-500 ease-in-out bg-no-repeat bg-bottom overflow-hidden"
       :class="store.isNightMode ? 'bg-[#0f172a]' : 'bg-[#e0f2fe]'" 
       :style="backgroundStyle"
       style="padding-top: var(--sat); padding-bottom: var(--sab);" 
@@ -41,7 +45,7 @@
         <span class="text-xl inline-block group-hover:animate-spin-slow origin-center">{{ store.isNightMode ? '🌛' : '☀️' }}</span>
       </button>
 
-      <div class="flex-1 flex flex-col relative z-10 pb-16 md:pb-0"> 
+      <div class="flex-1 flex flex-col relative z-10 pb-16 md:pb-0 overflow-hidden"> 
           <ShopView v-if="store.activeView === 'shop'" />
           <ForestView v-else-if="store.activeView === 'forest'" />
           <NotebookView v-else-if="store.activeView === 'notebook'" /> 
@@ -198,3 +202,4 @@ const formatDuration = (seconds) => {
   opacity: 0;
 }
 </style>
+}

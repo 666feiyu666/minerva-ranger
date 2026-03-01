@@ -1,7 +1,11 @@
+{
+type: uploaded file
+fileName: src/components/NotebookView.vue
+fullContent:
 <template>
-  <div class="flex-1 p-6 flex flex-col h-full bg-transparent overflow-hidden">
+  <div class="w-full h-full flex flex-col p-6 relative overflow-hidden">
     
-    <div class="flex justify-between items-center mb-6 shrink-0 p-6 rounded-lg border shadow-lg backdrop-blur-sm transition-all"
+    <div class="shrink-0 flex justify-between items-center mb-6 p-6 rounded-lg border shadow-lg backdrop-blur-sm transition-all"
          :class="store.isNightMode 
            ? 'bg-[#1a1a1a]/80 border-gray-700' 
            : 'bg-white/70 border-white/60 shadow-lg ring-1 ring-black/5'">
@@ -30,9 +34,9 @@
        </div>
     </div>
 
-    <div class="flex-1 flex flex-col gap-6 overflow-hidden min-h-0">
+    <div class="flex-1 flex flex-col gap-6 min-h-0">
        
-       <div class="border rounded-lg p-6 transition-all backdrop-blur-sm shadow-md shrink-0 overflow-y-auto max-h-[40vh] custom-scrollbar"
+       <div class="shrink-0 border rounded-lg p-6 backdrop-blur-sm shadow-md overflow-y-auto max-h-[35vh] custom-scrollbar"
             :class="store.isNightMode ? 'bg-[#1a1a1a]/60 border-gray-700' : 'bg-white/50 border-white/60'">
           <h3 class="text-lg font-bold mb-4 transition-colors"
               :class="store.isNightMode ? 'text-gray-200' : 'text-gray-800'">Submit New Note</h3>
@@ -88,16 +92,16 @@
           </div>
        </div>
 
-       <div class="border rounded-lg p-6 flex-1 flex flex-col min-h-0 backdrop-blur-sm shadow-md transition-all"
+       <div class="flex-1 border rounded-lg p-6 flex flex-col min-h-0 backdrop-blur-sm shadow-md transition-all"
             :class="store.isNightMode ? 'bg-[#1a1a1a]/60 border-gray-700' : 'bg-white/50 border-white/60'">
           
-          <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3 shrink-0">
+          <div class="shrink-0 flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
               <h3 class="text-lg font-bold transition-colors"
                   :class="store.isNightMode ? 'text-gray-200' : 'text-gray-800'">Submission History</h3>
               <div class="flex items-center gap-2">
                   <span class="text-xs uppercase" :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">Filter:</span>
                   <select v-model="filterId" 
-                      class="border rounded px-3 py-1 text-sm outline-none transition-colors"
+                      class="border rounded px-3 py-1 text-sm outline-none transition-colors cursor-pointer"
                       :class="store.isNightMode 
                         ? 'bg-[#1a1a1a] border-gray-700 text-gray-300' 
                         : 'bg-white border-gray-300 text-gray-700 shadow-sm'">
@@ -109,12 +113,12 @@
               </div>
           </div>
           
-          <div v-if="filteredNotes.length === 0" class="text-center py-10 italic transition-colors"
+          <div v-if="filteredNotes.length === 0" class="text-center py-10 italic transition-colors flex-1"
                :class="store.isNightMode ? 'text-gray-600' : 'text-gray-400'">
               No notes found matching the current filter.
           </div>
 
-          <div class="flex-1 overflow-y-auto pr-1 space-y-2 custom-scrollbar">
+          <div class="flex-1 overflow-y-auto pr-2 space-y-2 custom-scrollbar pb-10">
              <div v-for="note in filteredNotes" :key="note.id" 
                   class="border p-3 rounded transition-all backdrop-blur-sm hover:shadow-md"
                   :class="store.isNightMode 
@@ -122,44 +126,55 @@
                     : 'bg-white/60 border-gray-200 hover:bg-white hover:border-blue-200'">
                 
                 <div class="flex items-start justify-between">
-                    <div class="flex items-start gap-3 flex-1">
-                        <div class="p-2 rounded mt-1 transition-colors"
+                    <div class="flex items-start gap-3 flex-1 min-w-0">
+                        <div class="p-2 rounded mt-1 transition-colors shrink-0"
                              :class="store.isNightMode ? 'bg-blue-900/20 text-blue-400' : 'bg-blue-50 text-blue-600'">📝</div>
-                        <div class="flex-1">
-                            <div class="font-bold flex items-center gap-2 transition-colors"
-                                 :class="store.isNightMode ? 'text-gray-200' : 'text-gray-800'">
-                                {{ note.title }}
-                                <button v-if="editingNoteId !== note.id" @click="startEdit(note)" 
-                                        class="text-xs transition-colors" 
-                                        :class="store.isNightMode ? 'text-gray-600 hover:text-blue-400' : 'text-gray-400 hover:text-blue-600'"
-                                        title="Edit Tags">
-                                    ✏️
-                                </button>
-                            </div>
+                        <div class="flex-1 min-w-0">
                             
-                            <div v-if="editingNoteId !== note.id" class="flex flex-wrap items-center gap-2 mt-1">
-                                <span class="text-xs" :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">{{ note.date }}</span>
-                                <template v-if="note.projectIds && note.projectIds.length > 0">
-                                    <span v-for="pid in note.projectIds" :key="pid" 
-                                          class="text-[10px] px-1.5 rounded border transition-colors"
-                                          :class="store.isNightMode 
-                                            ? 'text-green-400 bg-green-900/20 border-green-900/30' 
-                                            : 'text-emerald-700 bg-emerald-50 border-emerald-200'">
-                                        {{ getProjectName(pid) }}
+                            <div v-if="editingNoteId !== note.id">
+                                <div class="font-bold flex items-center gap-2 transition-colors break-words"
+                                     :class="store.isNightMode ? 'text-gray-200' : 'text-gray-800'">
+                                    <span>{{ note.title }}</span>
+                                    <button @click.stop="startEdit(note)" 
+                                            class="shrink-0 text-xs transition-colors p-1 rounded hover:bg-black/5" 
+                                            :class="store.isNightMode ? 'text-gray-600 hover:text-blue-400 hover:bg-white/10' : 'text-gray-400 hover:text-blue-600'"
+                                            title="Edit Note">
+                                        ✏️
+                                    </button>
+                                </div>
+                                
+                                <div class="flex flex-wrap items-center gap-2 mt-1">
+                                    <span class="text-xs" :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">{{ note.date }}</span>
+                                    <template v-if="note.projectIds && note.projectIds.length > 0">
+                                        <span v-for="pid in note.projectIds" :key="pid" 
+                                              class="text-[10px] px-1.5 rounded border transition-colors truncate max-w-[100px]"
+                                              :class="store.isNightMode 
+                                                ? 'text-green-400 bg-green-900/20 border-green-900/30' 
+                                                : 'text-emerald-700 bg-emerald-50 border-emerald-200'">
+                                            {{ getProjectName(pid) }}
+                                        </span>
+                                    </template>
+                                    <span v-else class="text-[10px] px-1.5 rounded"
+                                          :class="store.isNightMode ? 'text-gray-500 bg-gray-800' : 'text-gray-500 bg-gray-200'">
+                                        Global
                                     </span>
-                                </template>
-                                <span v-else class="text-[10px] px-1.5 rounded"
-                                      :class="store.isNightMode ? 'text-gray-500 bg-gray-800' : 'text-gray-500 bg-gray-200'">
-                                    Global
-                                </span>
+                                </div>
                             </div>
 
-                            <div v-else class="mt-2 p-3 rounded border animate-in fade-in zoom-in duration-200"
+                            <div v-else class="mt-2 p-3 rounded border animate-in fade-in zoom-in duration-200 z-10 relative"
                                  :class="store.isNightMode 
                                    ? 'bg-[#121212] border-blue-900/50' 
                                    : 'bg-white border-blue-200 shadow-lg'">
+                                
+                                <div class="mb-3">
+                                    <label class="block text-xs font-bold uppercase mb-1" :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">Title</label>
+                                    <input v-model="editTitle" type="text" 
+                                           class="w-full text-sm px-2 py-1 rounded border outline-none"
+                                           :class="store.isNightMode ? 'bg-gray-800 border-gray-600 text-white' : 'bg-white border-gray-300 text-gray-900'" />
+                                </div>
+
                                 <div class="text-xs mb-2 font-bold uppercase tracking-wider"
-                                     :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">Reclassify Note</div>
+                                     :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">Projects</div>
                                 <div class="grid grid-cols-2 gap-2 mb-3 max-h-32 overflow-y-auto custom-scrollbar">
                                     <label v-for="p in store.projects" :key="p.id" 
                                            class="flex items-center gap-2 text-xs cursor-pointer select-none"
@@ -169,23 +184,31 @@
                                         <span class="truncate">{{ p.name }}</span>
                                     </label>
                                 </div>
-                                <div class="flex gap-2">
-                                    <button @click="saveEdit" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded font-bold transition-colors shadow-sm">
-                                        Save
+                                
+                                <div class="flex items-center justify-between gap-2 mt-4 pt-2 border-t" :class="store.isNightMode ? 'border-gray-700' : 'border-gray-100'">
+                                    <button @click="handleDelete(note)" 
+                                            class="px-2 py-1 text-xs text-red-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded transition-colors flex items-center gap-1">
+                                       🗑️ Delete ( -{{ note.coins }} 🪙)
                                     </button>
-                                    <button @click="cancelEdit" 
-                                            class="px-3 py-1 text-xs rounded transition-colors"
-                                            :class="store.isNightMode 
-                                              ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
-                                              : 'bg-gray-200 hover:bg-gray-300 text-gray-700'">
-                                        Cancel
-                                    </button>
+                                    <div class="flex gap-2">
+                                        <button @click="cancelEdit" 
+                                                class="px-3 py-1 text-xs rounded transition-colors"
+                                                :class="store.isNightMode 
+                                                  ? 'bg-gray-700 hover:bg-gray-600 text-gray-300' 
+                                                  : 'bg-gray-200 hover:bg-gray-300 text-gray-700'">
+                                            Cancel
+                                        </button>
+                                        <button @click="saveEdit" class="px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs rounded font-bold transition-colors shadow-sm">
+                                            Save Changes
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
+
                         </div>
                     </div>
 
-                    <div class="text-right pl-4">
+                    <div class="text-right pl-4 shrink-0">
                         <div class="font-bold font-mono transition-colors"
                              :class="store.isNightMode ? 'text-yellow-500' : 'text-yellow-600'">+{{ note.coins }} 🪙</div>
                         <div class="text-xs" :class="store.isNightMode ? 'text-gray-600' : 'text-gray-400'">{{ note.wordCount }} words</div>
@@ -201,36 +224,55 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue'
+import { ref, computed, watch, nextTick } from 'vue'
 import { useGameStore } from '@/stores/gameStore'
 const store = useGameStore()
 
 const noteTitle = ref('')
 const fileInput = ref(null)
-const selectedProjectIds = ref([]) // 上传用的
+const selectedProjectIds = ref([]) 
 const filterId = ref('ALL')
 
-// === 编辑状态管理 ===
-const editingNoteId = ref(null)    // 当前正在编辑哪条笔记
-const editSelectedIds = ref([])    // 编辑状态下的临时勾选列表
+// === Editing State ===
+const editingNoteId = ref(null)    
+const editSelectedIds = ref([])    
+const editTitle = ref('') 
 
-// 开始编辑
+// Start Edit
 const startEdit = (note) => {
-    editingNoteId.value = note.id
-    // 复制当前的标签到临时数组，防止直接修改 Store
-    editSelectedIds.value = note.projectIds ? [...note.projectIds] : []
+    // 强制关闭其他正在编辑的（如果有）
+    cancelEdit()
+    nextTick(() => {
+        editingNoteId.value = note.id
+        editSelectedIds.value = note.projectIds ? [...note.projectIds] : []
+        editTitle.value = note.title 
+    })
 }
 
-// 取消编辑
+// Cancel Edit
 const cancelEdit = () => {
     editingNoteId.value = null
     editSelectedIds.value = []
+    editTitle.value = ''
 }
 
-// 保存编辑
+// Save Edit
 const saveEdit = () => {
     if (editingNoteId.value) {
+        // 先进行重命名
+        store.renameNote(editingNoteId.value, editTitle.value)
+        // 再更新标签
         store.updateNoteTags(editingNoteId.value, editSelectedIds.value)
+        // 退出编辑模式
+        cancelEdit()
+    }
+}
+
+// Handle Delete
+const handleDelete = (note) => {
+    if(confirm(`Are you sure you want to delete "${note.title}"?\n${note.coins} Coins will be deducted.`)) {
+        store.deleteNote(note.id)
+        // 关键：删除后必须退出编辑模式，否则ID可能残留
         cancelEdit()
     }
 }
@@ -248,6 +290,9 @@ watch(() => store.activeProjectId, (newVal) => {
 })
 
 const filteredNotes = computed(() => {
+    // 确保 notebook 是数组
+    if (!Array.isArray(store.notebook)) return []
+
     if (filterId.value === 'ALL') {
         return store.notebook
     }
@@ -298,3 +343,4 @@ const handleFileChange = (event) => {
   background: rgba(128, 128, 128, 0.6); 
 }
 </style>
+}
