@@ -36,7 +36,7 @@ export const useGameStore = defineStore('game', () => {
   const isRunning = ref(false)
   const timer = ref(0)          
   
-  const MAX_PLANTING_TIME = 3 * 60 * 60 // [新增] 3小时最大正向计时上限 (秒)
+  const MAX_PLANTING_TIME = 3 * 60 * 60 // 3小时最大正向计时上限 (秒)
   
   const isNightMode = ref(false)
   const offlineEarnings = ref(null)
@@ -111,7 +111,6 @@ export const useGameStore = defineStore('game', () => {
     coins.value += earnedCoins
     const tags = Array.isArray(projectIds) ? projectIds : (projectIds ? [projectIds] : [])
       
-    // 【修复点】：加入了 content 字段，否则日志没有正文
     notebook.value.unshift({ 
       id: Date.now(), projectIds: tags, title, content, wordCount, coins: earnedCoins, date: new Date().toLocaleString() 
     })
@@ -154,10 +153,8 @@ export const useGameStore = defineStore('game', () => {
     const delta = (now - lastTimestamp) / 1000
     lastTimestamp = now
 
-    // [修改点]：如果已经达到 3 小时上限，直接 return，不再增加时间
     if (timer.value >= MAX_PLANTING_TIME) return
 
-    // [修改点]：计算本次实际可增加的时间，防止刚好跨越上限导致溢出
     const actualDelta = Math.min(delta, MAX_PLANTING_TIME - timer.value)
 
     timer.value += actualDelta
@@ -170,7 +167,7 @@ export const useGameStore = defineStore('game', () => {
 
   function startTimer() {
     if (isRunning.value) return 
-    if (timer.value >= MAX_PLANTING_TIME) return // 如果已经满了，不允许再启动计时器
+    if (timer.value >= MAX_PLANTING_TIME) return 
 
     isRunning.value = true
     lastTimestamp = Date.now()
@@ -208,7 +205,7 @@ export const useGameStore = defineStore('game', () => {
     startTimer()
   }
 
-  // [新增] 提交收获日志结算方法
+  // 【改进】：提交收获日志结算方法
   function submitHarvest(content) {
     if (!runningProject.value || !activeTree.value) return;
 
@@ -222,10 +219,12 @@ export const useGameStore = defineStore('game', () => {
       if (content && content.trim().length > 0) {
         uploadNote(`[植树日志] ${runningProject.value.name}`, content, [runningProject.value.id]);
       }
-
-      timer.value %= cycleTime; // 保留余下的零头时间
-      stopTimer(); // 结算完毕后暂停，让巡林官歇口气
     }
+
+    // 彻底重置状态，脱离“进行中/暂停”判定，完美回归“Start”视图
+    stopTimer();
+    timer.value = 0;
+    runningProjectId.value = null; // 关键点：清空正在运行的项目 ID
   }
 
   // === 7. 管理功能 ===
@@ -276,11 +275,9 @@ export const useGameStore = defineStore('game', () => {
     if (project) {
         if (!project.totalTimeSpent) project.totalTimeSpent = 0
         project.totalTimeSpent += secondsPassed
-        // 【修改点】：不再自动结算 completeCycle，而是保留时间给玩家手动 harvest
     }
     timer.value = newTimer 
     
-    // 如果还没满3小时，则继续运行
     if (timer.value < MAX_PLANTING_TIME) {
       isRunning.value = true 
       startTimer()
@@ -365,8 +362,6 @@ export const useGameStore = defineStore('game', () => {
           const tree = TREE_TYPES.find(t => t.id === activeTreeId.value)
           if (tree) {
              const totalTime = timer.value + secondsPassed
-             
-             // [修改点]：离线时间结算也要封顶 3 小时
              const finalTimer = Math.min(totalTime, MAX_PLANTING_TIME) 
              const effectiveSeconds = Math.max(0, finalTimer - timer.value) 
 
@@ -414,7 +409,7 @@ export const useGameStore = defineStore('game', () => {
     activeProjectId, activeProject, runningProjectId, runningProject, 
     activeTreeId, activeTree, timer, maxTime, isRunning, progressPercentage, 
     isNightMode, TREE_TYPES, inventoryTrees,
-    user, offlineEarnings, MAX_PLANTING_TIME, // [确保导出 MAX_PLANTING_TIME]
+    user, offlineEarnings, MAX_PLANTING_TIME, 
     
     createTheme, renameTheme, deleteTheme, submitHarvest,
     getTreeYield, buyTree, createProject, selectProject, 

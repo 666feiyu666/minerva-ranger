@@ -181,8 +181,9 @@
              <p class="mb-2">> ENTER_PLANTING_LOG (Optional) :</p>
              <textarea
                v-model="logContent"
+               @keydown.ctrl.enter="confirmHarvest"
                class="w-full h-36 bg-[#050505] border border-green-800 rounded p-3 text-green-400 focus:outline-none focus:border-green-500 focus:shadow-[0_0_15px_rgba(34,197,94,0.3)] resize-none custom-scrollbar-terminal transition-all"
-               placeholder="> Await user input..."
+               placeholder="> Await user input... (Press Ctrl+Enter to execute upload)"
                autofocus
              ></textarea>
              <p class="text-xs mt-2 text-green-700">1 字 = 1 金币</p>
@@ -247,7 +248,6 @@ const getCardClass = (treeId) => {
   if (isTreeActive(treeId)) {
     if (isHarvestReady.value) {
       if (store.timer >= store.MAX_PLANTING_TIME) {
-          // 3小时上限时的红色警告框
           return store.isNightMode 
             ? 'border-red-600 bg-[#3a1a1a] shadow-[0_0_20px_rgba(220,38,38,0.3)]'
             : 'border-red-500 bg-red-50 shadow-[0_0_20px_rgba(220,38,38,0.4)] ring-2 ring-red-400/30'
@@ -271,7 +271,6 @@ const getButtonClass = (tree) => {
           if (store.timer >= store.MAX_PLANTING_TIME) {
               return 'bg-[#0a0a0a] text-red-400 border border-red-500 font-mono font-bold hover:bg-red-900 hover:text-white shadow-[0_0_15px_rgba(220,38,38,0.5)] animate-pulse'
           }
-          // Terminal 风格的高亮 CLAIM 按钮
           return 'bg-[#0a0a0a] text-green-400 border border-green-500 font-mono font-bold hover:bg-green-900 hover:text-white shadow-[0_0_15px_rgba(34,197,94,0.4)] animate-pulse'
       }
       return store.isRunning 
@@ -303,7 +302,6 @@ const getButtonIcon = (tree) => {
 const handleButtonClick = (tree) => {
   if (isTreeActive(tree.id)) {
       if (isHarvestReady.value) {
-          // 暂停计时并打开终端
           store.stopTimer()
           logContent.value = ''
           showHarvestModal.value = true
