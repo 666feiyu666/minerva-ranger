@@ -1,7 +1,3 @@
-{
-type: uploaded file
-fileName: src/App.vue
-fullContent:
 <template>
   <div 
     class="flex h-screen w-screen font-sans overflow-hidden transition-colors duration-500"
@@ -47,6 +43,7 @@ fullContent:
 
       <div class="flex-1 flex flex-col relative z-10 pb-16 md:pb-0 overflow-hidden"> 
           <ShopView v-if="store.activeView === 'shop'" />
+          <MapView v-else-if="store.activeView === 'map'" />
           <ForestView v-else-if="store.activeView === 'forest'" />
           <NotebookView v-else-if="store.activeView === 'notebook'" /> 
           
@@ -140,6 +137,7 @@ import { ref, computed, onMounted } from 'vue'
 import Sidebar from './components/Sidebar.vue'
 import IdleDashboard from './components/IdleDashboard.vue'
 import ShopView from './components/ShopView.vue'
+import MapView from './components/MapView.vue'
 import ForestView from './components/ForestView.vue'
 import NotebookView from './components/NotebookView.vue'
 import { useGameStore } from '@/stores/gameStore'
@@ -202,4 +200,3 @@ const formatDuration = (seconds) => {
   opacity: 0;
 }
 </style>
-}

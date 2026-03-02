@@ -227,8 +227,20 @@ export const useGameStore = defineStore('game', () => {
     runningProjectId.value = null; // 关键点：清空正在运行的项目 ID
   }
 
-  // === 7. 管理功能 ===
-  function createTheme(name) { themes.value.push({ id: `theme_${Date.now()}`, name }) }
+  // 【新增】：添加打开地图的动作
+  function openMap() { activeView.value = 'map' }
+
+  // === 7. 管理功能 (修改 createTheme) ===
+  function createTheme(name) { 
+    themes.value.push({ 
+      id: `theme_${Date.now()}`, 
+      name,
+      // 为新主题在 15% 到 85% 的区间内随机生成地图坐标
+      x: Math.floor(Math.random() * 70) + 15,
+      y: Math.floor(Math.random() * 70) + 15
+    }) 
+  }
+
   function renameTheme(id, newName) { const theme = themes.value.find(t => t.id === id); if (theme) theme.name = newName }
   function deleteTheme(id) {
     projects.value.forEach(p => { if (p.themeId === id) p.themeId = null })
@@ -340,7 +352,11 @@ export const useGameStore = defineStore('game', () => {
       coins.value = data.coins || 0
       globalXP.value = data.globalXP || 0
       unlockedTreeIds.value = data.unlockedTreeIds || ['t1']
-      themes.value = data.themes || []
+      themes.value = (data.themes || []).map(t => ({
+        ...t,
+        x: t.x !== undefined ? t.x : Math.floor(Math.random() * 70) + 15,
+        y: t.y !== undefined ? t.y : Math.floor(Math.random() * 70) + 15
+      }))
       projects.value = (data.projects || []).map(p => ({ ...p, themeId: p.themeId || null, forest: p.forest || {}, totalTimeSpent: p.totalTimeSpent || 0 }))
       const rawNotebook = data.notebook || []
       notebook.value = rawNotebook.map(note => ({ ...note, projectIds: note.projectIds || (note.projectId ? [note.projectId] : []) }))
@@ -413,7 +429,7 @@ export const useGameStore = defineStore('game', () => {
     
     createTheme, renameTheme, deleteTheme, submitHarvest,
     getTreeYield, buyTree, createProject, selectProject, 
-    openShop, openForest, openNotebook, uploadNote,
+    openMap, openShop, openForest, openNotebook, uploadNote,
     startAction, stopTimer, toggleAction, downloadSaveFile, importSaveData, cheatAddCoins, getTreeIcon,
     renameProject, deleteProject, reorderProjects, updateNoteTags, toggleNightMode, 
     initAuth, loginWithEmail, registerWithEmail, logout, uploadSaveToCloud, downloadSaveFromCloud,
