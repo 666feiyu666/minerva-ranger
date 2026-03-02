@@ -8,7 +8,7 @@ import magicTreeImg from '@/assets/tree/magic_tree.png'
 import goldTreeImg from '@/assets/tree/gold_tree.png'
 
 export const useGameStore = defineStore('game', () => {
-  // === 1. 基础配置 (不变) ===
+  // === 1. 基础配置 ===
   const TREE_TYPES = [
     { id: 't1', name: '橡树', time: 25 * 60, xp: 100, price: 0, levelReq: 1, icon: normalTreeImg, desc: '基础树种，适合新手' },
     { id: 't2', name: '垂柳', time: 25 * 60, xp: 250, price: 500, levelReq: 5, icon: willowTreeImg, desc: '优雅的垂柳，经验丰富' },
@@ -22,7 +22,7 @@ export const useGameStore = defineStore('game', () => {
   const unlockedTreeIds = ref(['t1'])
   const globalXP = ref(0)
   
-  const themes = ref([]) // [新增] 主题(领域)数组
+  const themes = ref([]) 
   const projects = ref([]) 
   const notebook = ref([]) 
   
@@ -36,8 +36,9 @@ export const useGameStore = defineStore('game', () => {
   const isRunning = ref(false)
   const timer = ref(0)          
   
-  const isNightMode = ref(false)
+  const MAX_PLANTING_TIME = 3 * 60 * 60 // [新增] 3小时最大正向计时上限 (秒)
   
+  const isNightMode = ref(false)
   const offlineEarnings = ref(null)
 
   // === 4. 计算属性 ===
@@ -47,7 +48,6 @@ export const useGameStore = defineStore('game', () => {
     const level = globalLevel.value
     const currentBaseXP = 100 * Math.pow(level - 1, 2)
     const nextLevelXP = 100 * Math.pow(level, 2)
-    
     const needed = nextLevelXP - currentBaseXP
     const current = globalXP.value - currentBaseXP
     
@@ -105,13 +105,15 @@ export const useGameStore = defineStore('game', () => {
   function uploadNote(title, content, projectIds = []) {
     const cleanContent = content.replace(/\s/g, '')
     const wordCount = cleanContent.length
-    const earnedCoins = Math.floor(wordCount / 10)
-    if (earnedCoins <= 0) { alert("笔记内容太短了！"); return }
-    
+    const earnedCoins = Math.floor(wordCount)
+    if (earnedCoins <= 0) { alert("未记录笔记，未能获得金币！"); return }
+      
     coins.value += earnedCoins
     const tags = Array.isArray(projectIds) ? projectIds : (projectIds ? [projectIds] : [])
+      
+    // 【修复点】：加入了 content 字段，否则日志没有正文
     notebook.value.unshift({ 
-      id: Date.now(), projectIds: tags, title, wordCount, coins: earnedCoins, date: new Date().toLocaleString() 
+      id: Date.now(), projectIds: tags, title, content, wordCount, coins: earnedCoins, date: new Date().toLocaleString() 
     })
   }
 
@@ -151,24 +153,25 @@ export const useGameStore = defineStore('game', () => {
     const now = Date.now()
     const delta = (now - lastTimestamp) / 1000
     lastTimestamp = now
-    timer.value += delta
+
+    // [修改点]：如果已经达到 3 小时上限，直接 return，不再增加时间
+    if (timer.value >= MAX_PLANTING_TIME) return
+
+    // [修改点]：计算本次实际可增加的时间，防止刚好跨越上限导致溢出
+    const actualDelta = Math.min(delta, MAX_PLANTING_TIME - timer.value)
+
+    timer.value += actualDelta
 
     if (runningProject.value) {
         if (!runningProject.value.totalTimeSpent) runningProject.value.totalTimeSpent = 0
-        runningProject.value.totalTimeSpent += delta
-    }
-
-    if (timer.value >= activeTree.value.time) {
-      const finishedCycles = Math.floor(timer.value / activeTree.value.time)
-      if (finishedCycles > 0) {
-        completeCycle(finishedCycles)
-        timer.value %= activeTree.value.time
-      }
+        runningProject.value.totalTimeSpent += actualDelta
     }
   }
 
   function startTimer() {
     if (isRunning.value) return 
+    if (timer.value >= MAX_PLANTING_TIME) return // 如果已经满了，不允许再启动计时器
+
     isRunning.value = true
     lastTimestamp = Date.now()
     if (timerInterval) clearInterval(timerInterval)
@@ -205,24 +208,34 @@ export const useGameStore = defineStore('game', () => {
     startTimer()
   }
 
-  // === 7. 管理功能 ===
-  
-  // [新增] 主题操作
-  function createTheme(name) {
-    themes.value.push({ id: `theme_${Date.now()}`, name })
-  }
-  
-  function renameTheme(id, newName) {
-    const theme = themes.value.find(t => t.id === id)
-    if (theme) theme.name = newName
+  // [新增] 提交收获日志结算方法
+  function submitHarvest(content) {
+    if (!runningProject.value || !activeTree.value) return;
+
+    const cycleTime = activeTree.value.time;
+    const finishedCycles = Math.floor(timer.value / cycleTime);
+
+    if (finishedCycles > 0) {
+      completeCycle(finishedCycles); // 发放树木和经验
+
+      // 如果填写了日志，且有实质内容，则生成对应的 Notebook 记录
+      if (content && content.trim().length > 0) {
+        uploadNote(`[植树日志] ${runningProject.value.name}`, content, [runningProject.value.id]);
+      }
+
+      timer.value %= cycleTime; // 保留余下的零头时间
+      stopTimer(); // 结算完毕后暂停，让巡林官歇口气
+    }
   }
 
+  // === 7. 管理功能 ===
+  function createTheme(name) { themes.value.push({ id: `theme_${Date.now()}`, name }) }
+  function renameTheme(id, newName) { const theme = themes.value.find(t => t.id === id); if (theme) theme.name = newName }
   function deleteTheme(id) {
     projects.value.forEach(p => { if (p.themeId === id) p.themeId = null })
     themes.value = themes.value.filter(t => t.id !== id)
   }
 
-  // [修改] 项目操作
   function createProject(name, themeId = null) { 
     const newProj = { 
         id: Date.now(), name, icon: '📁', level: 1, currentXP: 0, nextLevelXP: 100, 
@@ -232,79 +245,54 @@ export const useGameStore = defineStore('game', () => {
     selectProject(newProj.id) 
   }
 
-  function renameProject(id, newName) {
-    const project = projects.value.find(p => p.id === id)
-    if (project) project.name = newName
-  }
+  function renameProject(id, newName) { const project = projects.value.find(p => p.id === id); if (project) project.name = newName }
 
   function deleteProject(id) {
     if (runningProjectId.value === id) {
-        stopTimer()
-        isRunning.value = false
-        runningProjectId.value = null
-        timer.value = 0
+        stopTimer(); isRunning.value = false; runningProjectId.value = null; timer.value = 0
     }
-    if (activeProjectId.value === id) {
-        activeProjectId.value = null
-        activeView.value = 'forest'
-    }
+    if (activeProjectId.value === id) { activeProjectId.value = null; activeView.value = 'forest' }
     projects.value = projects.value.filter(p => p.id !== id)
   }
 
-  // 移出原有的拖拽排序，目前用 themeId 进行归类，此方法可作废但暂且保留防报错
-  function reorderProjects(fromIndex, toIndex) {
-    // Legacy support, now we drag to themes instead
-  }
+  function reorderProjects(fromIndex, toIndex) {}
 
   // === 8. 持久化与离线逻辑 ===
   const SAVE_KEY = 'minerva_save_v1'
 
   function getSaveData() {
     return {
-      version: 1,
-      timestamp: Date.now(),
-      coins: coins.value,
-      globalXP: globalXP.value,
-      unlockedTreeIds: unlockedTreeIds.value,
-      themes: themes.value, // [新增]
-      projects: projects.value, 
-      notebook: notebook.value,
-      activeProjectId: activeProjectId.value,
-      runningProjectId: runningProjectId.value, 
-      activeTreeId: activeTreeId.value,
-      isRunning: isRunning.value,
-      timer: timer.value,
-      isNightMode: isNightMode.value 
+      version: 1, timestamp: Date.now(), coins: coins.value, globalXP: globalXP.value, unlockedTreeIds: unlockedTreeIds.value,
+      themes: themes.value, projects: projects.value, notebook: notebook.value,
+      activeProjectId: activeProjectId.value, runningProjectId: runningProjectId.value, activeTreeId: activeTreeId.value,
+      isRunning: isRunning.value, timer: timer.value, isNightMode: isNightMode.value 
     }
   }
 
   function claimOfflineEarnings() {
     if (!offlineEarnings.value) return
-    const { projectId, tree, secondsPassed, completedCycles, newTimer } = offlineEarnings.value
+    const { projectId, tree, secondsPassed, newTimer } = offlineEarnings.value
     const project = projects.value.find(p => p.id === projectId)
     if (project) {
         if (!project.totalTimeSpent) project.totalTimeSpent = 0
         project.totalTimeSpent += secondsPassed
-        if (completedCycles > 0) {
-             const oldRunning = runningProjectId.value
-             runningProjectId.value = projectId
-             activeTreeId.value = tree.id 
-             completeCycle(completedCycles)
-             runningProjectId.value = oldRunning
-        }
+        // 【修改点】：不再自动结算 completeCycle，而是保留时间给玩家手动 harvest
     }
-    timer.value = newTimer
-    isRunning.value = true 
-    startTimer()
+    timer.value = newTimer 
+    
+    // 如果还没满3小时，则继续运行
+    if (timer.value < MAX_PLANTING_TIME) {
+      isRunning.value = true 
+      startTimer()
+    } else {
+      isRunning.value = false
+    }
+    
     offlineEarnings.value = null
     saveToLocalStorage()
   }
 
-  function discardOfflineEarnings() {
-    offlineEarnings.value = null
-    isRunning.value = false 
-    saveToLocalStorage()
-  }
+  function discardOfflineEarnings() { offlineEarnings.value = null; isRunning.value = false; saveToLocalStorage() }
 
   // === 9. 云同步与认证逻辑 ===
   const user = ref(null)
@@ -312,9 +300,7 @@ export const useGameStore = defineStore('game', () => {
   async function initAuth() {
     const { data: { session } } = await supabase.auth.getSession()
     user.value = session?.user || null
-    supabase.auth.onAuthStateChange((_event, session) => {
-      user.value = session?.user || null
-    })
+    supabase.auth.onAuthStateChange((_event, session) => { user.value = session?.user || null })
   }
 
   async function loginWithEmail(email, password) {
@@ -330,10 +316,7 @@ export const useGameStore = defineStore('game', () => {
     return true
   }
 
-  async function logout() {
-    const { error } = await supabase.auth.signOut()
-    if (error) alert(error.message)
-  }
+  async function logout() { const { error } = await supabase.auth.signOut(); if (error) alert(error.message) }
 
   async function uploadSaveToCloud() {
     if (!user.value) return alert('请先登录！')
@@ -352,11 +335,7 @@ export const useGameStore = defineStore('game', () => {
     if (data && data.save_data) { importSaveData(JSON.stringify(data.save_data)) }
   }
 
-  function saveToLocalStorage() { 
-    if (!offlineEarnings.value) {
-        localStorage.setItem(SAVE_KEY, JSON.stringify(getSaveData())) 
-    }
-  }
+  function saveToLocalStorage() { if (!offlineEarnings.value) { localStorage.setItem(SAVE_KEY, JSON.stringify(getSaveData())) } }
 
   function importSaveData(jsonString, silent = false) {
     try {
@@ -364,16 +343,10 @@ export const useGameStore = defineStore('game', () => {
       coins.value = data.coins || 0
       globalXP.value = data.globalXP || 0
       unlockedTreeIds.value = data.unlockedTreeIds || ['t1']
-      
-      themes.value = data.themes || [] // [新增]
-      projects.value = (data.projects || []).map(p => ({ 
-          ...p, themeId: p.themeId || null, forest: p.forest || {}, totalTimeSpent: p.totalTimeSpent || 0 
-      }))
-      
+      themes.value = data.themes || []
+      projects.value = (data.projects || []).map(p => ({ ...p, themeId: p.themeId || null, forest: p.forest || {}, totalTimeSpent: p.totalTimeSpent || 0 }))
       const rawNotebook = data.notebook || []
-      notebook.value = rawNotebook.map(note => ({
-        ...note, projectIds: note.projectIds || (note.projectId ? [note.projectId] : [])
-      }))
+      notebook.value = rawNotebook.map(note => ({ ...note, projectIds: note.projectIds || (note.projectId ? [note.projectId] : []) }))
       
       activeProjectId.value = data.activeProjectId || null
       const savedRunningProjectId = data.runningProjectId || data.activeProjectId || null 
@@ -392,12 +365,16 @@ export const useGameStore = defineStore('game', () => {
           const tree = TREE_TYPES.find(t => t.id === activeTreeId.value)
           if (tree) {
              const totalTime = timer.value + secondsPassed
-             const cycleTime = tree.time
-             const completedCycles = Math.floor(totalTime / cycleTime)
-             const remainingTime = totalTime % cycleTime
              
-             offlineEarnings.value = {
-                 projectId: savedRunningProjectId, tree, secondsPassed, completedCycles, newTimer: remainingTime 
+             // [修改点]：离线时间结算也要封顶 3 小时
+             const finalTimer = Math.min(totalTime, MAX_PLANTING_TIME) 
+             const effectiveSeconds = Math.max(0, finalTimer - timer.value) 
+
+             offlineEarnings.value = { 
+                 projectId: savedRunningProjectId, 
+                 tree, 
+                 secondsPassed: effectiveSeconds, 
+                 newTimer: finalTimer 
              }
              runningProjectId.value = savedRunningProjectId
              isRunning.value = false 
@@ -414,7 +391,6 @@ export const useGameStore = defineStore('game', () => {
     } catch (e) { console.error(e); if (!silent) alert('存档损坏') }
   }
 
-  // [修改] watch 列表加入 themes
   watch([coins, globalXP, unlockedTreeIds, themes, projects, notebook, activeProjectId, runningProjectId, activeTreeId, isRunning, timer, isNightMode], () => { saveToLocalStorage() }, { deep: true })
   
   function loadGame() { const saved = localStorage.getItem(SAVE_KEY); if (saved) importSaveData(saved, true) }
@@ -422,16 +398,9 @@ export const useGameStore = defineStore('game', () => {
 
   function getTreeIcon(id) { const t = TREE_TYPES.find(tree => tree.id === id); return t ? t.icon : '❓' }
   function downloadSaveFile() { 
-    const data = getSaveData()
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `minerva_save_${new Date().toISOString().slice(0,10)}.json`
-    document.body.appendChild(a)
-    a.click()
-    document.body.removeChild(a)
-    URL.revokeObjectURL(url)
+    const data = getSaveData(); const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `minerva_save_${new Date().toISOString().slice(0,10)}.json`
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url)
   }
   function selectProject(id) { activeProjectId.value = id; activeView.value = 'dashboard' }
   function openShop() { activeView.value = 'shop' }
@@ -445,15 +414,13 @@ export const useGameStore = defineStore('game', () => {
     activeProjectId, activeProject, runningProjectId, runningProject, 
     activeTreeId, activeTree, timer, maxTime, isRunning, progressPercentage, 
     isNightMode, TREE_TYPES, inventoryTrees,
-    user, offlineEarnings,
+    user, offlineEarnings, MAX_PLANTING_TIME, // [确保导出 MAX_PLANTING_TIME]
     
-    createTheme, renameTheme, deleteTheme,
+    createTheme, renameTheme, deleteTheme, submitHarvest,
     getTreeYield, buyTree, createProject, selectProject, 
     openShop, openForest, openNotebook, uploadNote,
     startAction, stopTimer, toggleAction, downloadSaveFile, importSaveData, cheatAddCoins, getTreeIcon,
-    renameProject, deleteProject, reorderProjects,
-    updateNoteTags,
-    toggleNightMode, 
+    renameProject, deleteProject, reorderProjects, updateNoteTags, toggleNightMode, 
     initAuth, loginWithEmail, registerWithEmail, logout, uploadSaveToCloud, downloadSaveFromCloud,
     claimOfflineEarnings, discardOfflineEarnings, renameNote, deleteNote
   }

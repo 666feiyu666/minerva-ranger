@@ -32,10 +32,10 @@
          <span class="text-xl">🏪</span><span>商店</span>
        </button>
        <button @click="store.openForest()" :class="navBtnClass('forest', 'text-green-500', 'bg-green-800', 'text-green-700', 'bg-green-100')">
-         <span class="text-xl">🧭</span><span>巡林</span>
+         <span class="text-xl">🧭</span><span>密涅瓦</span>
        </button>
        <button @click="store.openNotebook()" :class="navBtnClass('notebook', 'text-blue-500', 'bg-blue-800', 'text-blue-700', 'bg-blue-100')">
-         <span class="text-xl">📝</span><span>记录</span>
+         <span class="text-xl">📝</span><span>巡林官手记</span>
        </button>
     </div>
 
