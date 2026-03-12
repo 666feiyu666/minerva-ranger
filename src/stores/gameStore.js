@@ -104,17 +104,14 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function uploadNote(title, content, projectIds = []) {
-    // 依然保留剔除空格计算字数的逻辑，用于展示信息
     const cleanContent = content.replace(/\s/g, '')
     const wordCount = cleanContent.length
     
-    // 基础防呆：如果没有实质内容则拦截
     if (wordCount <= 0) { 
       alert("未记录笔记，未能获得金币！")
       return 
     }
       
-    // 【修改点】：将基于字数的动态奖励改为固定 10 金币
     const earnedCoins = 10 
     
     coins.value += earnedCoins
@@ -126,7 +123,7 @@ export const useGameStore = defineStore('game', () => {
       title, 
       content, 
       wordCount, 
-      coins: earnedCoins, // 记录本次获得的固定金币
+      coins: earnedCoins, 
       date: new Date().toLocaleString() 
     })
   }
@@ -157,6 +154,33 @@ export const useGameStore = defineStore('game', () => {
   // === 6. 计时器与动作控制 ===
   let timerInterval = null
   let lastTimestamp = 0
+
+  // 【核心修复】：监听页面可见性变化，对抗浏览器后台休眠
+  document.addEventListener('visibilitychange', () => {
+    // 只有在树木正在生长时才需要补帧
+    if (isRunning.value) {
+      if (document.visibilityState === 'visible') {
+        // 当页面重新变回可见时，强制结算在后台流失的真实物理时间
+        const now = Date.now()
+        const delta = (now - lastTimestamp) / 1000
+        lastTimestamp = now
+
+        if (timer.value < MAX_PLANTING_TIME) {
+          const actualDelta = Math.min(delta, MAX_PLANTING_TIME - timer.value)
+          timer.value += actualDelta
+          
+          if (runningProject.value) {
+            if (!runningProject.value.totalTimeSpent) runningProject.value.totalTimeSpent = 0
+            runningProject.value.totalTimeSpent += actualDelta
+          }
+        }
+      } else if (document.visibilityState === 'hidden') {
+        // 当切到后台前，更新最后时间戳，并强制存一次档
+        lastTimestamp = Date.now()
+        saveToLocalStorage()
+      }
+    }
+  })
 
   function gameTick() {
     if (!activeTree.value || !isRunning.value) {
@@ -220,7 +244,6 @@ export const useGameStore = defineStore('game', () => {
     startTimer()
   }
 
-  // 【改进】：提交收获日志结算方法
   function submitHarvest(content) {
     if (!runningProject.value || !activeTree.value) return;
 
@@ -228,41 +251,35 @@ export const useGameStore = defineStore('game', () => {
     const finishedCycles = Math.floor(timer.value / cycleTime);
 
     if (finishedCycles > 0) {
-      completeCycle(finishedCycles); // 发放树木和经验
+      completeCycle(finishedCycles);
 
-      // 如果填写了日志，且有实质内容，则生成对应的 Notebook 记录
       if (content && content.trim().length > 0) {
         uploadNote(`[植树日志] ${runningProject.value.name}`, content, [runningProject.value.id]);
       }
     }
 
-    // 彻底重置状态，脱离“进行中/暂停”判定，完美回归“Start”视图
     stopTimer();
     timer.value = 0;
-    runningProjectId.value = null; // 关键点：清空正在运行的项目 ID
+    runningProjectId.value = null; 
   }
 
-  // 【新增】：添加打开地图的动作
   function openMap() { activeView.value = 'map' }
 
-  // 【新增】：进入特定主题森林
   function openThemeForest(themeId) {
     activeThemeId.value = themeId
     activeView.value = 'forest'
   }
   
-  // 顺便把原本的 openForest 修改一下，如果是全局查看，清空 activeThemeId
   function openForest() { 
     activeThemeId.value = null 
     activeView.value = 'forest' 
   }
 
-  // === 7. 管理功能 (修改 createTheme) ===
+  // === 7. 管理功能 ===
   function createTheme(name) { 
     themes.value.push({ 
       id: `theme_${Date.now()}`, 
       name,
-      // 为新主题在 15% 到 85% 的区间内随机生成地图坐标
       x: Math.floor(Math.random() * 70) + 15,
       y: Math.floor(Math.random() * 70) + 15
     }) 
@@ -401,7 +418,8 @@ export const useGameStore = defineStore('game', () => {
         const now = Date.now()
         const secondsPassed = Math.floor((now - lastSave) / 1000)
         
-        if (secondsPassed > 30) {
+        if (secondsPassed > 60) {
+          // 超过 1 分钟（60秒），走正常的离线收益弹窗逻辑
           const tree = TREE_TYPES.find(t => t.id === activeTreeId.value)
           if (tree) {
              const totalTime = timer.value + secondsPassed
@@ -417,6 +435,13 @@ export const useGameStore = defineStore('game', () => {
              runningProjectId.value = savedRunningProjectId
              isRunning.value = false 
           }
+        } else if (secondsPassed > 0) {
+          // 【核心修复】：如果是 1 分钟以内的刷新、页面意外重载或短暂切后台
+          // 默默把时间补上，直接继续运行，不弹窗打断用户的沉浸感
+          timer.value += secondsPassed
+          if (timer.value > MAX_PLANTING_TIME) timer.value = MAX_PLANTING_TIME
+          runningProjectId.value = savedRunningProjectId
+          startTimer() // 重新启动计时器
         } else {
           runningProjectId.value = savedRunningProjectId
           startTimer()

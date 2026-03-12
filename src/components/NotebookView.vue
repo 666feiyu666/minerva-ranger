@@ -2,12 +2,12 @@
   <div class="flex-1 p-6 flex flex-col h-full overflow-hidden bg-transparent relative">
     
     <div 
-      class="rounded-2xl p-6 mb-6 shadow-lg shrink-0 border backdrop-blur-md transition-all duration-300"
+      class="rounded-2xl p-6 mb-4 shadow-lg shrink-0 border backdrop-blur-md transition-all duration-300"
       :class="store.isNightMode 
         ? 'bg-[#1a1a1a]/80 border-gray-700' 
         : 'bg-white/70 border-white/60 shadow-xl ring-1 ring-black/5'"
     >
-       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+       <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-4">
          <div>
             <div class="text-xs uppercase tracking-widest mb-1 font-bold" 
                  :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
@@ -19,25 +19,51 @@
             </h2>
          </div>
          
-         <div class="flex gap-2 p-1 rounded-lg border transition-colors"
+         <div class="flex gap-2 p-1 rounded-lg border transition-colors w-full md:w-auto"
               :class="store.isNightMode ? 'bg-[#0f0f0f] border-gray-700' : 'bg-gray-200/50 border-gray-300'">
-            
             <button @click="currentTab = 'planting'"
-                    class="px-4 py-2 rounded-md font-mono text-sm font-bold transition-all border border-transparent"
+                    class="flex-1 md:flex-none px-4 py-2 rounded-md font-mono text-sm font-bold transition-all border border-transparent"
                     :class="currentTab === 'planting' 
                       ? 'bg-[#0a0a0a] text-green-400 border-green-500 shadow-[0_0_10px_rgba(34,197,94,0.2)]' 
                       : (store.isNightMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700')">
                >_ 植树日志
             </button>
-            
             <button @click="currentTab = 'ranger'"
-                    class="px-4 py-2 rounded-md text-sm font-bold transition-all border border-transparent flex items-center gap-2"
+                    class="flex-1 md:flex-none px-4 py-2 rounded-md text-sm font-bold transition-all border border-transparent flex items-center justify-center gap-2"
                     :class="currentTab === 'ranger' 
                       ? (store.isNightMode ? 'bg-gray-700 text-white shadow-sm' : 'bg-white text-gray-800 shadow-sm') 
                       : (store.isNightMode ? 'text-gray-500 hover:text-gray-300' : 'text-gray-500 hover:text-gray-700')">
                <span>📝</span> 巡林日志
             </button>
          </div>
+       </div>
+
+       <div class="pt-4 border-t" :class="store.isNightMode ? 'border-gray-800' : 'border-gray-200'">
+          <div class="text-xs font-bold mb-3 uppercase tracking-wider" :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
+             Filter by Project
+          </div>
+          <div class="flex flex-wrap gap-2">
+            <button 
+              @click="selectedProjectId = 'all'"
+              class="px-4 py-1.5 rounded-full text-sm font-bold transition-all border shadow-sm flex items-center gap-1.5 hover:-translate-y-0.5"
+              :class="selectedProjectId === 'all' 
+                ? 'bg-emerald-600 text-white border-emerald-500' 
+                : (store.isNightMode ? 'bg-[#2a2a2a] text-gray-400 border-gray-700 hover:text-gray-200 hover:border-gray-500' : 'bg-white text-gray-600 border-gray-300 hover:border-emerald-300 hover:text-emerald-700')"
+            >
+              <span>🌟</span> 所有记录
+            </button>
+            
+            <button 
+              v-for="project in store.projects" :key="project.id"
+              @click="selectedProjectId = project.id"
+              class="px-4 py-1.5 rounded-full text-sm font-bold transition-all border shadow-sm flex items-center gap-1.5 hover:-translate-y-0.5"
+              :class="selectedProjectId === project.id 
+                ? 'bg-blue-600 text-white border-blue-500 shadow-[0_4px_10px_rgba(37,99,235,0.3)]' 
+                : (store.isNightMode ? 'bg-[#2a2a2a] text-gray-400 border-gray-700 hover:text-gray-200 hover:border-gray-500' : 'bg-white text-gray-600 border-gray-300 hover:border-blue-300 hover:text-blue-700')"
+            >
+              <span>{{ project.icon || '📁' }}</span> {{ project.name }}
+            </button>
+          </div>
        </div>
     </div>
 
@@ -46,7 +72,8 @@
        <template v-if="currentTab === 'planting'">
           <div v-if="plantingLogs.length === 0" class="text-center mt-20 font-mono text-green-700/50 animate-pulse">
              > NO_PLANTING_RECORDS_FOUND. <br>
-             > AWAITING_FIRST_HARVEST...
+             <span v-if="selectedProjectId !== 'all'">> STATUS: PROJECT_ARCHIVE_EMPTY.</span>
+             <span v-else>> AWAITING_FIRST_HARVEST...</span>
           </div>
           
           <div v-for="note in plantingLogs" :key="note.id"
@@ -63,9 +90,9 @@
 
              <div class="mt-4 flex flex-wrap gap-4 text-xs text-green-700">
                 <span class="bg-green-900/20 px-2 py-1 rounded">> WORDS: {{ note.wordCount }}</span>
-                <span class="bg-green-900/20 px-2 py-1 rounded">> COINS_EARNED: +{{ note.coins }}</span>
-                <span v-if="note.projectIds?.length" class="bg-green-900/20 px-2 py-1 rounded">
-                  > TARGET_ID: {{ note.projectIds.join(', ') }}
+                <span class="bg-green-900/20 px-2 py-1 rounded">> COINS: +{{ note.coins }}</span>
+                <span v-if="note.projectIds?.length" class="bg-green-900/40 border border-green-800 px-2 py-1 rounded text-green-400">
+                  > PROJECT: {{ getProjectNames(note.projectIds) }}
                 </span>
              </div>
 
@@ -81,7 +108,8 @@
                class="text-center mt-20 font-medium transition-colors"
                :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
              <p class="text-4xl mb-4 grayscale opacity-50">🪶</p>
-             <p>暂无巡林日志。<br>属于你的地图叙事即将展开...</p>
+             <p v-if="selectedProjectId !== 'all'">该项目暂无巡林日志。<br>快来为它书写第一笔叙事吧！</p>
+             <p v-else>暂无巡林日志。<br>属于你的地图叙事即将展开...</p>
              <button class="mt-6 px-5 py-2.5 rounded-lg text-sm font-bold transition-all shadow-sm"
                      :class="store.isNightMode ? 'bg-emerald-900/40 text-emerald-400 hover:bg-emerald-800/60' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200'">
                + 新建巡林日志 (开发中)
@@ -101,9 +129,16 @@
                   </span>
                </div>
                
-               <p class="text-sm whitespace-pre-wrap" :class="store.isNightMode ? 'text-gray-300' : 'text-gray-600'">
+               <p class="text-sm whitespace-pre-wrap mb-4" :class="store.isNightMode ? 'text-gray-300' : 'text-gray-600'">
                  {{ note.content }}
                </p>
+
+               <div v-if="note.projectIds?.length" class="flex gap-2">
+                 <span class="text-xs font-bold px-2 py-1 rounded"
+                       :class="store.isNightMode ? 'bg-gray-700 text-gray-300' : 'bg-blue-50 text-blue-600 border border-blue-100'">
+                    {{ getProjectNames(note.projectIds) }}
+                 </span>
+               </div>
                
                <button @click="store.deleteNote(note.id)" 
                        class="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-all"
@@ -123,17 +158,33 @@ import { useGameStore } from '@/stores/gameStore'
 
 const store = useGameStore()
 
-// 'planting' (植树日志) 或 'ranger' (巡林日志)
 const currentTab = ref('planting') 
+const selectedProjectId = ref('all') // 核心过滤状态
 
-// 根据我们在 gameStore 中提交 Harvest 时设定的标题 '[植树日志]' 来自动分类
+// === 过滤逻辑：联动项目按钮 ===
 const plantingLogs = computed(() => {
-  return store.notebook.filter(note => note.title.startsWith('[植树日志]'))
+  let logs = store.notebook.filter(note => note.title.startsWith('[植树日志]'))
+  if (selectedProjectId.value !== 'all') {
+    logs = logs.filter(note => note.projectIds && note.projectIds.includes(selectedProjectId.value))
+  }
+  return logs
 })
 
 const rangerLogs = computed(() => {
-  return store.notebook.filter(note => !note.title.startsWith('[植树日志]'))
+  let logs = store.notebook.filter(note => !note.title.startsWith('[植树日志]'))
+  if (selectedProjectId.value !== 'all') {
+    logs = logs.filter(note => note.projectIds && note.projectIds.includes(selectedProjectId.value))
+  }
+  return logs
 })
+
+const getProjectNames = (ids) => {
+  if (!ids || ids.length === 0) return '未分类'
+  return ids.map(id => {
+    const project = store.projects.find(p => p.id === id)
+    return project ? project.name : '未知项目'
+  }).join(', ')
+}
 </script>
 
 <style scoped>
