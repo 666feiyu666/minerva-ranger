@@ -1,22 +1,28 @@
 <template>
   <div class="flex-1 w-full h-full relative overflow-hidden bg-[#e8dcb8] shadow-inner select-none flex flex-col">
+    
     <div class="absolute top-6 left-1/2 -translate-x-1/2 z-10 px-8 py-3 rounded-lg border-2 border-[#8b5a2b]/30 bg-[#f4ebd0]/90 backdrop-blur-sm shadow-lg text-center pointer-events-none">
       <h2 class="text-2xl font-serif font-bold text-[#5c3a21] tracking-widest uppercase">The Realm of Minerva</h2>
-      <p class="text-xs text-[#8b5a2b] font-mono mt-1">Select a territory to view your vassals</p>
+      <p class="text-xs text-[#8b5a2b] font-mono mt-1">Drag to arrange · Click to view vassals</p>
     </div>
 
     <div 
+      ref="mapContainer"
       class="w-full h-full relative bg-cover bg-center transition-all duration-700"
-      style="background-image: repeating-linear-gradient(45deg, rgba(139, 90, 43, 0.05) 0px, rgba(139, 90, 43, 0.05) 2px, transparent 2px, transparent 10px);"
+      style="background-image: url('/src/assets/map.png'); box-shadow: inset 0 0 100px rgba(0,0,0,0.5);"
     >
       <div 
         v-for="theme in store.themes" 
         :key="theme.id"
-        class="absolute transform -translate-x-1/2 -translate-y-1/2 group cursor-pointer"
-        :style="{ left: theme.x + '%', top: theme.y + '%' }"
-        @click="openThemeDetails(theme)"
+        class="absolute transform -translate-x-1/2 -translate-y-1/2 group cursor-grab active:cursor-grabbing"
+        :style="{ 
+          left: (theme.x || 50) + '%', 
+          top: (theme.y || 50) + '%' 
+        }"
+        @pointerdown.stop.prevent="startDrag($event, theme)"
+        @click.stop="handleThemeClick(theme)"
       >
-        <div class="relative flex flex-col items-center justify-center animate-bounce-slow hover:scale-110 transition-transform">
+        <div class="relative flex flex-col items-center justify-center hover:scale-110 transition-transform">
           <div class="text-4xl filter drop-shadow-lg group-hover:drop-shadow-[0_0_15px_rgba(255,215,0,0.8)] transition-all">
             🏰
           </div>
@@ -53,7 +59,7 @@
           </div>
 
           <div class="p-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
-             <div v-if="currentThemeProjects.length === 0" class="text-center py-8 opacity-60 font-mono text-sm">
+             <div v-if="currentThemeProjects.length === 0" class="text-center py-8 opacity-60 font-mono text-sm" :class="store.isNightMode ? 'text-gray-400' : 'text-[#5c3a21]'">
                此领地尚无封臣，快去左侧栏分配吧。
              </div>
              
@@ -64,21 +70,21 @@
                     :class="store.isNightMode 
                       ? 'bg-[#252525] border-gray-700 hover:border-blue-500 hover:bg-[#2a2a2a]' 
                       : 'bg-white border-[#e8dcb8] hover:border-[#8b5a2b]'">
-                  <div class="flex items-center gap-4">
-                    <div class="text-3xl">{{ project.icon || '📁' }}</div>
-                    <div>
-                      <h4 class="font-bold text-sm" :class="store.isNightMode ? 'text-gray-200' : 'text-gray-800'">
-                        {{ project.name }}
-                      </h4>
-                      <div class="flex items-center gap-3 mt-1 text-xs opacity-80" :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">
-                        <span>Lv.{{ project.level }}</span>
-                        <span>🌲 {{ project.totalTrees }}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div class="text-blue-500 font-bold text-xl opacity-0 group-hover:opacity-100 transition-opacity">
-                    ➡️
-                  </div>
+                 <div class="flex items-center gap-4">
+                   <div class="text-3xl">{{ project.icon || '📁' }}</div>
+                   <div>
+                     <h4 class="font-bold text-sm" :class="store.isNightMode ? 'text-gray-200' : 'text-gray-800'">
+                       {{ project.name }}
+                     </h4>
+                     <div class="flex items-center gap-3 mt-1 text-xs opacity-80" :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">
+                       <span>Lv.{{ project.level }}</span>
+                       <span>🌲 {{ project.totalTrees }}</span>
+                     </div>
+                   </div>
+                 </div>
+                 <div class="text-blue-500 font-bold text-xl opacity-0 group-hover:opacity-100 transition-opacity">
+                   ➡️
+                 </div>
                </div>
              </div>
           </div>
@@ -94,8 +100,61 @@ import { useGameStore } from '@/stores/gameStore'
 
 const store = useGameStore()
 const selectedTheme = ref(null)
+const mapContainer = ref(null)
 
-// 获取当前选中主题下的所有项目
+// === 拖拽交互逻辑 ===
+let isDragging = false
+let hasMoved = false
+let dragTheme = null
+
+// 开始拖拽
+const startDrag = (event, theme) => {
+  isDragging = true
+  hasMoved = false
+  dragTheme = theme
+
+  // 绑定全局事件，确保留在屏幕内也能稳定拖拽
+  document.addEventListener('pointermove', onDrag)
+  document.addEventListener('pointerup', stopDrag)
+  document.addEventListener('pointercancel', stopDrag)
+}
+
+// 拖拽移动中
+const onDrag = (event) => {
+  if (!isDragging || !dragTheme || !mapContainer.value) return
+
+  hasMoved = true // 标记发生了位移
+
+  const rect = mapContainer.value.getBoundingClientRect()
+  let x = ((event.clientX - rect.left) / rect.width) * 100
+  let y = ((event.clientY - rect.top) / rect.height) * 100
+
+  // 限制坐标在 5% 到 95% 之间，防止手滑把城堡拖出屏幕外找不到了
+  dragTheme.x = Math.max(5, Math.min(95, x))
+  dragTheme.y = Math.max(5, Math.min(95, y))
+}
+
+// 停止拖拽
+const stopDrag = () => {
+  isDragging = false
+  dragTheme = null
+  
+  document.removeEventListener('pointermove', onDrag)
+  document.removeEventListener('pointerup', stopDrag)
+  document.removeEventListener('pointercancel', stopDrag)
+}
+
+// === 点击事件拦截 ===
+const handleThemeClick = (theme) => {
+  // 如果玩家刚刚是在“拖拽”城堡，松手时会拦截点击，防止误触打开弹窗
+  if (hasMoved) {
+    hasMoved = false
+    return
+  }
+  openThemeDetails(theme)
+}
+
+// === 弹窗与下钻逻辑 ===
 const currentThemeProjects = computed(() => {
   if (!selectedTheme.value) return []
   return store.projects.filter(p => p.themeId === selectedTheme.value.id)
@@ -109,21 +168,14 @@ const closeThemeDetails = () => {
   selectedTheme.value = null
 }
 
-// 核心下钻逻辑：点击项目，切换到 2D 森林视图 (ForestView) 并关掉弹窗
 const diveIntoProject = (projectId) => {
-  // 【修改点】：在清空 selectedTheme 之前，先将当前的 themeId 存下来
   const targetThemeId = selectedTheme.value.id
-  
   closeThemeDetails()
-  
-  // 首先选中该项目，这会改变 activeProjectId（在 store 中 selectProject 默认会切到 dashboard）
   store.selectProject(projectId)
   
-  // 【修改点】：然后强制将视图切换回 forest，并且带上当前的主题ID，实现局部地图渲染
   if (store.openThemeForest) {
     store.openThemeForest(targetThemeId)
   } else {
-    // 兼容防呆：如果你还没在 gameStore.js 里写 openThemeForest 方法，至少保证能跳过去
     store.activeThemeId = targetThemeId
     store.activeView = 'forest'
   }
@@ -131,9 +183,6 @@ const diveIntoProject = (projectId) => {
 </script>
 
 <style scoped>
-.animate-bounce-slow {
-  animation: bounce 3s infinite;
-}
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
 }
@@ -143,5 +192,14 @@ const diveIntoProject = (projectId) => {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: rgba(139, 90, 43, 0.3);
   border-radius: 20px;
+}
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.3s ease;
+}
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
 }
 </style>
