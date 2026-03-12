@@ -10,17 +10,18 @@
                 <div>
                     <h2 class="text-3xl font-bold flex items-center gap-3 transition-colors"
                         :class="store.isNightMode ? 'text-green-500' : 'text-emerald-600'">
-                        <span>🧭</span> 巡林
+                        <span>🧭</span> 
+                        {{ currentThemeName === '全局' ? '全局巡林' : currentThemeName + ' - 领地巡视' }}
                     </h2>
                     <p class="text-sm mt-1 transition-colors"
                        :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">
-                       点击卡片进入森林视图 (Terraria Mode)
+                        点击卡片进入森林视图 (Terraria Mode)
                     </p>
                 </div>
                 <div class="flex flex-col items-end">
                     <div class="text-2xl font-bold transition-colors"
                          :class="store.isNightMode ? 'text-white' : 'text-gray-800'">
-                        {{ totalTreesGlobal }} <span :class="store.isNightMode ? 'text-green-500' : 'text-emerald-600'">Trees</span>
+                        {{ displayTreeCount }} <span :class="store.isNightMode ? 'text-green-500' : 'text-emerald-600'">Trees</span>
                     </div>
                 </div>
             </div>
@@ -28,7 +29,7 @@
 
         <div class="flex-1 overflow-y-auto p-6 pt-2 custom-scrollbar">
             <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">
-                <div v-for="project in store.projects" :key="project.id" 
+                <div v-for="project in displayProjects" :key="project.id" 
                     class="border rounded-lg overflow-hidden flex flex-col transition-all shadow-lg group relative cursor-pointer backdrop-blur-sm"
                     :class="store.isNightMode 
                       ? 'bg-[#1a1a1a]/80 border-gray-700 hover:border-green-500' 
@@ -160,7 +161,7 @@
                         <div v-for="(tree, index) in flatForest" :key="index"
                             class="relative flex flex-col items-center group transition-all duration-300 hover:scale-105 origin-bottom shrink-0"
                             :style="{ width: '120px', marginRight: '-30px' }">
-                            <img :src="normalTreeImg" 
+                            <img :src="tree.icon" 
                                 class="w-auto h-[180px] object-contain pixel-art drop-shadow-2xl cursor-pointer"
                                 :class="store.isNightMode ? 'brightness-75' : ''"
                                 :title="tree.name" />
@@ -197,7 +198,30 @@ import bgForestNight from '@/assets/background/normal_background_night.png'
 
 const viewingProject = ref(null) 
 const scrollContainer = ref(null)
-const totalTreesGlobal = computed(() => store.projects.reduce((sum, p) => sum + p.totalTrees, 0))
+
+// === 【新增】：基于 activeThemeId 的计算属性 ===
+
+// 1. 根据当前是否选中了某个主题，动态过滤要展示的项目
+const displayProjects = computed(() => {
+  if (store.activeThemeId) {
+    return store.projects.filter(p => p.themeId === store.activeThemeId)
+  }
+  return store.projects // 如果没有 activeThemeId（比如从侧边栏直接点击），则显示全局
+})
+
+// 2. 动态计算当前视图下的树木总数
+const displayTreeCount = computed(() => {
+  return displayProjects.value.reduce((sum, p) => sum + p.totalTrees, 0)
+})
+
+// 3. 动态获取当前主题的名字（用于顶部标题显示）
+const currentThemeName = computed(() => {
+  if (store.activeThemeId) {
+    const theme = store.themes.find(t => t.id === store.activeThemeId)
+    return theme ? theme.name : '全局'
+  }
+  return '全局'
+})
 
 // [新增] 获取项目内具体的树木统计
 const getProjectTreeStats = (project) => {

@@ -2,7 +2,7 @@
   <div class="flex-1 w-full h-full relative overflow-hidden bg-[#e8dcb8] shadow-inner select-none flex flex-col">
     <div class="absolute top-6 left-1/2 -translate-x-1/2 z-10 px-8 py-3 rounded-lg border-2 border-[#8b5a2b]/30 bg-[#f4ebd0]/90 backdrop-blur-sm shadow-lg text-center pointer-events-none">
       <h2 class="text-2xl font-serif font-bold text-[#5c3a21] tracking-widest uppercase">The Realm of Minerva</h2>
-      <p class="text-xs text-[#8b5a2b] font-mono mt-1 mt-1">Select a territory to view your vassals</p>
+      <p class="text-xs text-[#8b5a2b] font-mono mt-1">Select a territory to view your vassals</p>
     </div>
 
     <div 
@@ -60,7 +60,7 @@
              <div class="grid grid-cols-1 gap-3">
                <div v-for="project in currentThemeProjects" :key="project.id"
                     @click="diveIntoProject(project.id)"
-                    class="p-4 rounded-lg border-2 flex items-center justify-between cursor-pointer transition-all hover:-translate-y-1 shadow-sm hover:shadow-md"
+                    class="p-4 rounded-lg border-2 flex items-center justify-between cursor-pointer transition-all hover:-translate-y-1 shadow-sm hover:shadow-md group"
                     :class="store.isNightMode 
                       ? 'bg-[#252525] border-gray-700 hover:border-blue-500 hover:bg-[#2a2a2a]' 
                       : 'bg-white border-[#e8dcb8] hover:border-[#8b5a2b]'">
@@ -111,16 +111,37 @@ const closeThemeDetails = () => {
 
 // 核心下钻逻辑：点击项目，切换到 2D 森林视图 (ForestView) 并关掉弹窗
 const diveIntoProject = (projectId) => {
+  // 【修改点】：在清空 selectedTheme 之前，先将当前的 themeId 存下来
+  const targetThemeId = selectedTheme.value.id
+  
   closeThemeDetails()
+  
   // 首先选中该项目，这会改变 activeProjectId（在 store 中 selectProject 默认会切到 dashboard）
   store.selectProject(projectId)
-  // 然后强制将视图切换回 forest
-  store.openForest()
+  
+  // 【修改点】：然后强制将视图切换回 forest，并且带上当前的主题ID，实现局部地图渲染
+  if (store.openThemeForest) {
+    store.openThemeForest(targetThemeId)
+  } else {
+    // 兼容防呆：如果你还没在 gameStore.js 里写 openThemeForest 方法，至少保证能跳过去
+    store.activeThemeId = targetThemeId
+    store.activeView = 'forest'
+  }
 }
 </script>
 
 <style scoped>
 .animate-bounce-slow {
   animation: bounce 3s infinite;
+}
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background-color: rgba(139, 90, 43, 0.3);
+  border-radius: 20px;
 }
 </style>

@@ -29,6 +29,7 @@ export const useGameStore = defineStore('game', () => {
   const activeView = ref('dashboard')
 
   // === 3. 运行时状态 ===
+  const activeThemeId = ref(null)
   const activeProjectId = ref(null) 
   const runningProjectId = ref(null)
   
@@ -103,16 +104,30 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function uploadNote(title, content, projectIds = []) {
+    // 依然保留剔除空格计算字数的逻辑，用于展示信息
     const cleanContent = content.replace(/\s/g, '')
     const wordCount = cleanContent.length
-    const earnedCoins = Math.floor(wordCount)
-    if (earnedCoins <= 0) { alert("未记录笔记，未能获得金币！"); return }
+    
+    // 基础防呆：如果没有实质内容则拦截
+    if (wordCount <= 0) { 
+      alert("未记录笔记，未能获得金币！")
+      return 
+    }
       
+    // 【修改点】：将基于字数的动态奖励改为固定 10 金币
+    const earnedCoins = 10 
+    
     coins.value += earnedCoins
     const tags = Array.isArray(projectIds) ? projectIds : (projectIds ? [projectIds] : [])
       
     notebook.value.unshift({ 
-      id: Date.now(), projectIds: tags, title, content, wordCount, coins: earnedCoins, date: new Date().toLocaleString() 
+      id: Date.now(), 
+      projectIds: tags, 
+      title, 
+      content, 
+      wordCount, 
+      coins: earnedCoins, // 记录本次获得的固定金币
+      date: new Date().toLocaleString() 
     })
   }
 
@@ -229,6 +244,18 @@ export const useGameStore = defineStore('game', () => {
 
   // 【新增】：添加打开地图的动作
   function openMap() { activeView.value = 'map' }
+
+  // 【新增】：进入特定主题森林
+  function openThemeForest(themeId) {
+    activeThemeId.value = themeId
+    activeView.value = 'forest'
+  }
+  
+  // 顺便把原本的 openForest 修改一下，如果是全局查看，清空 activeThemeId
+  function openForest() { 
+    activeThemeId.value = null 
+    activeView.value = 'forest' 
+  }
 
   // === 7. 管理功能 (修改 createTheme) ===
   function createTheme(name) { 
@@ -422,14 +449,14 @@ export const useGameStore = defineStore('game', () => {
 
   return { 
     themes, projects, globalXP, globalLevel, globalLevelProgress, coins, unlockedTreeIds, activeView, notebook,
-    activeProjectId, activeProject, runningProjectId, runningProject, 
+    activeProjectId, activeProject, runningProjectId, runningProject, activeThemeId,
     activeTreeId, activeTree, timer, maxTime, isRunning, progressPercentage, 
     isNightMode, TREE_TYPES, inventoryTrees,
     user, offlineEarnings, MAX_PLANTING_TIME, 
     
     createTheme, renameTheme, deleteTheme, submitHarvest,
     getTreeYield, buyTree, createProject, selectProject, 
-    openMap, openShop, openForest, openNotebook, uploadNote,
+    openMap, openShop, openForest, openNotebook, uploadNote, openThemeForest,
     startAction, stopTimer, toggleAction, downloadSaveFile, importSaveData, cheatAddCoins, getTreeIcon,
     renameProject, deleteProject, reorderProjects, updateNoteTags, toggleNightMode, 
     initAuth, loginWithEmail, registerWithEmail, logout, uploadSaveToCloud, downloadSaveFromCloud,
