@@ -186,7 +186,7 @@
                placeholder="> Await user input... (Press Ctrl+Enter to execute upload)"
                autofocus
              ></textarea>
-             <p class="text-xs mt-2 text-green-700">1 字 = 1 金币</p>
+             <p class="text-xs mt-2 text-green-700">输入即有金币</p>
           </div>
         </div>
 
