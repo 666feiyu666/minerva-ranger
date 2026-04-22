@@ -192,7 +192,6 @@ const store = useGameStore()
 
 // 素材导入
 import normalLandImg from '@/assets/land/normal_land.png'
-import normalTreeImg from '@/assets/tree/normal_tree.png'
 import bgForestDay from '@/assets/background/normal_background_day.png'
 import bgForestNight from '@/assets/background/normal_background_night.png'
 

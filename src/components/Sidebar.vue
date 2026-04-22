@@ -90,15 +90,27 @@
             <div v-for="project in group.projects" :key="project.id"
                 draggable="true" 
                 @dragstart="handleDragStart(project, $event)"
+                @dragend="resetDragState"
+                @dragover.prevent="handleProjectDragOver(project, $event)"
+                @drop="handleProjectDrop(project, $event)"
                 @click="store.selectProject(project.id)"
                 class="pb-1 relative transition-all z-10"
-                :class="{ 'z-50': activeMenuId === project.id }">
+                :class="{
+                  'z-50': activeMenuId === project.id,
+                  'pt-3': dragOverProjectId === project.id && dragInsertPosition === 'before',
+                  'pb-4': dragOverProjectId === project.id && dragInsertPosition === 'after'
+                }">
+
+              <div v-if="dragOverProjectId === project.id && dragInsertPosition === 'before'"
+                   class="absolute left-3 right-3 top-0 h-0.5 rounded-full"
+                   :class="store.isNightMode ? 'bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]' : 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.35)]'"></div>
               
               <div class="group/item w-full flex items-center p-2 rounded-md border-l-4 transition-all relative cursor-pointer backdrop-blur-sm pr-8"
                   :class="[
                     isActive(project.id) 
                       ? (store.isNightMode ? 'bg-[#353535] border-green-500' : 'bg-emerald-50 border-emerald-500 shadow-sm') 
-                      : (store.isNightMode ? 'border-transparent hover:bg-[#2a2a2a]' : 'border-transparent hover:bg-white/60')
+                      : (store.isNightMode ? 'border-transparent hover:bg-[#2a2a2a]' : 'border-transparent hover:bg-white/60'),
+                    dragOverProjectId === project.id ? (store.isNightMode ? 'ring-1 ring-amber-500/40' : 'ring-1 ring-amber-300') : ''
                   ]">
                   <div class="absolute left-1 opacity-0 group-hover/item:opacity-100 cursor-move text-xs mr-1"
                        :class="store.isNightMode ? 'text-gray-600' : 'text-gray-400'">⋮⋮</div>
@@ -150,6 +162,11 @@
                               :class="store.isNightMode ? 'border-gray-700 text-blue-400' : 'border-gray-100 text-blue-600'">
                          <span>✏️</span> 重命名
                       </button>
+                      <button @click="openMergeModal(project)"
+                              class="text-left px-3 py-2 text-xs font-bold flex items-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-t"
+                              :class="store.isNightMode ? 'border-gray-700 text-amber-400' : 'border-gray-100 text-amber-600'">
+                         <span>🔀</span> 合并到...
+                      </button>
                       <button @click="handleDelete(project)" 
                               class="text-left px-3 py-2 text-xs font-bold flex items-center gap-2 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors border-t"
                               :class="store.isNightMode ? 'text-red-400 border-gray-700' : 'text-red-600 border-gray-100'">
@@ -157,6 +174,10 @@
                       </button>
                   </div>
               </div>
+
+              <div v-if="dragOverProjectId === project.id && dragInsertPosition === 'after'"
+                   class="absolute left-3 right-3 bottom-1 h-0.5 rounded-full"
+                   :class="store.isNightMode ? 'bg-amber-400 shadow-[0_0_10px_rgba(251,191,36,0.5)]' : 'bg-amber-500 shadow-[0_0_10px_rgba(245,158,11,0.35)]'"></div>
             </div>
          </div>
       </div>
@@ -208,6 +229,67 @@
       </div>
     </div>
     
+    <div v-if="mergeSourceProject" class="fixed inset-0 z-[80] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeMergeModal"></div>
+      <div class="relative w-full max-w-md rounded-2xl border shadow-2xl p-6"
+           :class="store.isNightMode ? 'bg-[#171717] border-gray-800' : 'bg-white border-gray-200'">
+        <div class="flex justify-between items-start gap-4 mb-4">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-widest mb-1"
+                 :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
+              Merge Project
+            </div>
+            <h3 class="text-xl font-bold" :class="store.isNightMode ? 'text-white' : 'text-gray-800'">
+              合并项目
+            </h3>
+          </div>
+          <button @click="closeMergeModal"
+                  class="text-xs px-3 py-1 rounded-full border transition-colors"
+                  :class="store.isNightMode ? 'border-gray-700 text-gray-400 hover:text-white' : 'border-gray-300 text-gray-500 hover:text-gray-800'">
+            取消
+          </button>
+        </div>
+
+        <div class="space-y-4">
+          <div class="rounded-xl border p-4"
+               :class="store.isNightMode ? 'border-amber-900/40 bg-amber-900/10' : 'border-amber-200 bg-amber-50'">
+            <p class="text-sm font-semibold mb-2" :class="store.isNightMode ? 'text-amber-200' : 'text-amber-800'">
+              将保留目标项目，并吸收源项目的数据
+            </p>
+            <p class="text-sm" :class="store.isNightMode ? 'text-amber-100/80' : 'text-amber-700'">
+              源项目：{{ mergeSourceProject.name }}
+            </p>
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-xs font-bold uppercase tracking-wider"
+                   :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
+              目标项目
+            </label>
+            <select v-model="mergeTargetProjectId"
+                    class="w-full rounded-xl px-4 py-3 border outline-none transition-colors"
+                    :class="store.isNightMode ? 'bg-[#0c0c0c] border-gray-700 text-white focus:border-amber-500' : 'bg-white border-gray-300 text-gray-800 focus:border-amber-400'">
+              <option v-for="project in mergeTargetOptions" :key="project.id" :value="project.id">
+                {{ project.name }}
+              </option>
+            </select>
+          </div>
+
+          <div class="rounded-xl border p-4 text-sm"
+               :class="store.isNightMode ? 'border-gray-800 bg-[#101010] text-gray-400' : 'border-gray-200 bg-gray-50 text-gray-600'">
+            合并后会迁移源项目的树木、时长、经验和关联日志，并生成一条系统日志。
+          </div>
+
+          <button @click="confirmMergeProject"
+                  :disabled="!mergeTargetProjectId"
+                  class="w-full py-3 rounded-xl font-bold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  :class="store.isNightMode ? 'bg-amber-700 text-white hover:bg-amber-600' : 'bg-amber-500 text-white hover:bg-amber-400'">
+            确认合并
+          </button>
+        </div>
+      </div>
+    </div>
+
     <div class="pt-2 mt-2 border-t border-dashed" :class="store.isNightMode ? 'border-gray-700' : 'border-gray-300'">
         <div v-if="!store.user">
             <div v-if="!showLoginForm" class="flex flex-col gap-2">
@@ -246,6 +328,9 @@
 <script setup>
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
 import { useGameStore } from '@/stores/gameStore'
+
+defineOptions({ name: 'SidebarPanel' })
+
 const store = useGameStore()
 
 // === 🌟 分组数据渲染逻辑 ===
@@ -278,19 +363,48 @@ const toggleTheme = (id) => {
 
 // === 🌟 拖拽归类逻辑 ===
 const dragOverThemeId = ref(null)
+const dragOverProjectId = ref(null)
+const dragInsertPosition = ref('before')
+const draggedProjectId = ref(null)
+
+const resetDragState = () => {
+    dragOverThemeId.value = null
+    dragOverProjectId.value = null
+    dragInsertPosition.value = 'before'
+    draggedProjectId.value = null
+}
 
 const handleDragStart = (project, event) => {
+    draggedProjectId.value = project.id
     event.dataTransfer.effectAllowed = 'move'
     event.dataTransfer.setData('projectId', project.id)
 }
 
 const handleDropOnTheme = (themeId, event) => {
-    dragOverThemeId.value = null
     const projectId = event.dataTransfer.getData('projectId')
     if (projectId) {
-        const p = store.projects.find(p => p.id == projectId)
-        if (p && p.themeId !== themeId) p.themeId = themeId
+        store.moveProjectToTheme(projectId, themeId)
     }
+    resetDragState()
+}
+
+const handleProjectDragOver = (project, event) => {
+    if (!draggedProjectId.value || draggedProjectId.value === project.id) return
+
+    dragOverThemeId.value = null
+    dragOverProjectId.value = project.id
+
+    const bounds = event.currentTarget.getBoundingClientRect()
+    const midpoint = bounds.top + bounds.height / 2
+    dragInsertPosition.value = event.clientY < midpoint ? 'before' : 'after'
+}
+
+const handleProjectDrop = (project, event) => {
+    const projectId = event.dataTransfer.getData('projectId')
+    if (projectId && projectId !== project.id) {
+        store.reorderProjects(projectId, project.id, dragInsertPosition.value)
+    }
+    resetDragState()
 }
 
 // === 项目/主题创建逻辑 ===
@@ -351,6 +465,45 @@ const cancelRename = () => { editingId.value = null; editName.value = '' }
 const handleDelete = (project) => {
     if (confirm(`确定要删除项目 "${project.name}" 吗？\n删除后无法恢复！`)) store.deleteProject(project.id)
     activeMenuId.value = null
+}
+
+const mergeSourceProject = ref(null)
+const mergeTargetProjectId = ref(null)
+
+const mergeTargetOptions = computed(() => {
+    if (!mergeSourceProject.value) return []
+    return store.projects.filter(project => project.id !== mergeSourceProject.value.id)
+})
+
+const openMergeModal = (project) => {
+    activeMenuId.value = null
+    if (store.projects.length < 2) {
+        alert('至少需要两个项目才能执行合并')
+        return
+    }
+    mergeSourceProject.value = project
+    mergeTargetProjectId.value = mergeTargetOptions.value[0]?.id || null
+}
+
+const closeMergeModal = () => {
+    mergeSourceProject.value = null
+    mergeTargetProjectId.value = null
+}
+
+const confirmMergeProject = () => {
+    if (!mergeSourceProject.value || !mergeTargetProjectId.value) return
+    const target = store.projects.find(project => project.id === mergeTargetProjectId.value)
+    if (!target) return
+
+    const confirmed = confirm(
+        `确认将项目 "${mergeSourceProject.value.name}" 合并到 "${target.name}" 吗？\n` +
+        '合并后源项目会被移除，并生成系统日志。'
+    )
+
+    if (!confirmed) return
+
+    store.mergeProjects(mergeSourceProject.value.id, mergeTargetProjectId.value)
+    closeMergeModal()
 }
 
 // === 🌟 主题重命名与删除逻辑 ===

@@ -39,7 +39,7 @@
                   </span>
                   <span class="px-2 py-0.5 rounded border font-bold text-xs flex items-center gap-1 transition-colors"
                       :class="store.isNightMode ? 'bg-purple-900/40 border-purple-800 text-purple-300' : 'bg-purple-50 border-purple-200 text-purple-600'">
-                      <span>⏱️</span>{{ formatDuration(store.activeProject?.totalTimeSpent) }}
+                      <span>⏱️</span>{{ formatDuration(displayedProjectTime) }}
                   </span>
               </div>
             </div>
@@ -188,6 +188,35 @@
              ></textarea>
              <p class="text-xs mt-2 text-green-700">输入即有金币</p>
           </div>
+
+          <div class="rounded-lg border border-green-800/60 bg-green-950/20 p-4 space-y-3">
+             <p>> CONFIRM_PROJECT_ALIGNMENT :</p>
+             <p class="text-sm text-green-300">
+               当前将归属到：
+               <span class="text-white font-bold">{{ harvestTargetProject?.name || '未选择项目' }}</span>
+             </p>
+             <p class="text-xs text-green-600">
+               请确认“你实际完成的项目”是否和这里一致；如果不一致，请先改正再提交。
+             </p>
+
+             <template v-if="harvestProjectOptions.length > 1">
+               <select
+                 v-model="harvestProjectId"
+                 class="w-full bg-[#050505] border border-green-800 rounded px-3 py-2 text-green-300 focus:outline-none focus:border-green-500"
+               >
+                 <option v-for="project in harvestProjectOptions" :key="project.id" :value="project.id">
+                   {{ project.name }}
+                 </option>
+               </select>
+             </template>
+             <template v-else>
+               <div class="text-xs text-green-500">当前只有一个项目，无需切换归属。</div>
+             </template>
+
+             <p v-if="harvestProjectId !== store.runningProjectId" class="text-xs text-amber-400">
+               > WARNING: 你正在把本次收获从初始计时项目切换到另一个项目。
+             </p>
+          </div>
         </div>
 
         <div class="p-4 border-t border-green-800/50 flex justify-end gap-4 bg-[#050505]">
@@ -213,10 +242,22 @@ const store = useGameStore()
 // --- Modal 状态管理 ---
 const showHarvestModal = ref(false)
 const logContent = ref('')
+const harvestProjectId = ref(null)
 
 // 计算是否满足收获条件（时间达标）
 const isHarvestReady = computed(() => {
   return store.activeTree && store.timer >= store.maxTime && store.activeProjectId === store.runningProjectId
+})
+
+const harvestProjectOptions = computed(() => store.projects)
+const harvestTargetProject = computed(() =>
+  store.projects.find(project => project.id === harvestProjectId.value) || store.runningProject
+)
+
+const displayedProjectTime = computed(() => {
+  const base = store.activeProject?.totalTimeSpent || 0
+  if (store.activeProjectId === store.runningProjectId) return base + store.timer
+  return base
 })
 
 // 计算本次总共完成了多少轮（正向计时倍数）
@@ -304,6 +345,7 @@ const handleButtonClick = (tree) => {
       if (isHarvestReady.value) {
           store.stopTimer()
           logContent.value = ''
+          harvestProjectId.value = store.runningProjectId
           showHarvestModal.value = true
       } else {
           store.toggleAction()
@@ -316,12 +358,21 @@ const handleButtonClick = (tree) => {
 const closeHarvestModal = () => {
   showHarvestModal.value = false
   logContent.value = ''
+  harvestProjectId.value = store.runningProjectId
 }
 
 const confirmHarvest = () => {
-  store.submitHarvest(logContent.value)
+  if (!harvestProjectId.value) {
+    alert('请先确认本次收获的项目归属')
+    return
+  }
+
+  const submitted = store.submitHarvest(logContent.value, harvestProjectId.value)
+  if (!submitted) return
+
   showHarvestModal.value = false
   logContent.value = ''
+  harvestProjectId.value = null
 }
 </script>
 

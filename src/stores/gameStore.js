@@ -8,6 +8,9 @@ import magicTreeImg from '@/assets/tree/magic_tree.png'
 import goldTreeImg from '@/assets/tree/gold_tree.png'
 
 export const useGameStore = defineStore('game', () => {
+  const PROJECT_BASE_XP = 100
+  const PROJECT_XP_GROWTH = 1.2
+
   // === 1. 基础配置 ===
   const TREE_TYPES = [
     { id: 't1', name: '橡树', time: 25 * 60, xp: 100, price: 0, levelReq: 1, icon: normalTreeImg, desc: '基础树种，适合新手' },
@@ -69,6 +72,129 @@ export const useGameStore = defineStore('game', () => {
   
   const inventoryTrees = computed(() => TREE_TYPES.filter(t => unlockedTreeIds.value.includes(t.id)))
 
+  function toProjectIds(projectIds) {
+    if (Array.isArray(projectIds)) return [...new Set(projectIds.filter(Boolean))]
+    if (projectIds) return [projectIds]
+    return []
+  }
+
+  function isSameProjectId(left, right) {
+    return String(left) === String(right)
+  }
+
+  function getProjectLevelState(totalXP = 0) {
+    let level = 1
+    let nextLevelXP = PROJECT_BASE_XP
+    let currentXP = Math.max(0, Math.floor(totalXP))
+
+    while (currentXP >= nextLevelXP) {
+      currentXP -= nextLevelXP
+      level += 1
+      nextLevelXP = Math.floor(nextLevelXP * PROJECT_XP_GROWTH)
+    }
+
+    return { level, currentXP, nextLevelXP }
+  }
+
+  function deriveTotalXPFromLegacyProject(project = {}) {
+    if (typeof project.totalXP === 'number' && Number.isFinite(project.totalXP)) {
+      return Math.max(0, Math.floor(project.totalXP))
+    }
+
+    let totalXP = Math.max(0, Math.floor(project.currentXP || 0))
+    let nextLevelXP = PROJECT_BASE_XP
+    const targetLevel = Math.max(1, Math.floor(project.level || 1))
+
+    for (let level = 1; level < targetLevel; level += 1) {
+      totalXP += nextLevelXP
+      nextLevelXP = Math.floor(nextLevelXP * PROJECT_XP_GROWTH)
+    }
+
+    return totalXP
+  }
+
+  function normalizeProject(project = {}) {
+    const totalXP = deriveTotalXPFromLegacyProject(project)
+    return {
+      ...project,
+      id: project.id,
+      name: project.name || '未命名项目',
+      icon: project.icon || '📁',
+      totalXP,
+      totalTrees: project.totalTrees || 0,
+      totalTimeSpent: project.totalTimeSpent || 0,
+      forest: project.forest || {},
+      themeId: project.themeId || null,
+      ...getProjectLevelState(totalXP)
+    }
+  }
+
+  function normalizeNote(note = {}) {
+    const createdAt = note.createdAt || note.updatedAt || new Date().toISOString()
+    const content = note.content || ''
+    const inferredType =
+      note.type || (note.title?.startsWith('[植树日志]') ? 'planting' : 'ranger')
+    const source = note.source || (inferredType === 'system' ? 'system' : 'user')
+
+    return {
+      ...note,
+      projectIds: toProjectIds(note.projectIds || note.projectId),
+      type: inferredType,
+      source,
+      eventType: note.eventType || null,
+      content,
+      wordCount:
+        typeof note.wordCount === 'number'
+          ? note.wordCount
+          : content.replace(/\s/g, '').length,
+      coins: note.coins || 0,
+      createdAt,
+      updatedAt: note.updatedAt || createdAt,
+      date: note.date || new Date(createdAt).toLocaleString()
+    }
+  }
+
+  function createNote({
+    title,
+    content,
+    projectIds = [],
+    type = 'planting',
+    source = 'user',
+    eventType = null,
+    awardCoins = source === 'user',
+    id = Date.now()
+  }) {
+    const cleanContent = (content || '').replace(/\s/g, '')
+    const wordCount = cleanContent.length
+
+    if (source === 'user' && wordCount <= 0) {
+      alert('未记录笔记，未能获得金币！')
+      return null
+    }
+
+    const earnedCoins = awardCoins ? 10 : 0
+    if (earnedCoins > 0) coins.value += earnedCoins
+
+    const createdAt = new Date().toISOString()
+    const note = normalizeNote({
+      id,
+      title,
+      content,
+      type,
+      source,
+      eventType,
+      projectIds,
+      wordCount,
+      coins: earnedCoins,
+      createdAt,
+      updatedAt: createdAt,
+      date: new Date(createdAt).toLocaleString()
+    })
+
+    notebook.value.unshift(note)
+    return note
+  }
+
   // === 5. 核心逻辑 ===
   function getTreeYield(tree, project) {
     if (!project) return { trees: 0, xp: 0, multiplier: 1 }
@@ -79,72 +205,102 @@ export const useGameStore = defineStore('game', () => {
     return { trees: 1 * multiplier, xp: tree.xp * multiplier, multiplier }
   }
 
-  function completeCycle(times = 1) {
-    if (!runningProject.value || !activeTree.value) return
-    
-    const yieldData = getTreeYield(activeTree.value, runningProject.value)
+  function completeCycle(times = 1, projectId = runningProjectId.value) {
+    const targetProject = projects.value.find(p => p.id === projectId)
+    if (!targetProject || !activeTree.value) return
+
+    const yieldData = getTreeYield(activeTree.value, targetProject)
     
     const totalTrees = yieldData.trees * times
     const totalXP = yieldData.xp * times
 
-    runningProject.value.totalTrees += totalTrees
-    runningProject.value.currentXP += totalXP
-    
-    if (!runningProject.value.forest) runningProject.value.forest = {}
-    if (!runningProject.value.forest[activeTree.value.id]) runningProject.value.forest[activeTree.value.id] = 0
-    runningProject.value.forest[activeTree.value.id] += totalTrees
+    targetProject.totalTrees += totalTrees
+    targetProject.totalXP += totalXP
+    Object.assign(targetProject, getProjectLevelState(targetProject.totalXP))
 
-    while (runningProject.value.currentXP >= runningProject.value.nextLevelXP) {
-      runningProject.value.level++
-      runningProject.value.currentXP -= runningProject.value.nextLevelXP
-      runningProject.value.nextLevelXP = Math.floor(runningProject.value.nextLevelXP * 1.2)
-    }
+    if (!targetProject.forest) targetProject.forest = {}
+    if (!targetProject.forest[activeTree.value.id]) targetProject.forest[activeTree.value.id] = 0
+    targetProject.forest[activeTree.value.id] += totalTrees
 
     globalXP.value += totalXP
   }
 
   function uploadNote(title, content, projectIds = []) {
-    const cleanContent = content.replace(/\s/g, '')
-    const wordCount = cleanContent.length
-    
-    if (wordCount <= 0) { 
-      alert("未记录笔记，未能获得金币！")
-      return 
-    }
-      
-    const earnedCoins = 10 
-    
-    coins.value += earnedCoins
-    const tags = Array.isArray(projectIds) ? projectIds : (projectIds ? [projectIds] : [])
-      
-    notebook.value.unshift({ 
-      id: Date.now(), 
-      projectIds: tags, 
-      title, 
-      content, 
-      wordCount, 
-      coins: earnedCoins, 
-      date: new Date().toLocaleString() 
+    return createNote({
+      title,
+      content,
+      projectIds,
+      type: 'planting',
+      source: 'user'
     })
   }
 
   function renameNote(noteId, newTitle) {
     const note = notebook.value.find(n => n.id === noteId)
-    if (note) note.title = newTitle
+    if (note && note.source !== 'system') {
+      note.title = newTitle
+      note.updatedAt = new Date().toISOString()
+    }
+  }
+
+  function updateNote(noteId, payload = {}) {
+    const note = notebook.value.find(n => n.id === noteId)
+    if (!note || note.source === 'system') return false
+
+    if (typeof payload.content === 'string') {
+      const cleanContent = payload.content.replace(/\s/g, '')
+      if (cleanContent.length <= 0) {
+        alert('日志内容不能为空')
+        return false
+      }
+      note.content = payload.content
+      note.wordCount = cleanContent.length
+    }
+
+    if (typeof payload.title === 'string' && payload.title.trim()) {
+      note.title = payload.title.trim()
+    }
+
+    if (payload.projectIds !== undefined) {
+      note.projectIds = toProjectIds(payload.projectIds)
+    }
+
+    note.updatedAt = new Date().toISOString()
+    return true
+  }
+
+  function createSystemNote({
+    title,
+    content,
+    projectIds = [],
+    eventType = null
+  }) {
+    return createNote({
+      title,
+      content,
+      projectIds,
+      type: 'system',
+      source: 'system',
+      eventType,
+      awardCoins: false
+    })
   }
 
   function deleteNote(noteId) {
     const index = notebook.value.findIndex(n => n.id === noteId)
     if (index !== -1) {
       const note = notebook.value[index]
+      if (note.source === 'system') return false
       if (note.coins > 0) coins.value = Math.max(0, coins.value - note.coins)
       notebook.value.splice(index, 1)
+      return true
     }
+    return false
   }
 
   function updateNoteTags(noteId, newProjectIds) {
     const note = notebook.value.find(n => n.id === noteId)
-    if (note) note.projectIds = [...newProjectIds]
+    if (note && note.source !== 'system') note.projectIds = [...newProjectIds]
   }
 
   function toggleNightMode() {
@@ -168,11 +324,6 @@ export const useGameStore = defineStore('game', () => {
         if (timer.value < MAX_PLANTING_TIME) {
           const actualDelta = Math.min(delta, MAX_PLANTING_TIME - timer.value)
           timer.value += actualDelta
-          
-          if (runningProject.value) {
-            if (!runningProject.value.totalTimeSpent) runningProject.value.totalTimeSpent = 0
-            runningProject.value.totalTimeSpent += actualDelta
-          }
         }
       } else if (document.visibilityState === 'hidden') {
         // 当切到后台前，更新最后时间戳，并强制存一次档
@@ -197,11 +348,6 @@ export const useGameStore = defineStore('game', () => {
     const actualDelta = Math.min(delta, MAX_PLANTING_TIME - timer.value)
 
     timer.value += actualDelta
-
-    if (runningProject.value) {
-        if (!runningProject.value.totalTimeSpent) runningProject.value.totalTimeSpent = 0
-        runningProject.value.totalTimeSpent += actualDelta
-    }
   }
 
   function startTimer() {
@@ -244,23 +390,32 @@ export const useGameStore = defineStore('game', () => {
     startTimer()
   }
 
-  function submitHarvest(content) {
-    if (!runningProject.value || !activeTree.value) return;
+  function submitHarvest(content, confirmedProjectId = runningProjectId.value) {
+    const targetProject = projects.value.find(p => p.id === confirmedProjectId)
+    if (!targetProject || !activeTree.value) return false
 
-    const cycleTime = activeTree.value.time;
-    const finishedCycles = Math.floor(timer.value / cycleTime);
+    const cycleTime = activeTree.value.time
+    const finishedCycles = Math.floor(timer.value / cycleTime)
 
     if (finishedCycles > 0) {
-      completeCycle(finishedCycles);
+      completeCycle(finishedCycles, targetProject.id)
+      targetProject.totalTimeSpent += timer.value
 
       if (content && content.trim().length > 0) {
-        uploadNote(`[植树日志] ${runningProject.value.name}`, content, [runningProject.value.id]);
+        createNote({
+          title: `[植树日志] ${targetProject.name}`,
+          content,
+          projectIds: [targetProject.id],
+          type: 'planting',
+          source: 'user'
+        })
       }
     }
 
-    stopTimer();
-    timer.value = 0;
-    runningProjectId.value = null; 
+    stopTimer()
+    timer.value = 0
+    runningProjectId.value = null
+    return true
   }
 
   function openMap() { activeView.value = 'map' }
@@ -292,11 +447,17 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function createProject(name, themeId = null) { 
-    const newProj = { 
-        id: Date.now(), name, icon: '📁', level: 1, currentXP: 0, nextLevelXP: 100, 
-        totalTrees: 0, totalTimeSpent: 0, forest: {}, themeId 
-    }; 
-    projects.value.push(newProj); 
+    const newProj = normalizeProject({
+      id: Date.now(),
+      name,
+      icon: '📁',
+      totalXP: 0,
+      totalTrees: 0,
+      totalTimeSpent: 0,
+      forest: {},
+      themeId
+    })
+    projects.value.push(newProj)
     selectProject(newProj.id) 
   }
 
@@ -310,7 +471,116 @@ export const useGameStore = defineStore('game', () => {
     projects.value = projects.value.filter(p => p.id !== id)
   }
 
-  function reorderProjects(fromIndex, toIndex) {}
+  function mergeProjects(sourceProjectId, targetProjectId) {
+    if (!sourceProjectId || !targetProjectId || isSameProjectId(sourceProjectId, targetProjectId)) return false
+
+    const sourceProject = projects.value.find(p => isSameProjectId(p.id, sourceProjectId))
+    const targetProject = projects.value.find(p => isSameProjectId(p.id, targetProjectId))
+    if (!sourceProject || !targetProject) return false
+
+    targetProject.totalTrees += sourceProject.totalTrees || 0
+    targetProject.totalTimeSpent += sourceProject.totalTimeSpent || 0
+    targetProject.totalXP =
+      deriveTotalXPFromLegacyProject(targetProject) +
+      deriveTotalXPFromLegacyProject(sourceProject)
+    Object.assign(targetProject, getProjectLevelState(targetProject.totalXP))
+
+    const mergedForest = { ...targetProject.forest }
+    Object.entries(sourceProject.forest || {}).forEach(([treeId, count]) => {
+      mergedForest[treeId] = (mergedForest[treeId] || 0) + count
+    })
+    targetProject.forest = mergedForest
+
+    let migratedLogCount = 0
+    notebook.value = notebook.value.map(note => {
+      const normalized = normalizeNote(note)
+      if (!normalized.projectIds.some(projectId => isSameProjectId(projectId, sourceProjectId))) return normalized
+
+      migratedLogCount += 1
+      normalized.projectIds = [
+        ...new Set(
+          normalized.projectIds.map(projectId =>
+            isSameProjectId(projectId, sourceProjectId) ? targetProject.id : projectId
+          )
+        )
+      ]
+      return normalized
+    })
+
+    if (isSameProjectId(activeProjectId.value, sourceProjectId)) activeProjectId.value = targetProject.id
+    if (isSameProjectId(runningProjectId.value, sourceProjectId)) runningProjectId.value = targetProject.id
+
+    projects.value = projects.value.filter(p => !isSameProjectId(p.id, sourceProjectId))
+
+    createSystemNote({
+      title: '[系统日志] 项目已合并',
+      projectIds: [targetProjectId],
+      eventType: 'project_merge',
+      content: [
+        `系统记录：项目合并完成。`,
+        `源项目：${sourceProject.name}`,
+        `目标项目：${targetProject.name}`,
+        `迁移树木：${sourceProject.totalTrees || 0} 棵`,
+        `迁移时长：${Math.floor(sourceProject.totalTimeSpent || 0)} 秒`,
+        `迁移经验：${deriveTotalXPFromLegacyProject(sourceProject)} XP`,
+        `迁移日志：${migratedLogCount} 条`
+      ].join('\n')
+    })
+
+    return true
+  }
+
+  function reorderProjects(sourceProjectId, targetProjectId, position = 'before') {
+    if (!sourceProjectId || !targetProjectId || isSameProjectId(sourceProjectId, targetProjectId)) return false
+
+    const nextProjects = [...projects.value]
+    const sourceIndex = nextProjects.findIndex(project => isSameProjectId(project.id, sourceProjectId))
+    const targetIndex = nextProjects.findIndex(project => isSameProjectId(project.id, targetProjectId))
+    if (sourceIndex === -1 || targetIndex === -1) return false
+
+    const [movedProject] = nextProjects.splice(sourceIndex, 1)
+    const targetProject = nextProjects.find(project => isSameProjectId(project.id, targetProjectId))
+    if (!movedProject || !targetProject) return false
+
+    movedProject.themeId = targetProject.themeId || null
+
+    const insertIndex =
+      nextProjects.findIndex(project => isSameProjectId(project.id, targetProjectId)) +
+      (position === 'after' ? 1 : 0)
+
+    nextProjects.splice(insertIndex, 0, movedProject)
+    projects.value = nextProjects
+    return true
+  }
+
+  function moveProjectToTheme(projectId, themeId = null) {
+    const nextProjects = [...projects.value]
+    const sourceIndex = nextProjects.findIndex(project => isSameProjectId(project.id, projectId))
+    if (sourceIndex === -1) return false
+
+    const [movedProject] = nextProjects.splice(sourceIndex, 1)
+    if (!movedProject) return false
+
+    movedProject.themeId = themeId || null
+
+    const lastThemeIndex = (() => {
+      if (!themeId) {
+        return nextProjects.reduce(
+          (index, project, currentIndex) => (!project.themeId ? currentIndex : index),
+          -1
+        )
+      }
+
+      return nextProjects.reduce(
+        (index, project, currentIndex) => (project.themeId === themeId ? currentIndex : index),
+        -1
+      )
+    })()
+
+    nextProjects.splice(lastThemeIndex + 1, 0, movedProject)
+    projects.value = nextProjects
+    return true
+  }
 
   // === 8. 持久化与离线逻辑 ===
   const SAVE_KEY = 'minerva_save_v1'
@@ -326,12 +596,7 @@ export const useGameStore = defineStore('game', () => {
 
   function claimOfflineEarnings() {
     if (!offlineEarnings.value) return
-    const { projectId, tree, secondsPassed, newTimer } = offlineEarnings.value
-    const project = projects.value.find(p => p.id === projectId)
-    if (project) {
-        if (!project.totalTimeSpent) project.totalTimeSpent = 0
-        project.totalTimeSpent += secondsPassed
-    }
+    const { newTimer } = offlineEarnings.value
     timer.value = newTimer 
     
     if (timer.value < MAX_PLANTING_TIME) {
@@ -401,9 +666,9 @@ export const useGameStore = defineStore('game', () => {
         x: t.x !== undefined ? t.x : Math.floor(Math.random() * 70) + 15,
         y: t.y !== undefined ? t.y : Math.floor(Math.random() * 70) + 15
       }))
-      projects.value = (data.projects || []).map(p => ({ ...p, themeId: p.themeId || null, forest: p.forest || {}, totalTimeSpent: p.totalTimeSpent || 0 }))
+      projects.value = (data.projects || []).map(normalizeProject)
       const rawNotebook = data.notebook || []
-      notebook.value = rawNotebook.map(note => ({ ...note, projectIds: note.projectIds || (note.projectId ? [note.projectId] : []) }))
+      notebook.value = rawNotebook.map(normalizeNote)
       
       activeProjectId.value = data.activeProjectId || null
       const savedRunningProjectId = data.runningProjectId || data.activeProjectId || null 
@@ -467,7 +732,6 @@ export const useGameStore = defineStore('game', () => {
   }
   function selectProject(id) { activeProjectId.value = id; activeView.value = 'dashboard' }
   function openShop() { activeView.value = 'shop' }
-  function openForest() { activeView.value = 'forest' }
   function openNotebook() { activeView.value = 'notebook' }
   function buyTree(tree) { if (unlockedTreeIds.value.includes(tree.id)) return; if (coins.value >= tree.price) { coins.value -= tree.price; unlockedTreeIds.value.push(tree.id) } }
   function cheatAddCoins() { coins.value += 1000; globalXP.value += 1000 }
@@ -483,8 +747,8 @@ export const useGameStore = defineStore('game', () => {
     getTreeYield, buyTree, createProject, selectProject, 
     openMap, openShop, openForest, openNotebook, uploadNote, openThemeForest,
     startAction, stopTimer, toggleAction, downloadSaveFile, importSaveData, cheatAddCoins, getTreeIcon,
-    renameProject, deleteProject, reorderProjects, updateNoteTags, toggleNightMode, 
+    renameProject, deleteProject, mergeProjects, reorderProjects, moveProjectToTheme, updateNoteTags, toggleNightMode, 
     initAuth, loginWithEmail, registerWithEmail, logout, uploadSaveToCloud, downloadSaveFromCloud,
-    claimOfflineEarnings, discardOfflineEarnings, renameNote, deleteNote
+    claimOfflineEarnings, discardOfflineEarnings, renameNote, updateNote, createSystemNote, deleteNote
   }
 })
