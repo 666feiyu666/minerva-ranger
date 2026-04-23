@@ -4,7 +4,7 @@ import vue from '@vitejs/plugin-vue'
 
 // https://vitejs.dev/config/
 export default defineConfig({
-  base: './', // <--- 关键！必须加这一行，且必须是 './'
+  base: './', 
   plugins: [vue()],
   resolve: {
     alias: {
