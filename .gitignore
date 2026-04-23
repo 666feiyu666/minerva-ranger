@@ -53,3 +53,5 @@ android/*
 # Capacitor - iOS
 # 忽略 iOS 的用户特定数据和 CocoaPods 依赖包
 ios/*
+
+release
