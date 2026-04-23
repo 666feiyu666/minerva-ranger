@@ -1,5 +1,8 @@
 <template>
+  <SaveSlotSelectView v-if="store.bootStage === 'slot-select'" />
+
   <div 
+    v-else
     class="flex h-screen w-screen font-sans overflow-hidden transition-colors duration-500"
     :class="store.isNightMode ? 'bg-melvor-dark text-gray-200' : 'bg-gray-100 text-gray-900'"
   >
@@ -34,12 +37,151 @@
         </svg>
       </button>
 
-      <button 
-        @click="store.toggleNightMode"
-        class="absolute top-4 right-4 z-40 p-2 rounded-full bg-black/30 hover:bg-black/50 border border-white/10 backdrop-blur-sm transition-transform hover:scale-110 active:scale-95 shadow-lg group"
-      >
-        <span class="text-xl inline-block group-hover:animate-spin-slow origin-center">{{ store.isNightMode ? '🌛' : '☀️' }}</span>
-      </button>
+      <div class="absolute top-4 right-4 z-40 flex items-start gap-2">
+        <div class="relative">
+          <button
+            @click="showUtilityMenu = !showUtilityMenu"
+            class="p-2 rounded-full bg-black/30 hover:bg-black/50 border border-white/10 backdrop-blur-sm transition-transform hover:scale-110 active:scale-95 shadow-lg"
+          >
+            <span class="text-xl">⚙️</span>
+          </button>
+
+          <div
+            v-if="showUtilityMenu"
+            class="absolute right-0 mt-3 w-[20rem] rounded-3xl border shadow-2xl backdrop-blur-xl p-4"
+            :class="store.isNightMode ? 'bg-[#121212]/95 border-white/10 text-white' : 'bg-white/95 border-gray-200 text-gray-800'"
+          >
+            <div class="mb-4">
+              <div class="text-xs uppercase tracking-[0.24em]"
+                   :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
+                Utility Panel
+              </div>
+              <div class="mt-2 text-sm">
+                当前存档：
+                <span class="font-bold">{{ store.activeSlotMeta?.name || '未命名存档' }}</span>
+              </div>
+            </div>
+
+            <div class="space-y-2">
+              <button
+                @click="handleExitToSlots"
+                class="w-full px-4 py-3 rounded-2xl text-left font-semibold transition-colors"
+                :class="store.isNightMode ? 'bg-amber-900/30 hover:bg-amber-800/40 text-amber-200' : 'bg-amber-50 hover:bg-amber-100 text-amber-800'"
+              >
+                🗂️ 返回存档列表
+              </button>
+              <button
+                @click="handleCloudUpload"
+                class="w-full px-4 py-3 rounded-2xl text-left font-semibold transition-colors"
+                :class="store.isNightMode ? 'bg-emerald-900/30 hover:bg-emerald-800/40 text-emerald-200' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800'"
+              >
+                ☁️ 云保存
+              </button>
+              <button
+                @click="handleCloudLoad"
+                class="w-full px-4 py-3 rounded-2xl text-left font-semibold transition-colors"
+                :class="store.isNightMode ? 'bg-sky-900/30 hover:bg-sky-800/40 text-sky-200' : 'bg-sky-50 hover:bg-sky-100 text-sky-800'"
+              >
+                ⬇️ 云读取
+              </button>
+              <div
+                class="w-full px-4 py-3 rounded-2xl text-left font-semibold border"
+                :class="store.isNightMode ? 'border-white/10 bg-white/5 text-gray-500' : 'border-gray-200 bg-gray-50 text-gray-400'"
+              >
+                🔄 云同步（未来开发）
+              </div>
+            </div>
+
+            <div class="mt-4 pt-4 border-t"
+                 :class="store.isNightMode ? 'border-white/10' : 'border-gray-200'">
+              <template v-if="store.user">
+                <div class="flex items-center justify-between gap-3 mb-3">
+                  <div class="min-w-0">
+                    <div class="text-xs uppercase tracking-[0.24em]"
+                         :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
+                      Cloud Account
+                    </div>
+                    <div class="text-sm truncate mt-1">{{ store.user.email }}</div>
+                  </div>
+                  <div class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></div>
+                </div>
+                <button
+                  @click="handleLogout"
+                  class="w-full px-4 py-3 rounded-2xl text-left font-semibold transition-colors"
+                  :class="store.isNightMode ? 'bg-red-900/20 hover:bg-red-900/30 text-red-200' : 'bg-red-50 hover:bg-red-100 text-red-700'"
+                >
+                  Sign Out
+                </button>
+              </template>
+
+              <template v-else>
+                <div v-if="!showLoginForm" class="space-y-2">
+                  <div class="text-xs uppercase tracking-[0.24em]"
+                       :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
+                    Cloud Account
+                  </div>
+                  <button
+                    @click="showLoginForm = true"
+                    class="w-full px-4 py-3 rounded-2xl text-left font-semibold transition-colors"
+                    :class="store.isNightMode ? 'bg-indigo-900/30 hover:bg-indigo-800/40 text-indigo-200' : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700'"
+                  >
+                    📧 Email Login / Sign Up
+                  </button>
+                </div>
+
+                <div v-else class="space-y-3">
+                  <div class="text-xs uppercase tracking-[0.24em]"
+                       :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
+                    Sign In
+                  </div>
+                  <input
+                    v-model="email"
+                    type="email"
+                    placeholder="Email"
+                    class="w-full px-3 py-2.5 rounded-2xl border outline-none transition-colors"
+                    :class="store.isNightMode ? 'bg-[#0d0d0d] border-white/10 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'"
+                  />
+                  <input
+                    v-model="password"
+                    type="password"
+                    placeholder="Password"
+                    class="w-full px-3 py-2.5 rounded-2xl border outline-none transition-colors"
+                    :class="store.isNightMode ? 'bg-[#0d0d0d] border-white/10 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'"
+                  />
+                  <div class="grid grid-cols-2 gap-2">
+                    <button
+                      @click="handleEmailLogin"
+                      class="px-3 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-colors"
+                    >
+                      Login
+                    </button>
+                    <button
+                      @click="handleEmailRegister"
+                      class="px-3 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors"
+                    >
+                      Sign Up
+                    </button>
+                  </div>
+                  <button
+                    @click="showLoginForm = false"
+                    class="w-full text-xs py-1 text-center"
+                    :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
+                  >
+                    取消
+                  </button>
+                </div>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <button 
+          @click="store.toggleNightMode"
+          class="p-2 rounded-full bg-black/30 hover:bg-black/50 border border-white/10 backdrop-blur-sm transition-transform hover:scale-110 active:scale-95 shadow-lg group"
+        >
+          <span class="text-xl inline-block group-hover:animate-spin-slow origin-center">{{ store.isNightMode ? '🌛' : '☀️' }}</span>
+        </button>
+      </div>
 
       <div class="flex-1 flex flex-col relative z-10 pb-16 md:pb-0 overflow-hidden"> 
           <ShopView v-if="store.activeView === 'shop'" />
@@ -133,8 +275,9 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import Sidebar from './components/Sidebar.vue'
+import SaveSlotSelectView from './components/SaveSlotSelectView.vue'
 import IdleDashboard from './components/IdleDashboard.vue'
 import ShopView from './components/ShopView.vue'
 import MapView from './components/MapView.vue'
@@ -146,13 +289,39 @@ import bgNight from '@/assets/bg-night.png'
 
 const store = useGameStore()
 const showMobileMenu = ref(false) 
+const showUtilityMenu = ref(false)
+const showLoginForm = ref(false)
+const email = ref('')
+const password = ref('')
 
 // 初始化认证
 onMounted(() => {
   store.initAuth()
+  store.initSaveSystem()
+  document.addEventListener('click', handleDocumentClick)
+})
+
+onUnmounted(() => {
+  document.removeEventListener('click', handleDocumentClick)
 })
 
 const backgroundStyle = computed(() => {
+  if (store.activeView === 'forest') {
+    return store.isNightMode
+      ? {
+          backgroundImage:
+            'linear-gradient(180deg, #1b1611 0%, #241d16 100%), radial-gradient(circle at top center, rgba(251, 191, 36, 0.06), transparent 24%), radial-gradient(circle at bottom left, rgba(120, 53, 15, 0.08), transparent 30%)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }
+      : {
+          backgroundImage:
+            'linear-gradient(180deg, #f1e4d2 0%, #e7d7c1 100%), radial-gradient(circle at top center, rgba(245, 158, 11, 0.08), transparent 24%), radial-gradient(circle at bottom left, rgba(180, 83, 9, 0.08), transparent 30%)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }
+  }
+
   const img = store.isNightMode ? bgNight : bgDay
   return { backgroundImage: `url(${img})`, backgroundSize: 'cover', backgroundPosition: 'center bottom' }
 })
@@ -167,6 +336,51 @@ const bottomNavClass = (view) => {
   const inactiveColor = store.isNightMode ? 'text-gray-500' : 'text-gray-400'
   
   return base + (isActive ? activeColor : inactiveColor)
+}
+
+const handleDocumentClick = (event) => {
+  const target = event.target
+  if (!(target instanceof Element)) return
+  if (target.closest('.absolute.top-4.right-4')) return
+  showUtilityMenu.value = false
+}
+
+const handleExitToSlots = () => {
+  showUtilityMenu.value = false
+  store.exitToSaveSelection()
+}
+
+const handleCloudUpload = () => {
+  if (!store.user) {
+    showLoginForm.value = true
+    return
+  }
+  store.uploadSaveToCloud()
+}
+
+const handleCloudLoad = () => {
+  if (!store.user) {
+    showLoginForm.value = true
+    return
+  }
+  store.downloadSaveFromCloud()
+}
+
+const handleEmailLogin = async () => {
+  if (await store.loginWithEmail(email.value, password.value)) {
+    showLoginForm.value = false
+  }
+}
+
+const handleEmailRegister = async () => {
+  if (await store.registerWithEmail(email.value, password.value)) {
+    showLoginForm.value = false
+  }
+}
+
+const handleLogout = async () => {
+  await store.logout()
+  showUtilityMenu.value = false
 }
 
 // [新增] 格式化时间辅助函数 (用于弹窗)

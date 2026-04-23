@@ -1,86 +1,149 @@
 <template>
-  <div class="flex-1 flex flex-col h-full bg-transparent overflow-hidden relative selection:bg-transparent">
+  <div class="flex-1 flex flex-col h-full overflow-hidden relative selection:bg-transparent"
+       :class="store.isNightMode ? 'bg-[#221c15]' : 'bg-[#eadcc8]'">
     
     <div v-if="!viewingProject" class="flex flex-col h-full">
-        <div class="shrink-0 p-6 pb-2">
-            <div class="flex justify-between items-center p-6 rounded-lg border shadow-lg backdrop-blur-sm transition-all duration-500"
+        <div class="shrink-0 p-6 pb-3">
+            <div class="rounded-[2rem] border shadow-2xl overflow-hidden transition-all duration-500"
                  :class="store.isNightMode 
-                   ? 'bg-[#1a1a1a]/80 border-gray-700' 
-                   : 'bg-white/70 border-white/60 shadow-lg ring-1 ring-black/5'">
-                <div>
-                    <h2 class="text-3xl font-bold flex items-center gap-3 transition-colors"
-                        :class="store.isNightMode ? 'text-green-500' : 'text-emerald-600'">
-                        <span>🧭</span> 
-                        {{ currentThemeName === '全局' ? '全局巡林' : currentThemeName + ' - 领地巡视' }}
-                    </h2>
-                    <p class="text-sm mt-1 transition-colors"
-                       :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">
-                        点击卡片进入森林视图 (Terraria Mode)
-                    </p>
-                </div>
-                <div class="flex flex-col items-end">
-                    <div class="text-2xl font-bold transition-colors"
-                         :class="store.isNightMode ? 'text-white' : 'text-gray-800'">
-                        {{ displayTreeCount }} <span :class="store.isNightMode ? 'text-green-500' : 'text-emerald-600'">Trees</span>
+                   ? 'bg-[#17120e] border-[#453628]' 
+                   : 'bg-[#f7efe3] border-[#d9c4a8] ring-1 ring-black/5'">
+                <div class="px-7 pt-6 pb-4 border-b"
+                     :class="store.isNightMode ? 'border-[#3a2f24] bg-[#140f0b]' : 'border-[#e2d2bc] bg-[#f3e8d8]'">
+                    <div class="flex justify-between items-start gap-6">
+                        <div>
+                            <div class="text-xs uppercase tracking-[0.28em] font-bold"
+                                 :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
+                                Forest Overview
+                            </div>
+                            <h2 class="text-3xl font-bold flex items-center gap-3 mt-2 transition-colors"
+                                :class="store.isNightMode ? 'text-emerald-300' : 'text-emerald-700'">
+                                <span>🦉</span>
+                                {{ currentThemeName === '全局' ? '全局森林巡视' : currentThemeName + ' · 森林巡视' }}
+                            </h2>
+                            <p class="text-sm mt-2 transition-colors"
+                               :class="store.isNightMode ? 'text-gray-400' : 'text-gray-600'">
+                                从这里查看主题下的项目陈列，巡视你的知识森林。
+                            </p>
+                        </div>
+
+                        <div class="shrink-0 text-right">
+                            <div class="text-xs uppercase tracking-[0.24em]"
+                                 :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
+                                Summary
+                            </div>
+                            <div class="mt-2 text-2xl font-black"
+                                 :class="store.isNightMode ? 'text-white' : 'text-gray-800'">
+                                {{ displayProjects.length }} <span class="text-base font-bold">Projects</span>
+                            </div>
+                            <div class="text-sm mt-1"
+                                 :class="store.isNightMode ? 'text-emerald-300' : 'text-emerald-700'">
+                                🌲 {{ displayTreeCount }} trees in view
+                            </div>
+                        </div>
                     </div>
                 </div>
+
             </div>
         </div>
 
-        <div class="flex-1 overflow-y-auto p-6 pt-2 custom-scrollbar">
-            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6 pb-20">
-                <div v-for="project in displayProjects" :key="project.id" 
-                    class="border rounded-lg overflow-hidden flex flex-col transition-all shadow-lg group relative cursor-pointer backdrop-blur-sm"
-                    :class="store.isNightMode 
-                      ? 'bg-[#1a1a1a]/80 border-gray-700 hover:border-green-500' 
-                      : 'bg-white/60 border-white/60 hover:bg-white/90 hover:border-emerald-300'"
-                    @click="openInspection(project)">
-                    
-                    <div class="p-4 border-b flex justify-between items-center transition-colors"
-                         :class="store.isNightMode ? 'bg-[#202020]/50 border-gray-700' : 'bg-white/40 border-gray-100'">
-                        
-                        <div class="flex items-center gap-3">
-                            <div class="text-2xl">{{ project.icon }}</div>
-                            <h3 class="font-bold" :class="store.isNightMode ? 'text-gray-200' : 'text-gray-800'">
-                                {{ project.name }}
-                            </h3>
+        <div class="flex-1 overflow-y-auto p-6 pt-6 custom-scrollbar">
+            <div class="rounded-[2rem] border shadow-2xl overflow-hidden"
+                 :class="store.isNightMode ? 'bg-[#17120e] border-[#453628]' : 'bg-[#f7efe3] border-[#d9c4a8] ring-1 ring-black/5'">
+                <div class="px-7 py-5 border-b flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between"
+                     :class="store.isNightMode ? 'border-[#3a2f24] bg-[#140f0b]' : 'border-[#e2d2bc] bg-[#f3e8d8]'">
+                    <div class="max-w-3xl">
+                        <div class="text-xs uppercase tracking-[0.24em] font-bold"
+                             :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
+                            Project Arrangement
+                        </div>
+                        <div class="text-lg font-bold mt-1"
+                             :class="store.isNightMode ? 'text-white' : 'text-gray-800'">
+                            {{ currentThemeName === '全局' ? '以列表方式巡视所有项目' : '以列表方式巡视 ' + currentThemeName + ' 的项目' }}
+                        </div>
+                        <p class="text-sm mt-3 leading-7"
+                           :class="store.isNightMode ? 'text-stone-300/80' : 'text-[#6a5643]'">
+                            你可以直接按项目查看等级、树木、累计时长和树种分布，再进入单个项目的巡视详情。
+                        </p>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2 lg:justify-end">
+                        <span class="px-3 py-1.5 rounded-full text-xs font-bold border"
+                              :class="store.isNightMode ? 'border-white/10 bg-black/25 text-gray-200' : 'border-white/60 bg-white/75 text-[#5d4633]'">
+                            List First
+                        </span>
+                        <span class="px-3 py-1.5 rounded-full text-xs font-bold border"
+                              :class="store.isNightMode ? 'border-white/10 bg-black/25 text-gray-200' : 'border-white/60 bg-white/75 text-[#5d4633]'">
+                            Inspect By Project
+                        </span>
+                    </div>
+                </div>
+
+                <div v-if="displayProjects.length === 0"
+                     class="px-7 py-14 text-center"
+                     :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
+                    <div class="text-4xl mb-3">🪑</div>
+                    <p class="font-semibold">这个主题下还没有项目陈列。</p>
+                    <p class="text-sm mt-2">可以先在左侧新建项目，或把现有项目拖进这个主题。</p>
+                </div>
+
+                <div v-else class="divide-y" :class="store.isNightMode ? 'divide-gray-800' : 'divide-black/5'">
+                    <button v-for="project in displayProjects" :key="project.id"
+                        class="w-full px-7 py-6 flex items-center gap-5 text-left transition-all group"
+                        :class="store.isNightMode ? 'hover:bg-[#211911]' : 'hover:bg-[#fff8ef]'"
+                        @click="openInspection(project)">
+                        <div class="w-14 h-14 shrink-0 rounded-2xl border flex items-center justify-center text-3xl"
+                             :class="store.isNightMode ? 'border-white/10 bg-[#241b14]' : 'border-[#e3d1ba] bg-[#fffaf3]'">
+                            {{ project.icon || '📁' }}
                         </div>
 
-                        <div class="px-2 py-1 rounded text-xs font-bold border transition-colors flex items-center gap-1"
-                             :class="store.isNightMode 
-                             ? 'bg-green-900/30 text-green-400 border-green-800' 
-                             : 'bg-green-50 text-emerald-600 border-green-200'">
-                            <span>🌲</span>
-                            <span>{{ project.totalTrees }}</span>
-                        </div>
-                    </div>
-                    
-                    <div class="p-4 flex-1 min-h-[120px] relative transition-colors flex flex-col justify-center"
-                         :class="store.isNightMode ? 'bg-[#151515]/80' : 'bg-gray-50/50'">
-                         
-                         <div v-if="getProjectTreeStats(project).length > 0" 
-                              class="grid grid-cols-3 gap-2 w-full">
-                            
-                            <div v-for="tree in getProjectTreeStats(project)" :key="tree.id"
-                                 class="flex flex-col items-center p-2 rounded border transition-colors"
-                                 :class="store.isNightMode 
-                                   ? 'bg-black/40 border-gray-700' 
-                                   : 'bg-white border-gray-200 shadow-sm'">
-                               
-                               <img :src="tree.icon" class="w-8 h-8 object-contain pixel-art mb-1" />
-                               
-                               <span class="text-xs font-bold"
-                                     :class="store.isNightMode ? 'text-gray-300' : 'text-gray-700'">
-                                 x{{ tree.count }}
-                               </span>
+                        <div class="min-w-0 flex-1">
+                            <div class="flex items-center gap-3 flex-wrap">
+                                <h3 class="font-bold text-lg truncate"
+                                    :class="store.isNightMode ? 'text-white' : 'text-gray-800'">
+                                    {{ project.name }}
+                                </h3>
+                                <span class="px-2.5 py-1 rounded-full text-xs font-bold border"
+                                      :class="store.isNightMode ? 'border-blue-900 bg-blue-900/20 text-blue-300' : 'border-blue-200 bg-blue-50 text-blue-700'">
+                                    Lv. {{ project.level }}
+                                </span>
                             </div>
-                         </div>
 
-                         <div v-else class="flex flex-col items-center justify-center opacity-50 h-full">
-                             <span class="text-2xl mb-2">🌱</span>
-                             <span class="text-xs uppercase tracking-widest font-bold">No Trees Yet</span>
-                         </div>
-                    </div>
+                            <div class="flex flex-wrap items-center gap-3 mt-2 text-xs"
+                                 :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">
+                                <span>🌲 {{ project.totalTrees }} trees</span>
+                                <span>⏱ {{ formatDuration(project.totalTimeSpent) }}</span>
+                                <span>📚 {{ getProjectTreeStats(project).length }} tree types</span>
+                            </div>
+
+                            <div class="mt-3 flex flex-wrap gap-2">
+                                <template v-if="getProjectTreeStats(project).length > 0">
+                                    <span v-for="tree in getProjectTreeStats(project).slice(0, 4)" :key="tree.id"
+                                          class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold"
+                                      :class="store.isNightMode ? 'border-white/10 bg-[#241b14] text-gray-300' : 'border-[#e3d1ba] bg-[#fffdf8] text-gray-600'">
+                                        <img :src="tree.icon" class="w-4 h-4 object-contain pixel-art" />
+                                        x{{ tree.count }}
+                                    </span>
+                                </template>
+                                <span v-else
+                                      class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-semibold opacity-70"
+                                      :class="store.isNightMode ? 'border-white/10 bg-[#241b14] text-gray-400' : 'border-[#e3d1ba] bg-[#fffdf8] text-gray-500'">
+                                    还没有树木陈列
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="shrink-0 flex flex-col items-end gap-2">
+                            <div class="w-11 h-11 rounded-full border flex items-center justify-center text-xl transition-all group-hover:translate-x-1"
+                                 :class="store.isNightMode ? 'border-emerald-800 bg-emerald-900/20 text-emerald-300' : 'border-emerald-200 bg-emerald-50 text-emerald-600'">
+                                →
+                            </div>
+                            <div class="text-[10px] uppercase tracking-[0.2em]"
+                                 :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
+                                Inspect
+                            </div>
+                        </div>
+                    </button>
                 </div>
             </div>
         </div>
@@ -281,6 +344,13 @@ const openInspection = (project) => {
 
 const closeInspection = () => { viewingProject.value = null }
 const setActiveAndStay = () => { if (viewingProject.value) store.selectProject(viewingProject.value.id) }
+
+const formatDuration = (seconds) => {
+  if (!seconds) return '0m'
+  const h = Math.floor(seconds / 3600)
+  const m = Math.floor((seconds % 3600) / 60)
+  return h > 0 ? `${h}h ${m}m` : `${m}m`
+}
 
 // 🖱️ 优化的滚轮处理
 const handleWheel = (e) => {

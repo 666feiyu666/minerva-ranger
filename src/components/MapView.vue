@@ -3,7 +3,7 @@
     
     <div class="absolute top-6 left-1/2 -translate-x-1/2 z-10 px-8 py-3 rounded-lg border-2 border-[#8b5a2b]/30 bg-[#f4ebd0]/90 backdrop-blur-sm shadow-lg text-center pointer-events-none">
       <h2 class="text-2xl font-serif font-bold text-[#5c3a21] tracking-widest uppercase">The Realm of Minerva</h2>
-      <p class="text-xs text-[#8b5a2b] font-mono mt-1">Drag to arrange · Click to view vassals</p>
+      <p class="text-xs text-[#8b5a2b] font-mono mt-1">Drag to arrange · Click to enter forest overview</p>
     </div>
 
     <div 
@@ -20,7 +20,7 @@
           top: (theme.y || 50) + '%' 
         }"
         @pointerdown.stop.prevent="startDrag($event, theme)"
-        @click.stop="handleThemeClick(theme)"
+        @click.stop="enterThemeForest(theme)"
       >
         <div class="relative flex flex-col items-center justify-center hover:scale-110 transition-transform">
           <div class="text-4xl filter drop-shadow-lg group-hover:drop-shadow-[0_0_15px_rgba(255,215,0,0.8)] transition-all">
@@ -33,73 +33,14 @@
       </div>
     </div>
 
-    <Transition name="fade">
-      <div v-if="selectedTheme" class="fixed inset-0 z-50 flex items-center justify-center px-4">
-        <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeThemeDetails"></div>
-        
-        <div class="relative w-full max-w-lg rounded-xl overflow-hidden shadow-2xl transition-all"
-             :class="store.isNightMode ? 'bg-[#1a1a1a] border border-gray-700' : 'bg-[#f9f6ef] border-2 border-[#d2b48c]'">
-          
-          <div class="px-6 py-4 flex justify-between items-center border-b"
-               :class="store.isNightMode ? 'bg-[#222] border-gray-800' : 'bg-[#e8dcb8]/50 border-[#d2b48c]'">
-            <div class="flex items-center gap-3">
-              <span class="text-3xl">🏰</span>
-              <div>
-                <h3 class="text-xl font-bold font-serif" :class="store.isNightMode ? 'text-white' : 'text-[#5c3a21]'">
-                  {{ selectedTheme.name }}
-                </h3>
-                <p class="text-xs font-mono" :class="store.isNightMode ? 'text-gray-400' : 'text-[#8b5a2b]'">
-                  {{ currentThemeProjects.length }} Vassals (Projects)
-                </p>
-              </div>
-            </div>
-            <button @click="closeThemeDetails" class="p-2 rounded-full hover:bg-black/10 transition-colors">
-              ❌
-            </button>
-          </div>
-
-          <div class="p-4 max-h-[60vh] overflow-y-auto custom-scrollbar">
-             <div v-if="currentThemeProjects.length === 0" class="text-center py-8 opacity-60 font-mono text-sm" :class="store.isNightMode ? 'text-gray-400' : 'text-[#5c3a21]'">
-               此领地尚无封臣，快去左侧栏分配吧。
-             </div>
-             
-             <div class="grid grid-cols-1 gap-3">
-               <div v-for="project in currentThemeProjects" :key="project.id"
-                    @click="diveIntoProject(project.id)"
-                    class="p-4 rounded-lg border-2 flex items-center justify-between cursor-pointer transition-all hover:-translate-y-1 shadow-sm hover:shadow-md group"
-                    :class="store.isNightMode 
-                      ? 'bg-[#252525] border-gray-700 hover:border-blue-500 hover:bg-[#2a2a2a]' 
-                      : 'bg-white border-[#e8dcb8] hover:border-[#8b5a2b]'">
-                 <div class="flex items-center gap-4">
-                   <div class="text-3xl">{{ project.icon || '📁' }}</div>
-                   <div>
-                     <h4 class="font-bold text-sm" :class="store.isNightMode ? 'text-gray-200' : 'text-gray-800'">
-                       {{ project.name }}
-                     </h4>
-                     <div class="flex items-center gap-3 mt-1 text-xs opacity-80" :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">
-                       <span>Lv.{{ project.level }}</span>
-                       <span>🌲 {{ project.totalTrees }}</span>
-                     </div>
-                   </div>
-                 </div>
-                 <div class="text-blue-500 font-bold text-xl opacity-0 group-hover:opacity-100 transition-opacity">
-                   ➡️
-                 </div>
-               </div>
-             </div>
-          </div>
-        </div>
-      </div>
-    </Transition>
   </div>
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useGameStore } from '@/stores/gameStore'
 
 const store = useGameStore()
-const selectedTheme = ref(null)
 const mapContainer = ref(null)
 
 // === 拖拽交互逻辑 ===
@@ -144,39 +85,15 @@ const stopDrag = () => {
   document.removeEventListener('pointercancel', stopDrag)
 }
 
-// === 点击事件拦截 ===
-const handleThemeClick = (theme) => {
-  // 如果玩家刚刚是在“拖拽”城堡，松手时会拦截点击，防止误触打开弹窗
+const enterThemeForest = (theme) => {
   if (hasMoved) {
     hasMoved = false
     return
   }
-  openThemeDetails(theme)
-}
-
-// === 弹窗与下钻逻辑 ===
-const currentThemeProjects = computed(() => {
-  if (!selectedTheme.value) return []
-  return store.projects.filter(p => p.themeId === selectedTheme.value.id)
-})
-
-const openThemeDetails = (theme) => {
-  selectedTheme.value = theme
-}
-
-const closeThemeDetails = () => {
-  selectedTheme.value = null
-}
-
-const diveIntoProject = (projectId) => {
-  const targetThemeId = selectedTheme.value.id
-  closeThemeDetails()
-  store.selectProject(projectId)
-  
   if (store.openThemeForest) {
-    store.openThemeForest(targetThemeId)
+    store.openThemeForest(theme.id)
   } else {
-    store.activeThemeId = targetThemeId
+    store.activeThemeId = theme.id
     store.activeView = 'forest'
   }
 }
@@ -194,12 +111,4 @@ const diveIntoProject = (projectId) => {
   border-radius: 20px;
 }
 
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.3s ease;
-}
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
 </style>

@@ -26,17 +26,28 @@
       </div>
     </div>
 
-    <div class="p-2 border-b shrink-0 space-y-1 transition-colors"
+    <div class="p-2 border-b shrink-0 transition-colors"
          :class="store.isNightMode ? 'border-white/10 bg-black/20' : 'border-gray-200/50 bg-white/40'">
-       <button @click="store.openShop()" :class="navBtnClass('shop', 'text-yellow-500', 'bg-yellow-700', 'text-yellow-700', 'bg-yellow-100')">
-         <span class="text-xl">🏪</span><span>商店</span>
+       <button
+         @click="systemAppsExpanded = !systemAppsExpanded"
+         class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-[0.18em] transition-colors"
+         :class="store.isNightMode ? 'text-gray-400 hover:bg-white/5 hover:text-white' : 'text-gray-500 hover:bg-black/5 hover:text-gray-800'"
+       >
+         <span>系统应用</span>
+         <span class="transition-transform" :class="systemAppsExpanded ? 'rotate-90' : ''">▶</span>
        </button>
-       <button @click="store.openMap()" :class="navBtnClass('map', 'text-amber-500', 'bg-amber-900', 'text-amber-700', 'bg-amber-100')">
-         <span class="text-xl">🗺️</span><span>密涅瓦</span>
-       </button>
-       <button @click="store.openNotebook()" :class="navBtnClass('notebook', 'text-blue-500', 'bg-blue-800', 'text-blue-700', 'bg-blue-100')">
-         <span class="text-xl">📝</span><span>巡林官手记</span>
-       </button>
+
+       <div v-show="systemAppsExpanded" class="mt-2 space-y-1">
+         <button @click="store.openShop()" :class="navBtnClass('shop', 'text-yellow-500', 'bg-yellow-700', 'text-yellow-700', 'bg-yellow-100')">
+           <span class="text-xl">🏪</span><span>商店</span>
+         </button>
+         <button @click="store.openMap()" :class="navBtnClass('map', 'text-amber-500', 'bg-amber-900', 'text-amber-700', 'bg-amber-100')">
+           <span class="text-xl">🗺️</span><span>密涅瓦</span>
+         </button>
+         <button @click="store.openNotebook()" :class="navBtnClass('notebook', 'text-blue-500', 'bg-blue-800', 'text-blue-700', 'bg-blue-100')">
+           <span class="text-xl">📝</span><span>巡林官手记</span>
+         </button>
+       </div>
     </div>
 
     <div class="px-4 py-2 text-xs font-bold uppercase tracking-widest mt-2 flex justify-between items-center"
@@ -213,22 +224,8 @@
           </button>
       </div>
 
-      <div class="pt-4 border-t flex justify-between gap-2"
-           :class="store.isNightMode ? 'border-gray-700' : 'border-gray-200/50'">
-         <button @click="store.downloadSaveFile" 
-                 class="flex-1 flex items-center justify-center gap-1 text-xs py-2 rounded border transition-colors"
-                 :class="store.isNightMode ? 'bg-[#333] hover:bg-[#444] text-gray-400 border-gray-600' : 'bg-white/60 hover:bg-white text-gray-500 border-gray-300 shadow-sm'" title="Export Save">
-            💾 Backup
-         </button>
-         <button @click="triggerImport" 
-                 class="flex-1 flex items-center justify-center gap-1 text-xs py-2 rounded border transition-colors"
-                 :class="store.isNightMode ? 'bg-[#333] hover:bg-[#444] text-gray-400 border-gray-600' : 'bg-white/60 hover:bg-white text-gray-500 border-gray-300 shadow-sm'" title="Import Save">
-            📂 Import
-         </button>
-         <input ref="fileInput" type="file" accept=".json" class="hidden" @change="handleFileImport" />
-      </div>
     </div>
-    
+
     <div v-if="mergeSourceProject" class="fixed inset-0 z-[80] flex items-center justify-center p-4">
       <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeMergeModal"></div>
       <div class="relative w-full max-w-md rounded-2xl border shadow-2xl p-6"
@@ -275,6 +272,19 @@
             </select>
           </div>
 
+          <div class="space-y-2">
+            <label class="text-xs font-bold uppercase tracking-wider"
+                   :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
+              Commit / 说明（可选）
+            </label>
+            <textarea
+              v-model="mergeCommitMessage"
+              placeholder="补充说明为什么要合并，系统日志会保留这条说明。"
+              class="w-full rounded-xl px-4 py-3 border outline-none resize-none h-28 transition-colors"
+              :class="store.isNightMode ? 'bg-[#0c0c0c] border-gray-700 text-white focus:border-amber-500 placeholder-gray-500' : 'bg-white border-gray-300 text-gray-800 focus:border-amber-400 placeholder-gray-400'"
+            ></textarea>
+          </div>
+
           <div class="rounded-xl border p-4 text-sm"
                :class="store.isNightMode ? 'border-gray-800 bg-[#101010] text-gray-400' : 'border-gray-200 bg-gray-50 text-gray-600'">
             合并后会迁移源项目的树木、时长、经验和关联日志，并生成一条系统日志。
@@ -290,38 +300,65 @@
       </div>
     </div>
 
-    <div class="pt-2 mt-2 border-t border-dashed" :class="store.isNightMode ? 'border-gray-700' : 'border-gray-300'">
-        <div v-if="!store.user">
-            <div v-if="!showLoginForm" class="flex flex-col gap-2">
-              <button @click="showLoginForm = true"
-                      class="w-full flex items-center justify-center gap-2 py-2 rounded transition-colors text-xs font-bold"
-                      :class="store.isNightMode ? 'bg-indigo-900/50 text-indigo-300 hover:bg-indigo-800' : 'bg-indigo-50 text-indigo-600 hover:bg-indigo-100'">
-                <span>📧</span> Email Login / Sign Up
-              </button>
+    <div v-if="deleteTargetProject" class="fixed inset-0 z-[80] flex items-center justify-center p-4">
+      <div class="absolute inset-0 bg-black/60 backdrop-blur-sm" @click="closeDeleteModal"></div>
+      <div class="relative w-full max-w-md rounded-2xl border shadow-2xl p-6"
+           :class="store.isNightMode ? 'bg-[#171717] border-gray-800' : 'bg-white border-gray-200'">
+        <div class="flex justify-between items-start gap-4 mb-4">
+          <div>
+            <div class="text-xs font-bold uppercase tracking-widest mb-1"
+                 :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
+              Delete Project
             </div>
-            <div v-else class="flex flex-col gap-2 animate-in fade-in slide-in-from-bottom-2 duration-200">
-              <div class="text-[10px] text-center opacity-60" :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">Enter email & password to start</div>
-              <input v-model="email" type="email" placeholder="Email (e.g. user@test.com)" class="w-full px-2 py-2 text-xs rounded border outline-none transition-colors" :class="store.isNightMode ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-black placeholder-gray-400'"/>
-              <input v-model="password" type="password" placeholder="Password (min 6 chars)" class="w-full px-2 py-2 text-xs rounded border outline-none transition-colors" :class="store.isNightMode ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-500' : 'bg-white border-gray-300 text-black placeholder-gray-400'"/>
-              <div class="flex gap-2 mt-1">
-                  <button @click="handleEmailLogin" class="flex-1 py-1.5 rounded text-xs font-bold text-white bg-green-600 hover:bg-green-500 shadow-sm">Login</button>
-                  <button @click="handleEmailRegister" class="flex-1 py-1.5 rounded text-xs font-bold text-white bg-blue-600 hover:bg-blue-500 shadow-sm">Sign Up</button>
-              </div>
-              <button @click="showLoginForm = false" class="text-[10px] underline text-center w-full mt-1 hover:opacity-80" :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">Cancel</button>
-            </div>
-        </div>
-        <div v-else class="flex flex-col gap-2">
-          <div class="flex items-center justify-between px-1">
-              <div class="text-[10px] truncate max-w-[120px] opacity-70" :title="store.user.email" :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">{{ store.user.email }}</div>
-              <div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+            <h3 class="text-xl font-bold" :class="store.isNightMode ? 'text-white' : 'text-gray-800'">
+              删除项目
+            </h3>
           </div>
-          <div class="flex gap-2">
-            <button @click="store.uploadSaveToCloud" class="flex-1 text-[10px] py-1.5 rounded border font-bold transition-colors" :class="store.isNightMode ? 'bg-green-900/30 border-green-800 text-green-400 hover:bg-green-800' : 'bg-green-50 border-green-200 text-green-700 hover:bg-green-100'">⬆️ Upload</button>
-            <button @click="store.downloadSaveFromCloud" class="flex-1 text-[10px] py-1.5 rounded border font-bold transition-colors" :class="store.isNightMode ? 'bg-blue-900/30 border-blue-800 text-blue-400 hover:bg-blue-800' : 'bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100'">⬇️ Load</button>
-          </div>
-          <button @click="store.logout" class="w-full text-[10px] py-1 rounded hover:bg-red-500/10 hover:text-red-500 transition-colors" :class="store.isNightMode ? 'text-gray-600' : 'text-gray-400'">Sign Out</button>
+          <button @click="closeDeleteModal"
+                  class="text-xs px-3 py-1 rounded-full border transition-colors"
+                  :class="store.isNightMode ? 'border-gray-700 text-gray-400 hover:text-white' : 'border-gray-300 text-gray-500 hover:text-gray-800'">
+            取消
+          </button>
         </div>
+
+        <div class="space-y-4">
+          <div class="rounded-xl border p-4"
+               :class="store.isNightMode ? 'border-red-900/40 bg-red-900/10' : 'border-red-200 bg-red-50'">
+            <p class="text-sm font-semibold mb-2" :class="store.isNightMode ? 'text-red-200' : 'text-red-800'">
+              删除后项目本体无法恢复
+            </p>
+            <p class="text-sm" :class="store.isNightMode ? 'text-red-100/80' : 'text-red-700'">
+              目标项目：{{ deleteTargetProject.name }}
+            </p>
+          </div>
+
+          <div class="rounded-xl border p-4 text-sm"
+               :class="store.isNightMode ? 'border-gray-800 bg-[#101010] text-gray-400' : 'border-gray-200 bg-gray-50 text-gray-600'">
+            系统会自动生成一条删除日志，记录项目名称、树木、时长、经验和关联日志数量。
+          </div>
+
+          <div class="space-y-2">
+            <label class="text-xs font-bold uppercase tracking-wider"
+                   :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
+              Commit / 说明（可选）
+            </label>
+            <textarea
+              v-model="deleteCommitMessage"
+              placeholder="补充说明为什么要删除，系统日志会保留这条说明。"
+              class="w-full rounded-xl px-4 py-3 border outline-none resize-none h-28 transition-colors"
+              :class="store.isNightMode ? 'bg-[#0c0c0c] border-gray-700 text-white focus:border-red-500 placeholder-gray-500' : 'bg-white border-gray-300 text-gray-800 focus:border-red-400 placeholder-gray-400'"
+            ></textarea>
+          </div>
+
+          <button @click="confirmDeleteProject"
+                  class="w-full py-3 rounded-xl font-bold transition-colors"
+                  :class="store.isNightMode ? 'bg-red-700 text-white hover:bg-red-600' : 'bg-red-500 text-white hover:bg-red-400'">
+            确认删除
+          </button>
+        </div>
+      </div>
     </div>
+
   </aside>
 </template>
 
@@ -332,6 +369,7 @@ import { useGameStore } from '@/stores/gameStore'
 defineOptions({ name: 'SidebarPanel' })
 
 const store = useGameStore()
+const systemAppsExpanded = ref(true)
 
 // === 🌟 分组数据渲染逻辑 ===
 const groupedProjects = computed(() => {
@@ -411,7 +449,6 @@ const handleProjectDrop = (project, event) => {
 const createMode = ref(null) 
 const newItemName = ref('')
 const inputRef = ref(null)
-const fileInput = ref(null)
 
 const startCreating = (mode) => {
     createMode.value = mode
@@ -463,12 +500,15 @@ const confirmRename = () => {
 const cancelRename = () => { editingId.value = null; editName.value = '' }
 
 const handleDelete = (project) => {
-    if (confirm(`确定要删除项目 "${project.name}" 吗？\n删除后无法恢复！`)) store.deleteProject(project.id)
     activeMenuId.value = null
+    deleteTargetProject.value = project
 }
 
 const mergeSourceProject = ref(null)
 const mergeTargetProjectId = ref(null)
+const mergeCommitMessage = ref('')
+const deleteTargetProject = ref(null)
+const deleteCommitMessage = ref('')
 
 const mergeTargetOptions = computed(() => {
     if (!mergeSourceProject.value) return []
@@ -483,11 +523,13 @@ const openMergeModal = (project) => {
     }
     mergeSourceProject.value = project
     mergeTargetProjectId.value = mergeTargetOptions.value[0]?.id || null
+    mergeCommitMessage.value = ''
 }
 
 const closeMergeModal = () => {
     mergeSourceProject.value = null
     mergeTargetProjectId.value = null
+    mergeCommitMessage.value = ''
 }
 
 const confirmMergeProject = () => {
@@ -502,8 +544,23 @@ const confirmMergeProject = () => {
 
     if (!confirmed) return
 
-    store.mergeProjects(mergeSourceProject.value.id, mergeTargetProjectId.value)
+    store.mergeProjects(mergeSourceProject.value.id, mergeTargetProjectId.value, {
+        commitMessage: mergeCommitMessage.value
+    })
     closeMergeModal()
+}
+
+const closeDeleteModal = () => {
+    deleteTargetProject.value = null
+    deleteCommitMessage.value = ''
+}
+
+const confirmDeleteProject = () => {
+    if (!deleteTargetProject.value) return
+    store.deleteProject(deleteTargetProject.value.id, {
+        commitMessage: deleteCommitMessage.value
+    })
+    closeDeleteModal()
 }
 
 // === 🌟 主题重命名与删除逻辑 ===
@@ -531,13 +588,6 @@ const handleDeleteTheme = (theme) => {
     if (confirm(`确定要删除领域 "${theme.name}" 吗？\n其下的项目将会被退回至"未分类"中。`)) store.deleteTheme(theme.id)
 }
 
-// === 登录逻辑 ===
-const showLoginForm = ref(false)
-const email = ref('')
-const password = ref('')
-const handleEmailLogin = async () => { if (await store.loginWithEmail(email.value, password.value)) showLoginForm.value = false }
-const handleEmailRegister = async () => { if (await store.registerWithEmail(email.value, password.value)) showLoginForm.value = false }
-
 // === 样式辅助 ===
 const navBtnClass = (view, nightText, nightBg, dayText, dayBg) => {
     const isActive = store.activeView === view
@@ -548,11 +598,4 @@ const navBtnClass = (view, nightText, nightBg, dayText, dayBg) => {
 }
 
 const isActive = (id) => store.activeProjectId === id && store.activeView === 'dashboard'
-const triggerImport = () => { fileInput.value.click() }
-const handleFileImport = (event) => {
-    const file = event.target.files[0]; if (!file) return
-    const reader = new FileReader()
-    reader.onload = (e) => { store.importSaveData(e.target.result); event.target.value = '' }
-    reader.readAsText(file)
-}
 </script>

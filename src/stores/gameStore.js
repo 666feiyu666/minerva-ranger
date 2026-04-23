@@ -10,6 +10,9 @@ import goldTreeImg from '@/assets/tree/gold_tree.png'
 export const useGameStore = defineStore('game', () => {
   const PROJECT_BASE_XP = 100
   const PROJECT_XP_GROWTH = 1.2
+  const LEGACY_SAVE_KEY = 'minerva_save_v1'
+  const SAVE_INDEX_KEY = 'minerva_save_index_v1'
+  const SAVE_SLOT_KEY_PREFIX = 'minerva_save_slot_'
 
   // === 1. 基础配置 ===
   const TREE_TYPES = [
@@ -30,6 +33,10 @@ export const useGameStore = defineStore('game', () => {
   const notebook = ref([]) 
   
   const activeView = ref('dashboard')
+  const bootStage = ref('slot-select')
+  const saveIndex = ref({ version: 1, lastSelectedSlotId: null, slots: [] })
+  const activeSlotId = ref(null)
+  const isHydrating = ref(false)
 
   // === 3. 运行时状态 ===
   const activeThemeId = ref(null)
@@ -71,6 +78,10 @@ export const useGameStore = defineStore('game', () => {
   })
   
   const inventoryTrees = computed(() => TREE_TYPES.filter(t => unlockedTreeIds.value.includes(t.id)))
+  const saveSlots = computed(() => saveIndex.value.slots || [])
+  const activeSlotMeta = computed(() =>
+    saveSlots.value.find(slot => slot.id === activeSlotId.value) || null
+  )
 
   function toProjectIds(projectIds) {
     if (Array.isArray(projectIds)) return [...new Set(projectIds.filter(Boolean))]
@@ -80,6 +91,139 @@ export const useGameStore = defineStore('game', () => {
 
   function isSameProjectId(left, right) {
     return String(left) === String(right)
+  }
+
+  function getGlobalLevelFromXP(xp = 0) {
+    return Math.floor(Math.sqrt((xp || 0) / 100)) + 1
+  }
+
+  function getSlotStorageKey(slotId) {
+    return `${SAVE_SLOT_KEY_PREFIX}${slotId}`
+  }
+
+  function createSlotId() {
+    return `slot_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+  }
+
+  function normalizeSaveIndex(index = {}) {
+    return {
+      version: 1,
+      lastSelectedSlotId: index.lastSelectedSlotId || null,
+      slots: Array.isArray(index.slots)
+        ? index.slots.map(slot => ({
+            id: slot.id,
+            name: slot.name || '未命名存档',
+            createdAt: slot.createdAt || new Date().toISOString(),
+            updatedAt: slot.updatedAt || slot.createdAt || new Date().toISOString(),
+            lastPlayedAt:
+              slot.lastPlayedAt || slot.updatedAt || slot.createdAt || new Date().toISOString(),
+            source: slot.source || 'local',
+            summary: {
+              globalLevel: slot.summary?.globalLevel || 1,
+              globalXP: slot.summary?.globalXP || 0,
+              coins: slot.summary?.coins || 0,
+              projectCount: slot.summary?.projectCount || 0,
+              themeCount: slot.summary?.themeCount || 0,
+              totalTrees: slot.summary?.totalTrees || 0,
+              noteCount: slot.summary?.noteCount || 0
+            }
+          }))
+        : []
+    }
+  }
+
+  function createEmptySaveData(slotId, slotName) {
+    return {
+      version: 2,
+      slotId,
+      slotName,
+      timestamp: Date.now(),
+      coins: 0,
+      globalXP: 0,
+      unlockedTreeIds: ['t1'],
+      themes: [],
+      projects: [],
+      notebook: [],
+      activeView: 'forest',
+      activeProjectId: null,
+      runningProjectId: null,
+      activeTreeId: null,
+      isRunning: false,
+      timer: 0,
+      isNightMode: false
+    }
+  }
+
+  function buildSaveSummary(saveData = {}) {
+    const projectsList = Array.isArray(saveData.projects) ? saveData.projects : []
+    const themesList = Array.isArray(saveData.themes) ? saveData.themes : []
+    const notebookList = Array.isArray(saveData.notebook) ? saveData.notebook : []
+
+    return {
+      globalLevel: getGlobalLevelFromXP(saveData.globalXP || 0),
+      globalXP: saveData.globalXP || 0,
+      coins: saveData.coins || 0,
+      projectCount: projectsList.length,
+      themeCount: themesList.length,
+      totalTrees: projectsList.reduce((sum, project) => sum + (project.totalTrees || 0), 0),
+      noteCount: notebookList.length
+    }
+  }
+
+  function saveSaveIndex() {
+    localStorage.setItem(SAVE_INDEX_KEY, JSON.stringify(saveIndex.value))
+  }
+
+  function loadSaveIndex() {
+    const raw = localStorage.getItem(SAVE_INDEX_KEY)
+    saveIndex.value = raw ? normalizeSaveIndex(JSON.parse(raw)) : normalizeSaveIndex()
+    return saveIndex.value
+  }
+
+  function updateSlotMeta(slotId, updates = {}) {
+    const slot = saveSlots.value.find(item => item.id === slotId)
+    if (!slot) return null
+    Object.assign(slot, updates)
+    return slot
+  }
+
+  function persistSlotData(slotId, saveData, options = {}) {
+    const now = new Date().toISOString()
+    const nextData = {
+      ...saveData,
+      version: 2,
+      slotId,
+      slotName: options.slotName || saveData.slotName || activeSlotMeta.value?.name || '未命名存档',
+      timestamp: Date.now()
+    }
+
+    localStorage.setItem(getSlotStorageKey(slotId), JSON.stringify(nextData))
+
+    const summary = buildSaveSummary(nextData)
+    const existing = saveSlots.value.find(slot => slot.id === slotId)
+    if (existing) {
+      existing.name = options.slotName || existing.name
+      existing.updatedAt = now
+      existing.lastPlayedAt = options.markPlayed ? now : existing.lastPlayedAt || now
+      existing.summary = summary
+      existing.source = existing.source || 'local'
+    } else {
+      saveSlots.value.push({
+        id: slotId,
+        name: options.slotName || nextData.slotName || '未命名存档',
+        createdAt: now,
+        updatedAt: now,
+        lastPlayedAt: now,
+        source: 'local',
+        summary
+      })
+    }
+
+    if (options.updateSelection !== false) {
+      saveIndex.value.lastSelectedSlotId = slotId
+    }
+    saveSaveIndex()
+    return nextData
   }
 
   function getProjectLevelState(totalXP = 0) {
@@ -463,20 +607,47 @@ export const useGameStore = defineStore('game', () => {
 
   function renameProject(id, newName) { const project = projects.value.find(p => p.id === id); if (project) project.name = newName }
 
-  function deleteProject(id) {
-    if (runningProjectId.value === id) {
+  function deleteProject(id, options = {}) {
+    const targetProject = projects.value.find(p => isSameProjectId(p.id, id))
+    if (!targetProject) return false
+
+    const commitMessage = options.commitMessage?.trim()
+    const relatedLogCount = notebook.value.filter(note =>
+      normalizeNote(note).projectIds.some(projectId => isSameProjectId(projectId, id))
+    ).length
+
+    if (isSameProjectId(runningProjectId.value, id)) {
         stopTimer(); isRunning.value = false; runningProjectId.value = null; timer.value = 0
     }
-    if (activeProjectId.value === id) { activeProjectId.value = null; activeView.value = 'forest' }
-    projects.value = projects.value.filter(p => p.id !== id)
+    if (isSameProjectId(activeProjectId.value, id)) { activeProjectId.value = null; activeView.value = 'forest' }
+    projects.value = projects.value.filter(p => !isSameProjectId(p.id, id))
+
+    createSystemNote({
+      title: '[系统日志] 项目已删除',
+      eventType: 'project_delete',
+      content: [
+        '系统记录：项目删除完成。',
+        `删除项目：${targetProject.name}`,
+        `删除前树木：${targetProject.totalTrees || 0} 棵`,
+        `删除前时长：${Math.floor(targetProject.totalTimeSpent || 0)} 秒`,
+        `删除前经验：${deriveTotalXPFromLegacyProject(targetProject)} XP`,
+        `关联日志：${relatedLogCount} 条`,
+        commitMessage ? `用户说明：${commitMessage}` : null
+      ]
+        .filter(Boolean)
+        .join('\n')
+    })
+
+    return true
   }
 
-  function mergeProjects(sourceProjectId, targetProjectId) {
+  function mergeProjects(sourceProjectId, targetProjectId, options = {}) {
     if (!sourceProjectId || !targetProjectId || isSameProjectId(sourceProjectId, targetProjectId)) return false
 
     const sourceProject = projects.value.find(p => isSameProjectId(p.id, sourceProjectId))
     const targetProject = projects.value.find(p => isSameProjectId(p.id, targetProjectId))
     if (!sourceProject || !targetProject) return false
+    const commitMessage = options.commitMessage?.trim()
 
     targetProject.totalTrees += sourceProject.totalTrees || 0
     targetProject.totalTimeSpent += sourceProject.totalTimeSpent || 0
@@ -523,8 +694,11 @@ export const useGameStore = defineStore('game', () => {
         `迁移树木：${sourceProject.totalTrees || 0} 棵`,
         `迁移时长：${Math.floor(sourceProject.totalTimeSpent || 0)} 秒`,
         `迁移经验：${deriveTotalXPFromLegacyProject(sourceProject)} XP`,
-        `迁移日志：${migratedLogCount} 条`
-      ].join('\n')
+        `迁移日志：${migratedLogCount} 条`,
+        commitMessage ? `用户说明：${commitMessage}` : null
+      ]
+        .filter(Boolean)
+        .join('\n')
     })
 
     return true
@@ -582,15 +756,109 @@ export const useGameStore = defineStore('game', () => {
     return true
   }
 
-  // === 8. 持久化与离线逻辑 ===
-  const SAVE_KEY = 'minerva_save_v1'
-
   function getSaveData() {
     return {
-      version: 1, timestamp: Date.now(), coins: coins.value, globalXP: globalXP.value, unlockedTreeIds: unlockedTreeIds.value,
+      version: 2,
+      slotId: activeSlotId.value,
+      slotName: activeSlotMeta.value?.name || '未命名存档',
+      timestamp: Date.now(),
+      coins: coins.value,
+      globalXP: globalXP.value,
+      unlockedTreeIds: unlockedTreeIds.value,
       themes: themes.value, projects: projects.value, notebook: notebook.value,
+      activeView: activeView.value,
       activeProjectId: activeProjectId.value, runningProjectId: runningProjectId.value, activeTreeId: activeTreeId.value,
       isRunning: isRunning.value, timer: timer.value, isNightMode: isNightMode.value 
+    }
+  }
+
+  function resetGameState() {
+    stopTimer()
+    coins.value = 0
+    unlockedTreeIds.value = ['t1']
+    globalXP.value = 0
+    themes.value = []
+    projects.value = []
+    notebook.value = []
+    activeView.value = 'forest'
+    activeThemeId.value = null
+    activeProjectId.value = null
+    runningProjectId.value = null
+    activeTreeId.value = null
+    isRunning.value = false
+    timer.value = 0
+    isNightMode.value = false
+    offlineEarnings.value = null
+  }
+
+  function applySaveData(data, silent = false) {
+    try {
+      isHydrating.value = true
+      stopTimer()
+
+      coins.value = data.coins || 0
+      globalXP.value = data.globalXP || 0
+      unlockedTreeIds.value = data.unlockedTreeIds || ['t1']
+      themes.value = (data.themes || []).map(t => ({
+        ...t,
+        x: t.x !== undefined ? t.x : Math.floor(Math.random() * 70) + 15,
+        y: t.y !== undefined ? t.y : Math.floor(Math.random() * 70) + 15
+      }))
+      projects.value = (data.projects || []).map(normalizeProject)
+      notebook.value = (data.notebook || []).map(normalizeNote)
+
+      activeView.value = data.activeView || (data.activeProjectId ? 'dashboard' : 'forest')
+      activeProjectId.value = data.activeProjectId || null
+      const savedRunningProjectId = data.runningProjectId || data.activeProjectId || null
+      activeTreeId.value = data.activeTreeId || null
+      timer.value = data.timer || 0
+      isNightMode.value = data.isNightMode || false
+
+      const wasRunning = data.isRunning || false
+      const lastSave = data.timestamp || Date.now()
+      offlineEarnings.value = null
+
+      if (wasRunning && activeTreeId.value && savedRunningProjectId) {
+        const now = Date.now()
+        const secondsPassed = Math.floor((now - lastSave) / 1000)
+
+        if (secondsPassed > 60) {
+          const tree = TREE_TYPES.find(t => t.id === activeTreeId.value)
+          if (tree) {
+            const totalTime = timer.value + secondsPassed
+            const finalTimer = Math.min(totalTime, MAX_PLANTING_TIME)
+            const effectiveSeconds = Math.max(0, finalTimer - timer.value)
+
+            offlineEarnings.value = {
+              projectId: savedRunningProjectId,
+              tree,
+              secondsPassed: effectiveSeconds,
+              newTimer: finalTimer
+            }
+            runningProjectId.value = savedRunningProjectId
+            isRunning.value = false
+          }
+        } else if (secondsPassed > 0) {
+          timer.value += secondsPassed
+          if (timer.value > MAX_PLANTING_TIME) timer.value = MAX_PLANTING_TIME
+          runningProjectId.value = savedRunningProjectId
+          startTimer()
+        } else {
+          runningProjectId.value = savedRunningProjectId
+          startTimer()
+        }
+      } else {
+        isRunning.value = false
+        runningProjectId.value = savedRunningProjectId
+      }
+      if (!silent) saveToLocalStorage()
+      return true
+    } catch (error) {
+      console.error(error)
+      if (!silent) alert('存档损坏')
+      return false
+    } finally {
+      isHydrating.value = false
     }
   }
 
@@ -653,81 +921,200 @@ export const useGameStore = defineStore('game', () => {
     if (data && data.save_data) { importSaveData(JSON.stringify(data.save_data)) }
   }
 
-  function saveToLocalStorage() { if (!offlineEarnings.value) { localStorage.setItem(SAVE_KEY, JSON.stringify(getSaveData())) } }
-
-  function importSaveData(jsonString, silent = false) {
-    try {
-      const data = JSON.parse(jsonString)
-      coins.value = data.coins || 0
-      globalXP.value = data.globalXP || 0
-      unlockedTreeIds.value = data.unlockedTreeIds || ['t1']
-      themes.value = (data.themes || []).map(t => ({
-        ...t,
-        x: t.x !== undefined ? t.x : Math.floor(Math.random() * 70) + 15,
-        y: t.y !== undefined ? t.y : Math.floor(Math.random() * 70) + 15
-      }))
-      projects.value = (data.projects || []).map(normalizeProject)
-      const rawNotebook = data.notebook || []
-      notebook.value = rawNotebook.map(normalizeNote)
-      
-      activeProjectId.value = data.activeProjectId || null
-      const savedRunningProjectId = data.runningProjectId || data.activeProjectId || null 
-      activeTreeId.value = data.activeTreeId || null
-      timer.value = data.timer || 0
-      isNightMode.value = data.isNightMode || false 
-      
-      const wasRunning = data.isRunning || false
-      const lastSave = data.timestamp || Date.now()
-
-      if (wasRunning && activeTreeId.value && savedRunningProjectId) {
-        const now = Date.now()
-        const secondsPassed = Math.floor((now - lastSave) / 1000)
-        
-        if (secondsPassed > 60) {
-          // 超过 1 分钟（60秒），走正常的离线收益弹窗逻辑
-          const tree = TREE_TYPES.find(t => t.id === activeTreeId.value)
-          if (tree) {
-             const totalTime = timer.value + secondsPassed
-             const finalTimer = Math.min(totalTime, MAX_PLANTING_TIME) 
-             const effectiveSeconds = Math.max(0, finalTimer - timer.value) 
-
-             offlineEarnings.value = { 
-                 projectId: savedRunningProjectId, 
-                 tree, 
-                 secondsPassed: effectiveSeconds, 
-                 newTimer: finalTimer 
-             }
-             runningProjectId.value = savedRunningProjectId
-             isRunning.value = false 
-          }
-        } else if (secondsPassed > 0) {
-          // 【核心修复】：如果是 1 分钟以内的刷新、页面意外重载或短暂切后台
-          // 默默把时间补上，直接继续运行，不弹窗打断用户的沉浸感
-          timer.value += secondsPassed
-          if (timer.value > MAX_PLANTING_TIME) timer.value = MAX_PLANTING_TIME
-          runningProjectId.value = savedRunningProjectId
-          startTimer() // 重新启动计时器
-        } else {
-          runningProjectId.value = savedRunningProjectId
-          startTimer()
-        }
-      } else {
-        isRunning.value = false
-        runningProjectId.value = savedRunningProjectId
-      }
-      if (!silent) { saveToLocalStorage() }
-    } catch (e) { console.error(e); if (!silent) alert('存档损坏') }
+  function saveActiveSlot(markPlayed = false) {
+    if (!activeSlotId.value) return false
+    persistSlotData(activeSlotId.value, getSaveData(), {
+      markPlayed,
+      slotName: activeSlotMeta.value?.name
+    })
+    return true
   }
 
-  watch([coins, globalXP, unlockedTreeIds, themes, projects, notebook, activeProjectId, runningProjectId, activeTreeId, isRunning, timer, isNightMode], () => { saveToLocalStorage() }, { deep: true })
-  
-  function loadGame() { const saved = localStorage.getItem(SAVE_KEY); if (saved) importSaveData(saved, true) }
-  loadGame()
+  function saveToLocalStorage() {
+    if (
+      !activeSlotId.value ||
+      bootStage.value !== 'in-game' ||
+      offlineEarnings.value ||
+      isHydrating.value
+    ) {
+      return
+    }
+    saveActiveSlot(false)
+  }
+
+  function createSaveSlot(name, initialData = null) {
+    const slotId = createSlotId()
+    const slotName = name?.trim() || `新存档 #${saveSlots.value.length + 1}`
+    const slotData = initialData
+      ? { ...initialData, version: 2, slotId, slotName, timestamp: Date.now() }
+      : createEmptySaveData(slotId, slotName)
+
+    persistSlotData(slotId, slotData, { markPlayed: false, slotName })
+    return slotId
+  }
+
+  function renameSaveSlot(slotId, newName) {
+    const trimmed = newName?.trim()
+    if (!trimmed) return false
+
+    const slot = updateSlotMeta(slotId, { name: trimmed, updatedAt: new Date().toISOString() })
+    if (!slot) return false
+
+    const raw = localStorage.getItem(getSlotStorageKey(slotId))
+    if (raw) {
+      const saveData = JSON.parse(raw)
+      persistSlotData(slotId, { ...saveData, slotName: trimmed }, { slotName: trimmed, updateSelection: false })
+    } else {
+      saveSaveIndex()
+    }
+    return true
+  }
+
+  function deleteSaveSlot(slotId) {
+    localStorage.removeItem(getSlotStorageKey(slotId))
+    saveIndex.value.slots = saveSlots.value.filter(slot => slot.id !== slotId)
+
+    if (activeSlotId.value === slotId) {
+      activeSlotId.value = null
+      resetGameState()
+      bootStage.value = 'slot-select'
+    }
+
+    if (saveIndex.value.lastSelectedSlotId === slotId) {
+      saveIndex.value.lastSelectedSlotId = saveSlots.value[0]?.id || null
+    }
+
+    saveSaveIndex()
+    return true
+  }
+
+  function loadSlot(slotId) {
+    const raw = localStorage.getItem(getSlotStorageKey(slotId))
+    if (!raw) return false
+
+    const data = JSON.parse(raw)
+    activeSlotId.value = slotId
+    return applySaveData(data, true)
+  }
+
+  function enterSlot(slotId) {
+    if (activeSlotId.value && bootStage.value === 'in-game') {
+      saveActiveSlot(true)
+    }
+
+    const loaded = loadSlot(slotId)
+    if (!loaded) return false
+
+    bootStage.value = 'in-game'
+    updateSlotMeta(slotId, { lastPlayedAt: new Date().toISOString() })
+    saveIndex.value.lastSelectedSlotId = slotId
+    saveSaveIndex()
+    saveActiveSlot(true)
+    return true
+  }
+
+  function exitToSaveSelection() {
+    if (activeSlotId.value) saveActiveSlot(true)
+    bootStage.value = 'slot-select'
+    stopTimer()
+  }
+
+  function importSaveData(jsonString, options = {}) {
+    const {
+      silent = false,
+      targetSlotId = activeSlotId.value,
+      createNewSlot = false,
+      slotName = null
+    } = options
+
+    try {
+      const data = JSON.parse(jsonString)
+
+      if (createNewSlot) {
+        const newSlotId = createSaveSlot(slotName || data.slotName || data.name, data)
+        return newSlotId
+      }
+
+      if (!targetSlotId) return false
+
+      const targetMeta = saveSlots.value.find(slot => slot.id === targetSlotId)
+      persistSlotData(
+        targetSlotId,
+        { ...data, slotId: targetSlotId, slotName: targetMeta?.name || slotName || data.slotName },
+        { markPlayed: false, slotName: targetMeta?.name || slotName || data.slotName, updateSelection: false }
+      )
+
+      if (activeSlotId.value === targetSlotId) {
+        applySaveData(
+          {
+            ...data,
+            slotId: targetSlotId,
+            slotName: targetMeta?.name || slotName || data.slotName
+          },
+          silent
+        )
+      }
+
+      return targetSlotId
+    } catch (error) {
+      console.error(error)
+      if (!silent) alert('存档损坏')
+      return false
+    }
+  }
+
+  function importSaveAsNewSlot(jsonString, slotName = null) {
+    return importSaveData(jsonString, { createNewSlot: true, slotName })
+  }
+
+  function migrateLegacySingleSaveIfNeeded() {
+    loadSaveIndex()
+    if (saveSlots.value.length > 0) return
+
+    const legacyRaw = localStorage.getItem(LEGACY_SAVE_KEY)
+    if (!legacyRaw) return
+
+    try {
+      const legacyData = JSON.parse(legacyRaw)
+      createSaveSlot('主档案', {
+        ...legacyData,
+        activeView: legacyData.activeView || (legacyData.activeProjectId ? 'dashboard' : 'forest')
+      })
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  function initSaveSystem() {
+    migrateLegacySingleSaveIfNeeded()
+    loadSaveIndex()
+    if (!activeSlotId.value) resetGameState()
+    bootStage.value = 'slot-select'
+  }
+
+  watch(
+    [coins, globalXP, unlockedTreeIds, themes, projects, notebook, activeView, activeProjectId, runningProjectId, activeTreeId, isRunning, timer, isNightMode],
+    () => { saveToLocalStorage() },
+    { deep: true }
+  )
 
   function getTreeIcon(id) { const t = TREE_TYPES.find(tree => tree.id === id); return t ? t.icon : '❓' }
-  function downloadSaveFile() { 
-    const data = getSaveData(); const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
-    const url = URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = `minerva_save_${new Date().toISOString().slice(0,10)}.json`
+  function downloadSaveFile(slotId = activeSlotId.value) { 
+    if (!slotId) return
+
+    const data =
+      slotId === activeSlotId.value
+        ? getSaveData()
+        : JSON.parse(localStorage.getItem(getSlotStorageKey(slotId)) || 'null')
+    if (!data) return
+
+    const slotName =
+      saveSlots.value.find(slot => slot.id === slotId)?.name || data.slotName || 'save'
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `minerva_${slotName}_${new Date().toISOString().slice(0,10)}.json`
     document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url)
   }
   function selectProject(id) { activeProjectId.value = id; activeView.value = 'dashboard' }
@@ -737,12 +1124,15 @@ export const useGameStore = defineStore('game', () => {
   function cheatAddCoins() { coins.value += 1000; globalXP.value += 1000 }
 
   return { 
+    bootStage, saveIndex, saveSlots, activeSlotId, activeSlotMeta,
     themes, projects, globalXP, globalLevel, globalLevelProgress, coins, unlockedTreeIds, activeView, notebook,
     activeProjectId, activeProject, runningProjectId, runningProject, activeThemeId,
     activeTreeId, activeTree, timer, maxTime, isRunning, progressPercentage, 
     isNightMode, TREE_TYPES, inventoryTrees,
     user, offlineEarnings, MAX_PLANTING_TIME, 
     
+    initSaveSystem, createSaveSlot, renameSaveSlot, deleteSaveSlot, enterSlot, exitToSaveSelection,
+    saveActiveSlot, importSaveAsNewSlot,
     createTheme, renameTheme, deleteTheme, submitHarvest,
     getTreeYield, buyTree, createProject, selectProject, 
     openMap, openShop, openForest, openNotebook, uploadNote, openThemeForest,

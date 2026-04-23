@@ -352,7 +352,7 @@
                       {{ note.source === 'system' ? 'System Log' : 'Planting Log' }}
                     </span>
                     <span
-                      v-if="note.eventType === 'project_merge'"
+                      v-if="systemEventLabel(note.eventType)"
                       class="text-[11px] px-2 py-1 rounded-full border font-bold uppercase tracking-wide"
                       :class="
                         store.isNightMode
@@ -360,7 +360,7 @@
                           : 'text-amber-700 border-amber-200 bg-amber-50'
                       "
                     >
-                      Project Merge
+                      {{ systemEventLabel(note.eventType) }}
                     </span>
                   </div>
                   <h3
@@ -492,7 +492,7 @@
                     System Log
                   </span>
                   <span
-                    v-if="note.eventType === 'project_merge'"
+                    v-if="systemEventLabel(note.eventType)"
                     class="text-[11px] px-2 py-1 rounded-full border font-bold uppercase tracking-wide"
                     :class="
                       store.isNightMode
@@ -500,7 +500,7 @@
                         : 'text-amber-700 border-amber-200 bg-amber-50'
                     "
                   >
-                    Project Merge
+                    {{ systemEventLabel(note.eventType) }}
                   </span>
                 </div>
                 <h3
@@ -753,6 +753,12 @@ const getProjectNames = ids => {
       return project ? project.name : '未知项目'
     })
     .join(', ')
+}
+
+const systemEventLabel = eventType => {
+  if (eventType === 'project_merge') return 'Project Merge'
+  if (eventType === 'project_delete') return 'Project Delete'
+  return ''
 }
 
 const themeButtonClass = themeId => {
