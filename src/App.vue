@@ -22,7 +22,7 @@
 
     <main 
       class="flex-1 flex flex-col relative transition-all duration-500 ease-in-out bg-no-repeat bg-bottom overflow-hidden"
-      :class="store.isNightMode ? 'bg-[#0f172a]' : 'bg-[#e0f2fe]'" 
+      :class="mainShellClass" 
       :style="backgroundStyle"
       style="padding-top: var(--sat); padding-bottom: var(--sab);" 
     >
@@ -242,13 +242,15 @@
                     <img :src="store.offlineEarnings.tree.icon" class="w-10 h-10 object-contain pixel-art shadow-sm">
                     <div class="text-left">
                        <div class="font-bold text-sm">{{ store.offlineEarnings.tree.name }}</div>
-                       <div class="text-xs text-green-500 font-bold">+ {{ store.offlineEarnings.completedCycles }} 棵</div>
+                       <div class="text-xs text-green-500 font-bold">
+                         计时推进到 {{ formatDuration(store.offlineEarnings.newTimer) }}
+                       </div>
                     </div>
                  </div>
                  <div class="text-right">
-                    <div class="text-xs opacity-60">获得经验</div>
+                    <div class="text-xs opacity-60">当前状态</div>
                     <div class="font-bold text-blue-500">
-                      +{{ store.offlineEarnings.completedCycles * store.offlineEarnings.tree.xp }} XP
+                      {{ store.offlineEarnings.newTimer >= store.MAX_PLANTING_TIME ? '已到上限' : '继续挂机中' }}
                     </div>
                  </div>
               </div>
@@ -263,7 +265,7 @@
                 </button>
                 <button @click="store.claimOfflineEarnings()" 
                         class="py-3 rounded-xl bg-green-600 text-white font-bold text-xs shadow-lg hover:bg-green-500 hover:scale-105 transition-all">
-                   ✅ 收下成果
+                   ✅ 继续计时
                 </button>
               </div>
           </div>
@@ -293,6 +295,7 @@ const showUtilityMenu = ref(false)
 const showLoginForm = ref(false)
 const email = ref('')
 const password = ref('')
+const SYSTEM_VIEWS = new Set(['shop', 'map', 'notebook'])
 
 // 初始化认证
 onMounted(() => {
@@ -305,7 +308,33 @@ onUnmounted(() => {
   document.removeEventListener('click', handleDocumentClick)
 })
 
+const isSystemView = computed(() => SYSTEM_VIEWS.has(store.activeView))
+
+const mainShellClass = computed(() => {
+  if (isSystemView.value) {
+    return store.isNightMode ? 'bg-[#0d1210] text-gray-100' : 'bg-[#eef3ea] text-gray-900'
+  }
+
+  return store.isNightMode ? 'bg-[#0f172a] text-gray-200' : 'bg-[#e0f2fe] text-gray-900'
+})
+
 const backgroundStyle = computed(() => {
+  if (isSystemView.value) {
+    return store.isNightMode
+      ? {
+          backgroundImage:
+            'linear-gradient(135deg, rgba(7, 12, 10, 0.96) 0%, rgba(14, 22, 18, 0.92) 52%, rgba(20, 29, 24, 0.94) 100%), radial-gradient(circle at top left, rgba(109, 151, 115, 0.14), transparent 24%), radial-gradient(circle at bottom right, rgba(216, 180, 108, 0.12), transparent 22%), repeating-linear-gradient(90deg, rgba(255,255,255,0.03) 0, rgba(255,255,255,0.03) 1px, transparent 1px, transparent 120px)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }
+      : {
+          backgroundImage:
+            'linear-gradient(135deg, rgba(244, 247, 241, 0.98) 0%, rgba(232, 238, 228, 0.96) 55%, rgba(224, 232, 221, 0.94) 100%), radial-gradient(circle at top left, rgba(128, 163, 132, 0.18), transparent 26%), radial-gradient(circle at bottom right, rgba(191, 158, 99, 0.16), transparent 22%), repeating-linear-gradient(90deg, rgba(48, 74, 58, 0.05) 0, rgba(48, 74, 58, 0.05) 1px, transparent 1px, transparent 120px)',
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        }
+  }
+
   if (store.activeView === 'forest') {
     return store.isNightMode
       ? {

@@ -1,167 +1,370 @@
 <template>
   <div class="flex flex-col h-full overflow-hidden">
-    
-    <div class="shrink-0 p-6 pb-2">
-      <div 
-        class="flex items-center justify-between p-6 rounded-2xl shadow-lg border backdrop-blur-md transition-all duration-300"
-        :class="store.isNightMode 
-          ? 'bg-gray-800/80 border-gray-700' 
-          : 'bg-white/70 border-white/60 shadow-lg ring-1 ring-black/5'"
+    <div class="shrink-0 p-6 pb-3">
+      <section
+        class="rounded-[2rem] border p-6 shadow-2xl backdrop-blur-md transition-colors"
+        :class="
+          store.isNightMode
+            ? 'border-[#355140] bg-[#101915]/90 text-white'
+            : 'border-[#cfd9cc] bg-[#f7fbf4]/90 text-gray-800'
+        "
       >
-        <div>
-          <h2 
-            class="text-3xl font-bold transition-colors duration-300 flex items-center gap-3"
-            :class="store.isNightMode ? 'text-white' : 'text-gray-800'"
-          >
-            <span>🏪</span> 商店
-          </h2>
-          <p 
-            class="text-sm mt-1 transition-colors duration-300"
-            :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'"
-          >
-            消耗金币购买稀有树种
-          </p>
-        </div>
+        <div class="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
+          <div class="max-w-3xl">
+            <div
+              class="text-xs uppercase tracking-[0.28em] font-bold"
+              :class="store.isNightMode ? 'text-emerald-200/60' : 'text-[#6f826d]'"
+            >
+              Ranger Supply
+            </div>
+            <h2 class="mt-3 text-3xl font-black tracking-wide">巡林补给商店</h2>
+            <p
+              class="mt-3 text-sm leading-7"
+              :class="store.isNightMode ? 'text-gray-300' : 'text-[#5e6d5c]'"
+            >
+              选择树种，扩充你的森林。
+            </p>
+          </div>
 
-        <div 
-          class="px-5 py-2 rounded-full font-mono font-bold text-lg shadow-inner border transition-colors duration-300"
-          :class="store.isNightMode 
-            ? 'bg-black/40 text-yellow-400 border-gray-600' 
-            : 'bg-yellow-50 text-yellow-600 border-yellow-200'"
-        >
-          🪙 {{ Math.floor(store.coins) }}
+          <div class="grid gap-3 sm:grid-cols-2 xl:min-w-[21rem]">
+            <div
+              class="rounded-2xl border px-4 py-4"
+              :class="
+                store.isNightMode
+                  ? 'border-white/10 bg-black/25'
+                  : 'border-white/70 bg-white/70'
+              "
+            >
+              <div
+                class="text-[11px] uppercase tracking-[0.22em] font-bold"
+                :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
+              >
+                Current Funds
+              </div>
+              <div class="mt-2 text-3xl font-black text-yellow-500">
+                🪙 {{ Math.floor(store.coins) }}
+              </div>
+            </div>
+
+            <div
+              class="rounded-2xl border px-4 py-4"
+              :class="
+                store.isNightMode
+                  ? 'border-white/10 bg-black/25'
+                  : 'border-white/70 bg-white/70'
+              "
+            >
+              <div
+                class="text-[11px] uppercase tracking-[0.22em] font-bold"
+                :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
+              >
+                Collected
+              </div>
+              <div class="mt-2 text-3xl font-black">
+                {{ store.inventoryTrees.length }}
+              </div>
+              <div
+                class="mt-1 text-xs"
+                :class="store.isNightMode ? 'text-gray-400' : 'text-[#657463]'"
+              >
+                已收录树种
+              </div>
+            </div>
+          </div>
         </div>
+      </section>
+    </div>
+
+    <div class="shrink-0 px-6 pb-3">
+      <div class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
+        <button
+          v-for="category in categories"
+          :key="category.id"
+          @click="selectedCategoryId = category.id"
+          class="shrink-0 rounded-full border px-4 py-2 text-sm font-bold transition-all"
+          :class="categoryTabClass(category.id)"
+        >
+          {{ category.name }}
+          <span class="ml-2 opacity-70">{{ category.items.length }}</span>
+        </button>
       </div>
     </div>
 
-    <div class="flex-1 overflow-y-auto p-6 pt-2 custom-scrollbar">
-      
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 pb-24">
-        <div
-          v-for="tree in store.TREE_TYPES"
-          :key="tree.id"
-          class="relative p-5 rounded-2xl shadow-lg border backdrop-blur-md transition-all duration-300 hover:scale-[1.02] group"
-          :class="store.isNightMode 
-            ? 'bg-gray-800/50 border-gray-600 text-gray-100 hover:bg-gray-800/60' 
-            : 'bg-white/60 border-white/50 text-gray-800 hover:bg-white/70 hover:shadow-xl'"
-        >
-          <div class="flex items-start justify-between mb-4">
-            <div>
-              <h3 class="text-xl font-bold">{{ tree.name }}</h3>
-              <p 
-                class="text-xs mt-1 transition-colors"
-                :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'"
-              >
-                {{ tree.desc }}
-              </p>
-            </div>
-            <img 
-              :src="tree.icon" 
-              class="w-16 h-16 object-contain pixel-art group-hover:scale-110 transition-transform duration-300 filter drop-shadow-md"
-              alt="tree icon"
-            />
-          </div>
-
-          <div class="grid grid-cols-2 gap-2 mb-4 text-xs font-bold">
-               <div class="px-2 py-1.5 rounded-lg flex items-center justify-center gap-1 transition-colors"
-                    :class="store.isNightMode ? 'bg-blue-900/40 text-blue-300' : 'bg-blue-50 text-blue-600'">
-                  <span>⚡</span> {{ tree.xp }} XP
-               </div>
-               <div class="px-2 py-1.5 rounded-lg flex items-center justify-center gap-1 transition-colors"
-                    :class="store.isNightMode ? 'bg-purple-900/40 text-purple-300' : 'bg-purple-50 text-purple-600'">
-                  <span>⏳</span> {{ (tree.time / 60).toFixed(0) }}m
-               </div>
-          </div>
-
-          <div class="mb-5 flex items-center justify-between text-sm">
-            <div class="font-bold flex items-center" 
-                 :class="store.isNightMode ? 'text-yellow-400' : 'text-yellow-600'">
-               🪙 {{ tree.price }}
-            </div>
-            <div 
-              class="text-xs font-bold px-2 py-0.5 rounded border"
-              :class="[
-                store.globalLevel >= tree.levelReq 
-                  ? (store.isNightMode ? 'border-green-500/30 text-green-400 bg-green-500/10' : 'border-green-200 text-green-600 bg-green-50')
-                  : (store.isNightMode ? 'border-red-500/30 text-red-400 bg-red-500/10' : 'border-red-200 text-red-500 bg-red-50')
-              ]"
-            >
-              Lv.{{ tree.levelReq }} 解锁
-            </div>
-          </div>
-
-          <button
-            @click="store.buyTree(tree)"
-            :disabled="isOwned(tree.id) || store.coins < tree.price || store.globalLevel < tree.levelReq"
-            class="w-full py-3 rounded-xl font-bold text-sm transition-all duration-200 shadow-md flex items-center justify-center gap-2"
-            :class="getBtnClass(tree)"
-          >
-            <span v-if="isOwned(tree.id)">✅ 已拥有</span>
-            <span v-else-if="store.globalLevel < tree.levelReq">🔒 等级不足</span>
-            <span v-else-if="store.coins < tree.price">💰 金币不足</span>
-            <span v-else>🛒 立即购买</span>
-          </button>
-        </div>
-      </div>
-      
-      <div 
-        class="text-center text-xs pb-8 opacity-60 transition-colors"
-        :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
+    <div class="flex-1 overflow-y-auto px-6 pb-24 custom-scrollbar">
+      <section
+        v-if="selectedCategory"
+        class="rounded-[2rem] border shadow-2xl overflow-hidden"
+        :class="
+          store.isNightMode
+            ? 'border-[#355140] bg-[#111915]/90'
+            : 'border-[#d5ddd1] bg-[#f8fbf5]/90'
+        "
       >
-        — 更多稀有物种正在研究中 —
-      </div>
+        <div
+          class="border-b px-6 py-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between"
+          :class="
+            store.isNightMode
+              ? 'border-white/10 bg-black/20'
+              : 'border-[#dee6db] bg-white/55'
+          "
+        >
+          <div>
+            <div
+              class="text-[11px] uppercase tracking-[0.24em] font-bold"
+              :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
+            >
+              {{ selectedCategory.eyebrow }}
+            </div>
+            <h3 class="mt-2 text-2xl font-black">{{ selectedCategory.name }}</h3>
+            <p
+              class="mt-2 text-sm"
+              :class="store.isNightMode ? 'text-gray-300' : 'text-[#60705f]'"
+            >
+              {{ selectedCategory.desc }}
+            </p>
+          </div>
+
+          <span
+            class="rounded-full border px-3 py-1.5 text-xs font-bold"
+            :class="
+              store.isNightMode
+                ? 'border-white/10 bg-black/25 text-emerald-200'
+                : 'border-white/70 bg-white/80 text-[#4f6650]'
+            "
+          >
+            {{ selectedCategory.items.length }} 件在售
+          </span>
+        </div>
+
+        <div class="grid gap-5 p-6 md:grid-cols-2 2xl:grid-cols-3">
+          <article
+            v-for="item in selectedCategory.items"
+            :key="item.id"
+            class="rounded-[1.75rem] border p-5 transition-all duration-300 hover:-translate-y-1"
+            :class="cardClass(item)"
+          >
+            <div class="flex items-start justify-between gap-4">
+              <div class="min-w-0">
+                <span
+                  class="rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide"
+                  :class="badgeClass(item)"
+                >
+                  {{ item.badge }}
+                </span>
+                <h4 class="mt-3 text-xl font-black">{{ item.name }}</h4>
+                <p
+                  class="mt-2 text-sm leading-6"
+                  :class="store.isNightMode ? 'text-gray-300' : 'text-[#5e6d5c]'"
+                >
+                  {{ item.desc }}
+                </p>
+              </div>
+
+              <div
+                class="w-16 h-16 shrink-0 rounded-2xl border flex items-center justify-center overflow-hidden"
+                :class="
+                  store.isNightMode
+                    ? 'border-white/10 bg-black/25'
+                    : 'border-white/70 bg-white/80'
+                "
+              >
+                <img
+                  v-if="item.icon"
+                  :src="item.icon"
+                  class="w-12 h-12 object-contain pixel-art"
+                  alt="shop item"
+                />
+                <span v-else class="text-3xl">{{ item.iconEmoji || '🧺' }}</span>
+              </div>
+            </div>
+
+            <div class="mt-5 grid grid-cols-2 gap-2">
+              <div
+                v-for="meta in item.meta"
+                :key="`${item.id}-${meta.label}`"
+                class="rounded-2xl border px-3 py-3"
+                :class="
+                  store.isNightMode
+                    ? 'border-white/10 bg-black/20'
+                    : 'border-[#dbe3d7] bg-white/70'
+                "
+              >
+                <div
+                  class="text-[11px] uppercase tracking-[0.2em] font-bold"
+                  :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
+                >
+                  {{ meta.label }}
+                </div>
+                <div class="mt-1 text-sm font-bold">{{ meta.value }}</div>
+              </div>
+            </div>
+
+            <div class="mt-5 flex items-center justify-between gap-3">
+              <div>
+                <div
+                  class="text-[11px] uppercase tracking-[0.2em] font-bold"
+                  :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
+                >
+                  Price
+                </div>
+                <div class="mt-1 text-lg font-black text-yellow-500">
+                  🪙 {{ item.price }}
+                </div>
+              </div>
+
+              <div
+                class="rounded-full border px-3 py-1.5 text-xs font-bold"
+                :class="
+                  store.globalLevel >= item.levelReq
+                    ? store.isNightMode
+                      ? 'border-emerald-800 bg-emerald-900/20 text-emerald-300'
+                      : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+                    : store.isNightMode
+                      ? 'border-red-900 bg-red-900/20 text-red-300'
+                      : 'border-red-200 bg-red-50 text-red-600'
+                "
+              >
+                Lv.{{ item.levelReq }}
+              </div>
+            </div>
+
+            <button
+              @click="store.purchaseShopItem(item)"
+              :disabled="!store.canPurchaseShopItem(item)"
+              class="mt-5 w-full rounded-2xl px-4 py-3 text-sm font-bold transition-all"
+              :class="buttonClass(item)"
+            >
+              {{ buttonLabel(item) }}
+            </button>
+          </article>
+        </div>
+      </section>
+
+      <section
+        v-else
+        class="rounded-[2rem] border px-6 py-16 text-center shadow-2xl"
+        :class="
+          store.isNightMode
+            ? 'border-[#355140] bg-[#111915]/90 text-gray-300'
+            : 'border-[#d5ddd1] bg-[#f8fbf5]/90 text-[#60705f]'
+        "
+      >
+        当前没有可购买内容。
+      </section>
     </div>
   </div>
 </template>
 
 <script setup>
+import { computed, ref, watch } from 'vue'
 import { useGameStore } from '../stores/gameStore'
 
 const store = useGameStore()
+const selectedCategoryId = ref(null)
 
-// 判断是否拥有
-const isOwned = (treeId) => {
-  return store.unlockedTreeIds.includes(treeId)
+const categories = computed(() => store.shopCatalog)
+
+watch(
+  categories,
+  nextCategories => {
+    if (!nextCategories.length) {
+      selectedCategoryId.value = null
+      return
+    }
+
+    if (!nextCategories.some(category => category.id === selectedCategoryId.value)) {
+      selectedCategoryId.value = nextCategories[0].id
+    }
+  },
+  { immediate: true }
+)
+
+const selectedCategory = computed(
+  () => categories.value.find(category => category.id === selectedCategoryId.value) || null
+)
+
+const categoryTabClass = categoryId => {
+  if (selectedCategoryId.value === categoryId) {
+    return store.isNightMode
+      ? 'border-emerald-700 bg-emerald-900/30 text-white shadow-[0_0_30px_rgba(16,185,129,0.08)]'
+      : 'border-emerald-300 bg-emerald-50 text-gray-800 shadow-[0_10px_24px_rgba(16,185,129,0.08)]'
+  }
+
+  return store.isNightMode
+    ? 'border-white/10 bg-black/20 text-gray-300 hover:bg-black/30'
+    : 'border-white/70 bg-white/70 text-gray-700 hover:bg-white'
 }
 
-// 动态按钮样式
-const getBtnClass = (tree) => {
-  // 1. 已拥有
-  if (isOwned(tree.id)) {
-    return store.isNightMode 
-      ? 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed'
-      : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
-  }
-  
-  // 2. 等级不足
-  if (store.globalLevel < tree.levelReq) {
-    return 'bg-red-500/10 text-red-500 border border-red-500/20 cursor-not-allowed'
-  }
-  
-  // 3. 金币不足
-  if (store.coins < tree.price) {
+const badgeClass = item => {
+  if (item.availability === 'preview') {
     return store.isNightMode
-      ? 'bg-gray-800 text-gray-500 border border-gray-700 cursor-not-allowed'
-      : 'bg-gray-100 text-gray-400 border border-gray-200 cursor-not-allowed'
+      ? 'border-amber-800 bg-amber-900/20 text-amber-300'
+      : 'border-amber-200 bg-amber-50 text-amber-700'
   }
-  
-  // 4. 可购买 (高亮)
-  return 'bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-500 hover:to-emerald-500 hover:shadow-lg active:scale-95 shadow-green-900/20'
+
+  return store.isNightMode
+    ? 'border-emerald-800 bg-emerald-900/20 text-emerald-300'
+    : 'border-emerald-200 bg-emerald-50 text-emerald-700'
+}
+
+const cardClass = item => {
+  if (item.availability === 'preview') {
+    return store.isNightMode
+      ? 'border-[#4d4122] bg-[#1b1710] text-white'
+      : 'border-[#e8d8b0] bg-[#fff9ec] text-gray-800'
+  }
+
+  return store.isNightMode
+    ? 'border-white/10 bg-[#141c18] text-white hover:border-emerald-800'
+    : 'border-white/80 bg-white/85 text-gray-800 hover:border-emerald-200'
+}
+
+const buttonLabel = item => {
+  if (store.ownsShopItem(item)) return '已收录'
+  if (item.availability === 'preview') return '暂未开放'
+  if (store.globalLevel < item.levelReq) return '等级不足'
+  if (store.coins < item.price) return '金币不足'
+  return item.type === 'tree' ? '购买树种' : '购买'
+}
+
+const buttonClass = item => {
+  if (store.ownsShopItem(item)) {
+    return store.isNightMode
+      ? 'border border-white/10 bg-black/25 text-gray-500 cursor-not-allowed'
+      : 'border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+  }
+
+  if (item.availability === 'preview') {
+    return store.isNightMode
+      ? 'border border-amber-900 bg-amber-900/15 text-amber-300 cursor-not-allowed'
+      : 'border border-amber-200 bg-amber-50 text-amber-700 cursor-not-allowed'
+  }
+
+  if (store.globalLevel < item.levelReq || store.coins < item.price) {
+    return store.isNightMode
+      ? 'border border-white/10 bg-black/25 text-gray-500 cursor-not-allowed'
+      : 'border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
+  }
+
+  return 'bg-gradient-to-r from-emerald-700 to-lime-700 text-white hover:from-emerald-600 hover:to-lime-600 shadow-[0_18px_40px_rgba(20,83,45,0.25)] active:scale-[0.99]'
 }
 </script>
 
 <style scoped>
-/* 滚动条样式适配 (与 ForestView 保持一致) */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
+  height: 6px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background-color: rgba(156, 163, 175, 0.3);
   border-radius: 20px;
 }
+
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
   background-color: rgba(156, 163, 175, 0.5);
 }

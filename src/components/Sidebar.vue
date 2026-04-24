@@ -26,34 +26,38 @@
       </div>
     </div>
 
-    <div class="p-2 border-b shrink-0 transition-colors"
+    <div class="p-3 border-b shrink-0 transition-colors"
          :class="store.isNightMode ? 'border-white/10 bg-black/20' : 'border-gray-200/50 bg-white/40'">
-       <button
-         @click="systemAppsExpanded = !systemAppsExpanded"
-         class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-[0.18em] transition-colors"
-         :class="store.isNightMode ? 'text-gray-400 hover:bg-white/5 hover:text-white' : 'text-gray-500 hover:bg-black/5 hover:text-gray-800'"
-       >
-         <span>系统应用</span>
-         <span class="transition-transform" :class="systemAppsExpanded ? 'rotate-90' : ''">▶</span>
-       </button>
+       <div class="rounded-2xl border p-2.5 transition-colors"
+            :class="store.isNightMode ? 'border-emerald-900/40 bg-[#0d1511]' : 'border-emerald-200/80 bg-[#f3f8f1]'">
+         <button
+           @click="systemAppsExpanded = !systemAppsExpanded"
+           class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-[0.18em] transition-colors"
+           :class="store.isNightMode ? 'text-emerald-200 hover:bg-white/5' : 'text-[#496148] hover:bg-black/5'"
+         >
+           <div class="text-left">
+             <span>系统应用</span>
+           </div>
+           <span class="transition-transform" :class="systemAppsExpanded ? 'rotate-90' : ''">▶</span>
+         </button>
 
-       <div v-show="systemAppsExpanded" class="mt-2 space-y-1">
-         <button @click="store.openShop()" :class="navBtnClass('shop', 'text-yellow-500', 'bg-yellow-700', 'text-yellow-700', 'bg-yellow-100')">
-           <span class="text-xl">🏪</span><span>商店</span>
-         </button>
-         <button @click="store.openMap()" :class="navBtnClass('map', 'text-amber-500', 'bg-amber-900', 'text-amber-700', 'bg-amber-100')">
-           <span class="text-xl">🗺️</span><span>密涅瓦</span>
-         </button>
-         <button @click="store.openNotebook()" :class="navBtnClass('notebook', 'text-blue-500', 'bg-blue-800', 'text-blue-700', 'bg-blue-100')">
-           <span class="text-xl">📝</span><span>巡林官手记</span>
-         </button>
+         <div v-show="systemAppsExpanded" class="mt-2 space-y-1">
+           <button @click="store.openShop()" :class="navBtnClass('shop', 'text-yellow-500', 'bg-yellow-700', 'text-yellow-700', 'bg-yellow-100')">
+             <span class="text-xl">🏪</span><span>商店</span>
+           </button>
+           <button @click="store.openMap()" :class="navBtnClass('map', 'text-amber-500', 'bg-amber-900', 'text-amber-700', 'bg-amber-100')">
+             <span class="text-xl">🗺️</span><span>密涅瓦</span>
+           </button>
+           <button @click="store.openNotebook()" :class="navBtnClass('notebook', 'text-blue-500', 'bg-blue-800', 'text-blue-700', 'bg-blue-100')">
+             <span class="text-xl">📝</span><span>巡林官手记</span>
+           </button>
+         </div>
        </div>
     </div>
 
     <div class="px-4 py-2 text-xs font-bold uppercase tracking-widest mt-2 flex justify-between items-center"
-         :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
-      <span>Your Territories</span>
-      <span class="text-[10px]" :class="store.isNightMode ? 'text-gray-600' : 'text-gray-400/80'">Drag to categorize</span>
+         :class="store.isNightMode ? 'text-green-200/60' : 'text-[#6d7d58]'">
+      <span>Your Forest</span>
     </div>
     
     <div class="flex-1 overflow-y-auto p-2 custom-scrollbar overflow-x-visible">
@@ -88,14 +92,14 @@
             <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                <button v-if="group.id && editingThemeId !== group.id" @click.stop="startRenameTheme(group)" class="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded" title="Rename Theme">✏️</button>
                <button v-if="group.id" @click.stop="handleDeleteTheme(group)" class="p-1 hover:bg-red-500/20 text-red-500 rounded" title="Delete Theme">🗑️</button>
-               <span v-if="!group.id" class="text-[10px]">Drop Here</span>
+               <span v-if="!group.id" class="text-[10px]">未分类</span>
             </div>
          </div>
 
          <div v-show="expandedThemes.has(group.id)" class="mt-1 space-y-1">
             <div v-if="group.projects.length === 0" class="text-center text-[10px] py-2 opacity-50" 
                  :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
-                (空领域)
+                暂无项目
             </div>
 
             <div v-for="project in group.projects" :key="project.id"
@@ -199,15 +203,15 @@
       
       <div v-if="createMode !== null" class="flex flex-col gap-2">
          <div class="text-xs font-bold mb-1 uppercase tracking-widest" :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">
-            New {{ createMode === 'theme' ? 'Theme' : 'Project' }}
+            {{ createMode === 'theme' ? '新建主题' : '新建项目' }}
          </div>
-         <input v-model="newItemName" @keyup.enter="confirmCreate" ref="inputRef" type="text" :placeholder="createMode === 'theme' ? 'Theme Name...' : 'Project Name...'" 
+         <input v-model="newItemName" @keyup.enter="confirmCreate" ref="inputRef" type="text" :placeholder="createMode === 'theme' ? '输入主题名称' : '输入项目名称'" 
             class="w-full text-sm px-3 py-2 rounded border focus:border-green-500 outline-none transition-colors" 
             :class="store.isNightMode ? 'bg-gray-800 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300 shadow-inner'"/>
          <div class="flex gap-2">
-            <button @click="confirmCreate" class="flex-1 bg-green-700 hover:bg-green-600 text-white text-xs py-1.5 rounded font-bold">OK</button>
+            <button @click="confirmCreate" class="flex-1 bg-green-700 hover:bg-green-600 text-white text-xs py-1.5 rounded font-bold">确认</button>
             <button @click="createMode = null" class="flex-1 text-white text-xs py-1.5 rounded transition-colors"
-                    :class="store.isNightMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-400 hover:bg-gray-500'">Cancel</button>
+                    :class="store.isNightMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-400 hover:bg-gray-500'">取消</button>
          </div>
       </div>
       
@@ -215,12 +219,12 @@
           <button @click="startCreating('project')" 
                   class="flex-1 flex items-center justify-center gap-1 py-2 rounded transition-colors text-xs font-bold border border-dashed"
                   :class="store.isNightMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-200 border-transparent' : 'bg-white/50 hover:bg-white text-gray-500 border-gray-300'">
-            + Project
+            + 项目
           </button>
           <button @click="startCreating('theme')" 
                   class="flex-1 flex items-center justify-center gap-1 py-2 rounded transition-colors text-xs font-bold border border-dashed"
                   :class="store.isNightMode ? 'bg-[#333] hover:bg-[#444] text-blue-400 border-transparent' : 'bg-blue-50/50 hover:bg-blue-50 text-blue-600 border-blue-200'">
-            + Theme
+            + 主题
           </button>
       </div>
 
@@ -385,7 +389,7 @@ const groupedProjects = computed(() => {
     if (unclassified.length > 0 || groups.length === 0) {
         groups.unshift({
             id: null,
-            name: '未分类 (Uncategorized)',
+            name: '未分类',
             projects: unclassified
         })
     }
@@ -585,7 +589,7 @@ const confirmRenameTheme = () => {
 const cancelRenameTheme = () => { editingThemeId.value = null; editThemeName.value = '' }
 
 const handleDeleteTheme = (theme) => {
-    if (confirm(`确定要删除领域 "${theme.name}" 吗？\n其下的项目将会被退回至"未分类"中。`)) store.deleteTheme(theme.id)
+    if (confirm(`确定要删除主题 "${theme.name}" 吗？\n其下的项目将会被移回“未分类”。`)) store.deleteTheme(theme.id)
 }
 
 // === 样式辅助 ===

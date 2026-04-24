@@ -22,10 +22,100 @@ export const useGameStore = defineStore('game', () => {
     { id: 't4', name: '魔法树', time: 25 * 60, xp: 1500, price: 10000, levelReq: 30, icon: magicTreeImg, desc: '传说中的魔法植物' },
     { id: 't5', name: '金钱树', time: 25 * 60, xp: 3000, price: 50000, levelReq: 50, icon: goldTreeImg, desc: '能收获金钱吗？' },
   ]
+  const SHOP_CATEGORIES = [
+    {
+      id: 'trees',
+      name: '树种',
+      eyebrow: 'Trees',
+      desc: '选择适合当前阶段的树种。'
+    },
+    {
+      id: 'boosts',
+      name: '技能',
+      eyebrow: 'Skills',
+      desc: '提升效率的辅助道具。'
+    },
+    {
+      id: 'backgrounds',
+      name: '造景',
+      eyebrow: 'Scenes',
+      desc: '用于项目空间的外观装饰。'
+    }
+  ]
+  const PREVIEW_SKILL_ITEMS = [
+    {
+      id: 'boost_double_coins',
+      type: 'boost',
+      categoryId: 'boosts',
+      name: '双倍金币手册',
+      desc: '提升日志收益的辅助道具。',
+      price: 1200,
+      levelReq: 8,
+      availability: 'preview',
+      iconEmoji: '📘',
+      badge: '暂未开放',
+      meta: [
+        { label: '效果', value: '日志金币 x2' },
+        { label: '持续', value: '单次任务周期' }
+      ]
+    },
+    {
+      id: 'boost_focus_lens',
+      type: 'boost',
+      categoryId: 'boosts',
+      name: '专注透镜',
+      desc: '缩短种植周期的效率道具。',
+      price: 2400,
+      levelReq: 16,
+      availability: 'preview',
+      iconEmoji: '🔍',
+      badge: '暂未开放',
+      meta: [
+        { label: '效果', value: '成长时间 -20%' },
+        { label: '定位', value: '效率型技能书' }
+      ]
+    }
+  ]
+  const PREVIEW_BACKGROUND_ITEMS = [
+    {
+      id: 'background_archive_room',
+      type: 'background',
+      categoryId: 'backgrounds',
+      name: '档案室温室',
+      desc: '适用于单个项目的温室造景。',
+      price: 1800,
+      levelReq: 10,
+      availability: 'preview',
+      iconEmoji: '🪟',
+      badge: '暂未开放',
+      meta: [
+        { label: '作用域', value: '单个项目' },
+        { label: '气质', value: '记录室 / 温室' }
+      ]
+    },
+    {
+      id: 'background_watchtower',
+      type: 'background',
+      categoryId: 'backgrounds',
+      name: '巡林瞭望台',
+      desc: '适用于单个项目的瞭望台造景。',
+      price: 4200,
+      levelReq: 20,
+      availability: 'preview',
+      iconEmoji: '🗼',
+      badge: '暂未开放',
+      meta: [
+        { label: '作用域', value: '单个项目' },
+        { label: '气质', value: '瞭望台 / 野外值守' }
+      ]
+    }
+  ]
 
   // === 2. 玩家数据 ===
   const coins = ref(0)
   const unlockedTreeIds = ref(['t1'])
+  const ownedBoostIds = ref([])
+  const unlockedBackgroundIds = ref(['background_default'])
   const globalXP = ref(0)
   
   const themes = ref([]) 
@@ -78,10 +168,55 @@ export const useGameStore = defineStore('game', () => {
   })
   
   const inventoryTrees = computed(() => TREE_TYPES.filter(t => unlockedTreeIds.value.includes(t.id)))
+  const shopItems = computed(() => {
+    const treeItems = TREE_TYPES.map(tree => ({
+      id: `tree_${tree.id}`,
+      productId: tree.id,
+      type: 'tree',
+      categoryId: 'trees',
+      name: tree.name,
+      desc: tree.desc,
+      price: tree.price,
+      levelReq: tree.levelReq,
+      availability: 'available',
+      icon: tree.icon,
+      badge: tree.levelReq <= 1 ? '基础树种' : '可购买',
+      meta: [
+        { label: '成长', value: `${(tree.time / 60).toFixed(0)}m` },
+        { label: '收益', value: `${tree.xp} XP` }
+      ]
+    }))
+
+    return [...treeItems, ...PREVIEW_SKILL_ITEMS, ...PREVIEW_BACKGROUND_ITEMS]
+  })
+  const shopCatalog = computed(() =>
+    SHOP_CATEGORIES.map(category => ({
+      ...category,
+      items: shopItems.value.filter(
+        item => item.categoryId === category.id && item.availability === 'available'
+      )
+    })).filter(category => category.items.length > 0)
+  )
   const saveSlots = computed(() => saveIndex.value.slots || [])
   const activeSlotMeta = computed(() =>
     saveSlots.value.find(slot => slot.id === activeSlotId.value) || null
   )
+
+  function ownsShopItem(item) {
+    if (!item) return false
+    if (item.type === 'tree') return unlockedTreeIds.value.includes(item.productId)
+    if (item.type === 'boost') return ownedBoostIds.value.includes(item.id)
+    if (item.type === 'background') return unlockedBackgroundIds.value.includes(item.id)
+    return false
+  }
+
+  function canPurchaseShopItem(item) {
+    if (!item || item.availability !== 'available') return false
+    if (ownsShopItem(item)) return false
+    if (globalLevel.value < (item.levelReq || 1)) return false
+    if (coins.value < (item.price || 0)) return false
+    return true
+  }
 
   function toProjectIds(projectIds) {
     if (Array.isArray(projectIds)) return [...new Set(projectIds.filter(Boolean))]
@@ -141,6 +276,8 @@ export const useGameStore = defineStore('game', () => {
       coins: 0,
       globalXP: 0,
       unlockedTreeIds: ['t1'],
+      ownedBoostIds: [],
+      unlockedBackgroundIds: ['background_default'],
       themes: [],
       projects: [],
       notebook: [],
@@ -277,13 +414,14 @@ export const useGameStore = defineStore('game', () => {
     const createdAt = note.createdAt || note.updatedAt || new Date().toISOString()
     const content = note.content || ''
     const inferredType =
-      note.type || (note.title?.startsWith('[植树日志]') ? 'planting' : 'ranger')
+      note.type || (note.title?.startsWith('[植树日志]') ? 'planting' : 'essay')
+    const normalizedType = inferredType === 'ranger' ? 'essay' : inferredType
     const source = note.source || (inferredType === 'system' ? 'system' : 'user')
 
     return {
       ...note,
       projectIds: toProjectIds(note.projectIds || note.projectId),
-      type: inferredType,
+      type: normalizedType,
       source,
       eventType: note.eventType || null,
       content,
@@ -312,7 +450,7 @@ export const useGameStore = defineStore('game', () => {
     const wordCount = cleanContent.length
 
     if (source === 'user' && wordCount <= 0) {
-      alert('未记录笔记，未能获得金币！')
+      alert(type === 'planting' ? '未记录笔记，未能获得金币！' : '内容不能为空')
       return null
     }
 
@@ -379,11 +517,23 @@ export const useGameStore = defineStore('game', () => {
     })
   }
 
+  function createEssayNote(title, content, projectIds = []) {
+    return createNote({
+      title,
+      content,
+      projectIds,
+      type: 'essay',
+      source: 'user',
+      awardCoins: false
+    })
+  }
+
   function renameNote(noteId, newTitle) {
     const note = notebook.value.find(n => n.id === noteId)
     if (note && note.source !== 'system') {
       note.title = newTitle
       note.updatedAt = new Date().toISOString()
+      note.date = new Date(note.updatedAt).toLocaleString()
     }
   }
 
@@ -410,6 +560,7 @@ export const useGameStore = defineStore('game', () => {
     }
 
     note.updatedAt = new Date().toISOString()
+    note.date = new Date(note.updatedAt).toLocaleString()
     return true
   }
 
@@ -455,27 +606,58 @@ export const useGameStore = defineStore('game', () => {
   let timerInterval = null
   let lastTimestamp = 0
 
-  // 【核心修复】：监听页面可见性变化，对抗浏览器后台休眠
-  document.addEventListener('visibilitychange', () => {
-    // 只有在树木正在生长时才需要补帧
-    if (isRunning.value) {
-      if (document.visibilityState === 'visible') {
-        // 当页面重新变回可见时，强制结算在后台流失的真实物理时间
-        const now = Date.now()
-        const delta = (now - lastTimestamp) / 1000
-        lastTimestamp = now
-
-        if (timer.value < MAX_PLANTING_TIME) {
-          const actualDelta = Math.min(delta, MAX_PLANTING_TIME - timer.value)
-          timer.value += actualDelta
-        }
-      } else if (document.visibilityState === 'hidden') {
-        // 当切到后台前，更新最后时间戳，并强制存一次档
-        lastTimestamp = Date.now()
-        saveToLocalStorage()
-      }
+  function syncRunningTimer(now = Date.now()) {
+    if (!isRunning.value || !activeTree.value) {
+      lastTimestamp = now
+      return 0
     }
-  })
+
+    const delta = Math.max(0, (now - lastTimestamp) / 1000)
+    lastTimestamp = now
+
+    if (timer.value >= MAX_PLANTING_TIME) return 0
+
+    const actualDelta = Math.min(delta, MAX_PLANTING_TIME - timer.value)
+    timer.value += actualDelta
+    return actualDelta
+  }
+
+  function flushRuntimeState() {
+    if (
+      !activeSlotId.value ||
+      bootStage.value !== 'in-game' ||
+      offlineEarnings.value ||
+      isHydrating.value
+    ) {
+      return
+    }
+
+    if (isRunning.value) syncRunningTimer()
+    saveActiveSlot(false)
+  }
+
+  function handleVisibilityChange() {
+    if (!isRunning.value) return
+
+    if (document.visibilityState === 'hidden') {
+      syncRunningTimer()
+      saveToLocalStorage()
+      return
+    }
+
+    if (document.visibilityState === 'visible') {
+      syncRunningTimer()
+    }
+  }
+
+  if (typeof document !== 'undefined') {
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+  }
+
+  if (typeof window !== 'undefined') {
+    window.addEventListener('pagehide', flushRuntimeState)
+    window.addEventListener('beforeunload', flushRuntimeState)
+  }
 
   function gameTick() {
     if (!activeTree.value || !isRunning.value) {
@@ -483,15 +665,8 @@ export const useGameStore = defineStore('game', () => {
       return
     }
 
-    const now = Date.now()
-    const delta = (now - lastTimestamp) / 1000
-    lastTimestamp = now
-
     if (timer.value >= MAX_PLANTING_TIME) return
-
-    const actualDelta = Math.min(delta, MAX_PLANTING_TIME - timer.value)
-
-    timer.value += actualDelta
+    syncRunningTimer()
   }
 
   function startTimer() {
@@ -765,6 +940,8 @@ export const useGameStore = defineStore('game', () => {
       coins: coins.value,
       globalXP: globalXP.value,
       unlockedTreeIds: unlockedTreeIds.value,
+      ownedBoostIds: ownedBoostIds.value,
+      unlockedBackgroundIds: unlockedBackgroundIds.value,
       themes: themes.value, projects: projects.value, notebook: notebook.value,
       activeView: activeView.value,
       activeProjectId: activeProjectId.value, runningProjectId: runningProjectId.value, activeTreeId: activeTreeId.value,
@@ -776,6 +953,8 @@ export const useGameStore = defineStore('game', () => {
     stopTimer()
     coins.value = 0
     unlockedTreeIds.value = ['t1']
+    ownedBoostIds.value = []
+    unlockedBackgroundIds.value = ['background_default']
     globalXP.value = 0
     themes.value = []
     projects.value = []
@@ -799,6 +978,8 @@ export const useGameStore = defineStore('game', () => {
       coins.value = data.coins || 0
       globalXP.value = data.globalXP || 0
       unlockedTreeIds.value = data.unlockedTreeIds || ['t1']
+      ownedBoostIds.value = data.ownedBoostIds || []
+      unlockedBackgroundIds.value = data.unlockedBackgroundIds || ['background_default']
       themes.value = (data.themes || []).map(t => ({
         ...t,
         x: t.x !== undefined ? t.x : Math.floor(Math.random() * 70) + 15,
@@ -868,7 +1049,6 @@ export const useGameStore = defineStore('game', () => {
     timer.value = newTimer 
     
     if (timer.value < MAX_PLANTING_TIME) {
-      isRunning.value = true 
       startTimer()
     } else {
       isRunning.value = false
@@ -1009,7 +1189,7 @@ export const useGameStore = defineStore('game', () => {
     updateSlotMeta(slotId, { lastPlayedAt: new Date().toISOString() })
     saveIndex.value.lastSelectedSlotId = slotId
     saveSaveIndex()
-    saveActiveSlot(true)
+    if (!offlineEarnings.value) saveActiveSlot(true)
     return true
   }
 
@@ -1093,7 +1273,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   watch(
-    [coins, globalXP, unlockedTreeIds, themes, projects, notebook, activeView, activeProjectId, runningProjectId, activeTreeId, isRunning, timer, isNightMode],
+    [coins, globalXP, unlockedTreeIds, ownedBoostIds, unlockedBackgroundIds, themes, projects, notebook, activeView, activeProjectId, runningProjectId, activeTreeId, isRunning, timer, isNightMode],
     () => { saveToLocalStorage() },
     { deep: true }
   )
@@ -1121,24 +1301,45 @@ export const useGameStore = defineStore('game', () => {
   function openShop() { activeView.value = 'shop' }
   function openNotebook() { activeView.value = 'notebook' }
   function buyTree(tree) { if (unlockedTreeIds.value.includes(tree.id)) return; if (coins.value >= tree.price) { coins.value -= tree.price; unlockedTreeIds.value.push(tree.id) } }
+  function purchaseShopItem(item) {
+    if (!item) return false
+    if (item.type === 'tree') {
+      const tree = TREE_TYPES.find(treeItem => treeItem.id === item.productId)
+      if (!tree || !canPurchaseShopItem(item)) return false
+      buyTree(tree)
+      return true
+    }
+
+    if (item.availability !== 'available') {
+      alert('该内容暂未开放。')
+      return false
+    }
+
+    if (!canPurchaseShopItem(item)) return false
+    coins.value -= item.price || 0
+
+    if (item.type === 'boost') ownedBoostIds.value.push(item.id)
+    if (item.type === 'background') unlockedBackgroundIds.value.push(item.id)
+    return true
+  }
   function cheatAddCoins() { coins.value += 1000; globalXP.value += 1000 }
 
   return { 
     bootStage, saveIndex, saveSlots, activeSlotId, activeSlotMeta,
-    themes, projects, globalXP, globalLevel, globalLevelProgress, coins, unlockedTreeIds, activeView, notebook,
+    themes, projects, globalXP, globalLevel, globalLevelProgress, coins, unlockedTreeIds, ownedBoostIds, unlockedBackgroundIds, activeView, notebook,
     activeProjectId, activeProject, runningProjectId, runningProject, activeThemeId,
     activeTreeId, activeTree, timer, maxTime, isRunning, progressPercentage, 
-    isNightMode, TREE_TYPES, inventoryTrees,
+    isNightMode, TREE_TYPES, SHOP_CATEGORIES, shopItems, shopCatalog, inventoryTrees,
     user, offlineEarnings, MAX_PLANTING_TIME, 
     
     initSaveSystem, createSaveSlot, renameSaveSlot, deleteSaveSlot, enterSlot, exitToSaveSelection,
     saveActiveSlot, importSaveAsNewSlot,
     createTheme, renameTheme, deleteTheme, submitHarvest,
-    getTreeYield, buyTree, createProject, selectProject, 
+    getTreeYield, buyTree, purchaseShopItem, ownsShopItem, canPurchaseShopItem, createProject, selectProject, 
     openMap, openShop, openForest, openNotebook, uploadNote, openThemeForest,
     startAction, stopTimer, toggleAction, downloadSaveFile, importSaveData, cheatAddCoins, getTreeIcon,
     renameProject, deleteProject, mergeProjects, reorderProjects, moveProjectToTheme, updateNoteTags, toggleNightMode, 
     initAuth, loginWithEmail, registerWithEmail, logout, uploadSaveToCloud, downloadSaveFromCloud,
-    claimOfflineEarnings, discardOfflineEarnings, renameNote, updateNote, createSystemNote, deleteNote
+    claimOfflineEarnings, discardOfflineEarnings, renameNote, updateNote, createSystemNote, createEssayNote, deleteNote
   }
 })

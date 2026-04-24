@@ -151,7 +151,7 @@
 
     <div v-else class="absolute inset-0 z-50 flex flex-col animate-in fade-in zoom-in duration-300 overflow-hidden bg-black">
      
-        <div class="absolute top-0 left-0 w-full p-6 flex justify-between items-start z-[100] pointer-events-none">
+        <div class="absolute top-0 left-0 w-full p-6 pr-28 md:pr-32 flex justify-between items-start z-[100] pointer-events-none">
             <button @click="closeInspection" 
                     class="pointer-events-auto flex items-center gap-2 px-4 py-2 rounded-full backdrop-blur transition-all border shadow-lg group"
                     :class="store.isNightMode 
@@ -160,7 +160,7 @@
             <span>←</span> <span class="text-sm font-bold uppercase group-hover:pl-1 transition-all">Back</span>
             </button>
 
-            <div class="pointer-events-auto border p-4 rounded-xl shadow-2xl backdrop-blur-md transition-colors min-w-[200px]"
+            <div class="pointer-events-auto border p-4 rounded-xl shadow-2xl backdrop-blur-md transition-colors min-w-[220px] max-w-[280px] mr-6 md:mr-10"
                 :class="store.isNightMode 
                 ? 'bg-gray-900/80 border-gray-700 text-white' 
                 : 'bg-white/80 border-white/60 text-gray-800'">
@@ -173,9 +173,6 @@
                     </span>
                 </div>
 
-                <div class="text-[10px] text-right opacity-70 mt-1 flex items-center justify-end gap-1">
-                    <span>🖱️/✋</span> Scroll horizontally
-                </div>
                 <button v-if="store.activeProjectId !== viewingProject.id" 
                         @click="setActiveAndStay"
                         class="mt-2 w-full py-1.5 text-white text-[10px] font-bold uppercase rounded shadow bg-emerald-500 hover:bg-emerald-400">
@@ -185,70 +182,62 @@
         </div>
 
         <div class="flex-1 relative w-full h-full overflow-hidden">
-            
-            <div class="absolute inset-0 overflow-x-auto overflow-y-hidden custom-scrollbar z-10" 
-                 ref="scrollContainer"
-                 @wheel.prevent="handleWheel">
-                
-                <div class="relative h-full flex items-end transition-all duration-300 min-w-full"
-                     :style="dynamicWorldStyle">
-                
-                    <div class="absolute inset-0 z-0 pixel-art pointer-events-none"
-                        :style="{ 
-                            backgroundImage: `url(${store.isNightMode ? bgForestNight : bgForestDay})`,
-                            backgroundRepeat: 'repeat-x', 
-                            backgroundPosition: 'bottom left',
-                            backgroundSize: 'auto 100%' 
-                        }">
-                    </div>
+            <div class="absolute inset-0 z-0 pixel-art pointer-events-none"
+                :style="{ 
+                    backgroundImage: `url(${store.isNightMode ? bgForestNight : bgForestDay})`,
+                    backgroundRepeat: 'repeat-x', 
+                    backgroundPosition: 'bottom left',
+                    backgroundSize: 'auto 100%' 
+                }">
+            </div>
 
-                    <div class="absolute bottom-0 left-0 right-0 z-20 pixel-art pointer-events-none"
-                        :style="{ 
-                            height: '64px',
-                            backgroundImage: `url(${normalLandImg})`,
-                            backgroundRepeat: 'repeat-x', 
-                            backgroundPosition: 'bottom left',
-                            backgroundSize: 'auto 100%', 
-                            filter: store.isNightMode ? 'brightness(0.6)' : 'none'
-                        }">
-                    </div>
+            <div v-if="scenicForestTrees.length === 0"
+                 class="absolute inset-x-0 bottom-[120px] z-30 flex flex-col items-center justify-center opacity-70">
+                <div class="text-4xl animate-bounce mb-2">🌱</div>
+                <span class="bg-black/40 text-white px-3 py-1 rounded text-xs whitespace-nowrap">Empty world... Plant something!</span>
+            </div>
 
-                    <div class="shrink-0 w-10 h-10"></div>
-
-                    <div class="flex items-end relative z-30 mb-[48px]"> 
-                        <div v-if="flatForest.length === 0" class="w-[200px] flex flex-col items-center justify-center opacity-60 mb-10 ml-10">
-                            <div class="text-4xl animate-bounce mb-2">🌱</div>
-                            <span class="bg-black/40 text-white px-3 py-1 rounded text-xs whitespace-nowrap">Empty world... Plant something!</span>
-                        </div>
-
-                        <div v-for="(tree, index) in flatForest" :key="index"
-                            class="relative flex flex-col items-center group transition-all duration-300 hover:scale-105 origin-bottom shrink-0"
-                            :style="{ width: '120px', marginRight: '-30px' }">
-                            <img :src="tree.icon" 
-                                class="w-auto h-[180px] object-contain pixel-art drop-shadow-2xl cursor-pointer"
-                                :class="store.isNightMode ? 'brightness-75' : ''"
-                                :title="tree.name" />
-                        </div>
-                    </div>
-
-                    <div class="shrink-0 w-[50vw] h-[200px] flex items-end pb-20 pl-20 opacity-30 group pointer-events-none">
-                         <div class="border-l-4 border-dashed border-white/20 h-48 flex flex-col justify-end pl-4">
-                             <span class="text-xl font-bold uppercase tracking-widest text-white/50 drop-shadow-lg whitespace-nowrap">
-                                 Future Territory
-                             </span>
-                         </div>
-                    </div>
-
+            <div class="absolute inset-x-0 bottom-[18px] h-[320px] z-30 pointer-events-none">
+                <div v-for="tree in scenicForestTrees"
+                     :key="tree.layoutId"
+                     class="absolute flex flex-col items-center origin-bottom transition-transform duration-300 hover:scale-105"
+                    :style="{
+                        left: `${tree.x}%`,
+                        bottom: `${tree.bottom}px`,
+                        transform: `translateX(-50%) scale(${tree.scale})`,
+                        zIndex: tree.z
+                     }">
+                    <img :src="tree.icon" 
+                        class="relative w-auto h-[180px] object-contain pixel-art drop-shadow-2xl"
+                        :class="store.isNightMode ? 'brightness-75' : ''"
+                        :title="tree.name" />
                 </div>
             </div>
 
+            <div class="absolute inset-x-0 bottom-0 h-[92px] z-40 pointer-events-none overflow-hidden">
+                <div v-for="tile in scenicGroundTiles"
+                     :key="tile.id"
+                     class="absolute bottom-0 pixel-art"
+                     :style="{ 
+                        left: `${tile.x}%`,
+                        width: `${tile.width}px`,
+                        height: '76px',
+                        transform: 'translateX(-50%)',
+                        backgroundImage: `url(${normalLandImg})`,
+                        backgroundRepeat: 'repeat-x',
+                        backgroundPosition: 'bottom center',
+                        backgroundSize: 'auto 100%',
+                        filter: store.isNightMode ? 'brightness(0.6)' : 'none',
+                        zIndex: tile.z
+                     }"></div>
+            </div>
         </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, nextTick } from 'vue'
+import { ref, computed } from 'vue'
 import { useGameStore } from '@/stores/gameStore'
 
 const store = useGameStore()
@@ -259,7 +248,7 @@ import bgForestDay from '@/assets/background/normal_background_day.png'
 import bgForestNight from '@/assets/background/normal_background_night.png'
 
 const viewingProject = ref(null) 
-const scrollContainer = ref(null)
+const inspectionSeed = ref(Date.now())
 
 // === 【新增】：基于 activeThemeId 的计算属性 ===
 
@@ -312,34 +301,100 @@ const flatForest = computed(() => {
       })
     }
   })
-  // 这里暂时不随机打乱，保证每次进入顺序一致，如果需要随机可自行加上 .sort
   return list
 })
 
-// === 核心逻辑：动态计算世界宽度 ===
-// 根据树的数量计算总宽度，确保容器能容纳所有内容
-const dynamicWorldStyle = computed(() => {
-  const treeWidth = 90 // 树的有效宽度 (120px - 30px overlap)
-  const startPadding = 40 // 起始 padding
-  const endSpacer = window.innerWidth * 0.5 // 终点留白 (50vw)
-  
-  // 计算内容所需的总像素宽度
-  const contentWidth = startPadding + (flatForest.value.length * treeWidth) + endSpacer
-  
-  // 确保至少占满一屏
-  return {
-    width: `${Math.max(window.innerWidth, contentWidth)}px` 
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value))
+
+const hashString = (value = '') => {
+  let hash = 2166136261
+  for (let i = 0; i < value.length; i += 1) {
+    hash ^= value.charCodeAt(i)
+    hash = Math.imul(hash, 16777619)
   }
+  return hash >>> 0
+}
+
+const createSeededRandom = seed => {
+  let state = seed || 1
+  return () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0
+    return state / 4294967296
+  }
+}
+
+const scenicForestTrees = computed(() => {
+  if (!viewingProject.value || flatForest.value.length === 0) return []
+
+  const forestSignature = Object.entries(viewingProject.value.forest || {})
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([treeId, count]) => `${treeId}:${count}`)
+    .join('|')
+  const seed = hashString(`${viewingProject.value.id}-${forestSignature}`)
+  const rng = createSeededRandom(seed ^ inspectionSeed.value)
+  const minTarget = Math.min(20, flatForest.value.length)
+  const maxTarget = Math.min(40, flatForest.value.length)
+  const targetCount =
+    maxTarget <= minTarget
+      ? flatForest.value.length
+      : Math.floor(minTarget + rng() * (maxTarget - minTarget + 1))
+
+  const sampled = [...flatForest.value]
+    .map(tree => ({ tree, weight: rng() }))
+    .sort((left, right) => left.weight - right.weight)
+    .slice(0, targetCount)
+    .map(entry => entry.tree)
+
+  return sampled.map((tree, index) => {
+    const laneRatio = targetCount === 1 ? 0.5 : index / (targetCount - 1)
+    const baseX = 8 + laneRatio * 84
+    const x = clamp(baseX + (rng() - 0.5) * 4.8, 6, 94)
+    const depth = rng()
+    const scale = 0.78 + depth * 0.34
+    const bottom = -6 + (1 - depth) * 40
+
+    return {
+      ...tree,
+      layoutId: `${tree.instanceId}-${index}`,
+      x,
+      scale,
+      bottom,
+      z: 20 + Math.round(depth * 30)
+    }
+  }).sort((left, right) => left.z - right.z)
+})
+
+const scenicGroundTiles = computed(() => {
+  if (!viewingProject.value || scenicForestTrees.value.length === 0) return []
+
+  const forestSignature = Object.entries(viewingProject.value.forest || {})
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([treeId, count]) => `${treeId}:${count}`)
+    .join('|')
+  const seed = hashString(`ground-${viewingProject.value.id}-${forestSignature}`)
+  const rng = createSeededRandom(seed)
+  const tiles = []
+
+  let x = 0
+  let index = 0
+  while (x < 112) {
+    const width = 160 + rng() * 70
+    tiles.push({
+      id: `ground-${index}`,
+      x,
+      width,
+      z: 100 + index
+    })
+    x += 8.5 + rng() * 3.5
+    index += 1
+  }
+
+  return tiles
 })
 
 const openInspection = (project) => {
     viewingProject.value = project
-    // 打开时自动滚动到最左侧 (初始位置)
-    nextTick(() => { 
-        if (scrollContainer.value) {
-            scrollContainer.value.scrollLeft = 0
-        }
-    })
+    inspectionSeed.value = Date.now()
 }
 
 const closeInspection = () => { viewingProject.value = null }
@@ -352,22 +407,6 @@ const formatDuration = (seconds) => {
   return h > 0 ? `${h}h ${m}m` : `${m}m`
 }
 
-// 🖱️ 优化的滚轮处理
-const handleWheel = (e) => {
-    if (!scrollContainer.value) return;
-    
-    // 不同的设备 deltaY 的值差异很大。
-    // 触摸板通常较小，普通鼠标滚轮较大。
-    const scrollSpeed = 1.5; 
-    let delta = e.deltaY * scrollSpeed;
-
-    // 支持横向滚动设备 (e.deltaX)
-    if (e.deltaX) {
-        delta += e.deltaX * scrollSpeed;
-    }
-
-    scrollContainer.value.scrollLeft += delta;
-}
 </script>
 
 <style scoped>
