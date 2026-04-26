@@ -235,6 +235,7 @@
 
 <script setup>
 import { ref, computed } from 'vue'
+import { alertDialog } from '@/composables/dialogService'
 import { useGameStore } from '@/stores/gameStore'
 
 const store = useGameStore()
@@ -363,7 +364,9 @@ const closeHarvestModal = () => {
 
 const confirmHarvest = () => {
   if (!harvestProjectId.value) {
-    alert('请先确认本次收获的项目归属')
+    void alertDialog('请先确认本次收获的项目归属', {
+      title: '无法收获'
+    })
     return
   }
 

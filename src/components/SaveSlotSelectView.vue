@@ -185,6 +185,7 @@
 
 <script setup>
 import { ref } from 'vue'
+import { confirmDialog, promptDialog } from '@/composables/dialogService'
 import { useGameStore } from '@/stores/gameStore'
 
 const store = useGameStore()
@@ -196,21 +197,32 @@ const formatDate = value => {
   return new Date(value).toLocaleString()
 }
 
-const createSlot = () => {
-  const name = window.prompt('请输入新存档名称', `新存档 #${store.saveSlots.length + 1}`)
+const createSlot = async () => {
+  const name = await promptDialog('请输入新存档名称', {
+    title: '新建存档',
+    defaultValue: `新存档 #${store.saveSlots.length + 1}`,
+    confirmText: '创建'
+  })
   if (name === null) return
   const slotId = store.createSaveSlot(name)
   if (slotId) store.enterSlot(slotId)
 }
 
-const renameSlot = slot => {
-  const name = window.prompt('请输入新的存档名称', slot.name)
+const renameSlot = async slot => {
+  const name = await promptDialog('请输入新的存档名称', {
+    title: '重命名存档',
+    defaultValue: slot.name,
+    confirmText: '保存'
+  })
   if (name === null) return
   store.renameSaveSlot(slot.id, name)
 }
 
-const deleteSlot = slot => {
-  const confirmed = window.confirm(`确认删除存档 "${slot.name}" 吗？该操作不可恢复。`)
+const deleteSlot = async slot => {
+  const confirmed = await confirmDialog(`确认删除存档 "${slot.name}" 吗？该操作不可恢复。`, {
+    title: '删除存档',
+    confirmText: '删除'
+  })
   if (!confirmed) return
   store.deleteSaveSlot(slot.id)
 }

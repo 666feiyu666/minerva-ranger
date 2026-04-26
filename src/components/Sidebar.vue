@@ -368,6 +368,7 @@
 
 <script setup>
 import { ref, computed, nextTick, onMounted, onUnmounted } from 'vue'
+import { alertDialog, confirmDialog } from '@/composables/dialogService'
 import { useGameStore } from '@/stores/gameStore'
 
 defineOptions({ name: 'SidebarPanel' })
@@ -522,7 +523,9 @@ const mergeTargetOptions = computed(() => {
 const openMergeModal = (project) => {
     activeMenuId.value = null
     if (store.projects.length < 2) {
-        alert('至少需要两个项目才能执行合并')
+        void alertDialog('至少需要两个项目才能执行合并', {
+            title: '无法合并'
+        })
         return
     }
     mergeSourceProject.value = project
@@ -536,14 +539,18 @@ const closeMergeModal = () => {
     mergeCommitMessage.value = ''
 }
 
-const confirmMergeProject = () => {
+const confirmMergeProject = async () => {
     if (!mergeSourceProject.value || !mergeTargetProjectId.value) return
     const target = store.projects.find(project => project.id === mergeTargetProjectId.value)
     if (!target) return
 
-    const confirmed = confirm(
+    const confirmed = await confirmDialog(
         `确认将项目 "${mergeSourceProject.value.name}" 合并到 "${target.name}" 吗？\n` +
-        '合并后源项目会被移除，并生成系统日志。'
+        '合并后源项目会被移除，并生成系统日志。',
+        {
+            title: '确认项目合并',
+            confirmText: '开始合并'
+        }
     )
 
     if (!confirmed) return
@@ -588,8 +595,15 @@ const confirmRenameTheme = () => {
 }
 const cancelRenameTheme = () => { editingThemeId.value = null; editThemeName.value = '' }
 
-const handleDeleteTheme = (theme) => {
-    if (confirm(`确定要删除主题 "${theme.name}" 吗？\n其下的项目将会被移回“未分类”。`)) store.deleteTheme(theme.id)
+const handleDeleteTheme = async (theme) => {
+    const confirmed = await confirmDialog(
+        `确定要删除主题 "${theme.name}" 吗？\n其下的项目将会被移回“未分类”。`,
+        {
+            title: '删除主题',
+            confirmText: '删除'
+        }
+    )
+    if (confirmed) store.deleteTheme(theme.id)
 }
 
 // === 样式辅助 ===

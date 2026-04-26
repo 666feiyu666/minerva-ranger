@@ -1,5 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
+import { alertDialog } from '@/composables/dialogService'
 import { supabase } from '@/supabase'
 import normalTreeImg from '@/assets/tree/normal_tree.png'
 import willowTreeImg from '@/assets/tree/willow_tree.png'
@@ -450,7 +451,9 @@ export const useGameStore = defineStore('game', () => {
     const wordCount = cleanContent.length
 
     if (source === 'user' && wordCount <= 0) {
-      alert(type === 'planting' ? '未记录笔记，未能获得金币！' : '内容不能为空')
+      void alertDialog(type === 'planting' ? '未记录笔记，未能获得金币！' : '内容不能为空', {
+        title: '内容无效'
+      })
       return null
     }
 
@@ -544,7 +547,9 @@ export const useGameStore = defineStore('game', () => {
     if (typeof payload.content === 'string') {
       const cleanContent = payload.content.replace(/\s/g, '')
       if (cleanContent.length <= 0) {
-        alert('日志内容不能为空')
+        void alertDialog('日志内容不能为空', {
+          title: '内容无效'
+        })
         return false
       }
       note.content = payload.content
@@ -1036,7 +1041,11 @@ export const useGameStore = defineStore('game', () => {
       return true
     } catch (error) {
       console.error(error)
-      if (!silent) alert('存档损坏')
+      if (!silent) {
+        void alertDialog('存档损坏', {
+          title: '读取失败'
+        })
+      }
       return false
     } finally {
       isHydrating.value = false
@@ -1071,33 +1080,76 @@ export const useGameStore = defineStore('game', () => {
 
   async function loginWithEmail(email, password) {
     const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) { alert('登录失败: ' + error.message); return false }
+    if (error) {
+      void alertDialog('登录失败: ' + error.message, {
+        title: '登录失败'
+      })
+      return false
+    }
     return true
   }
 
   async function registerWithEmail(email, password) {
     const { error } = await supabase.auth.signUp({ email, password })
-    if (error) { alert('注册失败: ' + error.message); return false }
-    alert('注册成功！已自动登录。')
+    if (error) {
+      void alertDialog('注册失败: ' + error.message, {
+        title: '注册失败'
+      })
+      return false
+    }
+    void alertDialog('注册成功！已自动登录。', {
+      title: '注册成功'
+    })
     return true
   }
 
-  async function logout() { const { error } = await supabase.auth.signOut(); if (error) alert(error.message) }
+  async function logout() {
+    const { error } = await supabase.auth.signOut()
+    if (error) {
+      void alertDialog(error.message, {
+        title: '退出失败'
+      })
+    }
+  }
 
   async function uploadSaveToCloud() {
-    if (!user.value) return alert('请先登录！')
+    if (!user.value) {
+      void alertDialog('请先登录！', {
+        title: '未登录'
+      })
+      return false
+    }
     const saveData = getSaveData()
     const { error } = await supabase.from('game_saves').upsert({ 
         user_id: user.value.id, save_data: saveData, updated_at: new Date()
       }, { onConflict: 'user_id' })
-    if (error) { console.error(error); alert('云端保存失败: ' + error.message) } 
-    else { alert('☁️ 云端保存成功！') }
+    if (error) {
+      console.error(error)
+      void alertDialog('云端保存失败: ' + error.message, {
+        title: '同步失败'
+      })
+    } else {
+      void alertDialog('☁️ 云端保存成功！', {
+        title: '同步成功'
+      })
+    }
   }
 
   async function downloadSaveFromCloud() {
-    if (!user.value) return alert('请先登录！')
+    if (!user.value) {
+      void alertDialog('请先登录！', {
+        title: '未登录'
+      })
+      return false
+    }
     const { data, error } = await supabase.from('game_saves').select('save_data').single()
-    if (error) { console.error(error); alert('读取云存档失败: ' + error.message); return }
+    if (error) {
+      console.error(error)
+      void alertDialog('读取云存档失败: ' + error.message, {
+        title: '读取失败'
+      })
+      return
+    }
     if (data && data.save_data) { importSaveData(JSON.stringify(data.save_data)) }
   }
 
@@ -1238,7 +1290,11 @@ export const useGameStore = defineStore('game', () => {
       return targetSlotId
     } catch (error) {
       console.error(error)
-      if (!silent) alert('存档损坏')
+      if (!silent) {
+        void alertDialog('存档损坏', {
+          title: '导入失败'
+        })
+      }
       return false
     }
   }
@@ -1311,7 +1367,9 @@ export const useGameStore = defineStore('game', () => {
     }
 
     if (item.availability !== 'available') {
-      alert('该内容暂未开放。')
+      void alertDialog('该内容暂未开放。', {
+        title: '暂不可用'
+      })
       return false
     }
 

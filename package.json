@@ -7,8 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "app:start": "electron .",
-    "app:build": "electron-builder",
+    "app:start": "npm run build && electron .",
+    "app:build": "npm run build && electron-builder",
     "lint": "run-s lint:*",
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
@@ -50,17 +50,23 @@
     "appId": "com.minerva.ranger",
     "productName": "MinervaRanger",
     "directories": {
-      "output": "release"
+      "output": "release",
+      "buildResources": "build"
     },
     "files": [
       "dist/**/*",
       "electron/**/*"
     ],
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "icons/icon.ico"
     },
     "mac": {
-      "target": "dmg"
+      "target": "dmg",
+      "icon": "icons/icon.icns"
+    },
+    "linux": {
+      "icon": "icons/icon.png"
     }
   }
 }

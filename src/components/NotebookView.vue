@@ -1382,6 +1382,7 @@
 
 <script setup>
 import { computed, reactive, ref, watch } from 'vue'
+import { alertDialog, confirmDialog } from '@/composables/dialogService'
 import { useGameStore } from '@/stores/gameStore'
 
 const UNCATEGORIZED_THEME_ID = '__uncategorized__'
@@ -1899,13 +1900,15 @@ const saveEssayRename = () => {
   essayEditorMode.value = 'view'
 }
 
-const saveEssayDraft = () => {
+const saveEssayDraft = async () => {
   const title = essayDraft.title.trim()
   const content = essayDraft.content
   const projectIds = essayDraft.projectId === 'all' ? [] : [essayDraft.projectId]
 
   if (!title) {
-    alert('请填写随笔标题')
+    await alertDialog('请填写随笔标题', {
+      title: '缺少标题'
+    })
     return
   }
 
@@ -1929,10 +1932,14 @@ const saveEssayDraft = () => {
   resetEssayDraft()
 }
 
-const deleteEssay = noteId => {
+const deleteEssay = async noteId => {
   const note = essayNotes.value.find(item => item.id === noteId)
   if (!note) return
-  if (!confirm(`确定要删除随笔 "${note.title}" 吗？`)) return
+  const confirmed = await confirmDialog(`确定要删除随笔 "${note.title}" 吗？`, {
+    title: '删除随笔',
+    confirmText: '删除'
+  })
+  if (!confirmed) return
   store.deleteNote(noteId)
   goToEssayList()
 }

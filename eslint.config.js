@@ -21,6 +21,16 @@ export default defineConfig([
     },
   },
 
+  {
+    files: ['electron/**/*.js'],
+    languageOptions: {
+      globals: {
+        ...globals.node,
+      },
+      sourceType: 'commonjs',
+    },
+  },
+
   js.configs.recommended,
   ...pluginVue.configs['flat/essential'],
 

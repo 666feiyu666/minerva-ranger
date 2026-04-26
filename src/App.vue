@@ -1,7 +1,7 @@
 <template>
   <SaveSlotSelectView v-if="store.bootStage === 'slot-select'" />
 
-  <div 
+  <div
     v-else
     class="flex h-screen w-screen font-sans overflow-hidden transition-colors duration-500"
     :class="store.isNightMode ? 'bg-melvor-dark text-gray-200' : 'bg-gray-100 text-gray-900'"
@@ -274,10 +274,13 @@
 
     </main>
   </div>
+
+  <AppDialogHost />
 </template>
 
 <script setup>
 import { ref, computed, onMounted, onUnmounted } from 'vue'
+import AppDialogHost from './components/AppDialogHost.vue'
 import Sidebar from './components/Sidebar.vue'
 import SaveSlotSelectView from './components/SaveSlotSelectView.vue'
 import IdleDashboard from './components/IdleDashboard.vue'
