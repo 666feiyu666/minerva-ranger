@@ -56,6 +56,8 @@
           </div>
         </div>
 
+        <component :is="DevToolsPanel" v-if="DevToolsPanel" class="mb-8" />
+
         <div v-if="store.saveSlots.length === 0" class="rounded-[2rem] border border-dashed border-white/15 bg-black/20 p-10 text-center">
           <div class="text-5xl mb-4">🌲</div>
           <h3 class="text-2xl font-bold mb-3">还没有可用存档</h3>
@@ -184,13 +186,17 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { defineAsyncComponent, ref } from 'vue'
 import { confirmDialog, promptDialog } from '@/composables/dialogService'
 import { useGameStore } from '@/stores/gameStore'
 
 const store = useGameStore()
 const fileInput = ref(null)
 const importMode = ref({ type: 'new', slotId: null })
+const isDevToolsMode = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEV_TOOLS === 'true'
+const DevToolsPanel = isDevToolsMode
+  ? defineAsyncComponent(() => import('@/components/DevToolsPanel.vue'))
+  : null
 
 const formatDate = value => {
   if (!value) return '未进入过'

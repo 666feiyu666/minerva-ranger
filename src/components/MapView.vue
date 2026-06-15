@@ -9,7 +9,7 @@
     <div 
       ref="mapContainer"
       class="w-full h-full relative bg-cover bg-center transition-all duration-700"
-      style="background-image: url('/src/assets/map.png'); box-shadow: inset 0 0 100px rgba(0,0,0,0.5);"
+      :style="mapStyle"
     >
       <div 
         v-for="theme in store.themes" 
@@ -39,9 +39,14 @@
 <script setup>
 import { ref } from 'vue'
 import { useGameStore } from '@/stores/gameStore'
+import mapImage from '@/assets/map.png'
 
 const store = useGameStore()
 const mapContainer = ref(null)
+const mapStyle = {
+  backgroundImage: `url(${mapImage})`,
+  boxShadow: 'inset 0 0 100px rgba(0,0,0,0.5)'
+}
 
 // === 拖拽交互逻辑 ===
 let isDragging = false

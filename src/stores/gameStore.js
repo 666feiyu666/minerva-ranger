@@ -14,6 +14,8 @@ export const useGameStore = defineStore('game', () => {
   const LEGACY_SAVE_KEY = 'minerva_save_v1'
   const SAVE_INDEX_KEY = 'minerva_save_index_v1'
   const SAVE_SLOT_KEY_PREFIX = 'minerva_save_slot_'
+  const TIMER_TICK_INTERVAL_MS = 1000
+  const RUNNING_SAVE_INTERVAL_MS = 15 * 1000
 
   // === 1. 基础配置 ===
   const TREE_TYPES = [
@@ -283,6 +285,7 @@ export const useGameStore = defineStore('game', () => {
       projects: [],
       notebook: [],
       activeView: 'forest',
+      activeThemeId: null,
       activeProjectId: null,
       runningProjectId: null,
       activeTreeId: null,
@@ -610,6 +613,7 @@ export const useGameStore = defineStore('game', () => {
   // === 6. 计时器与动作控制 ===
   let timerInterval = null
   let lastTimestamp = 0
+  let lastRuntimeSaveAt = 0
 
   function syncRunningTimer(now = Date.now()) {
     if (!isRunning.value || !activeTree.value) {
@@ -624,6 +628,12 @@ export const useGameStore = defineStore('game', () => {
 
     const actualDelta = Math.min(delta, MAX_PLANTING_TIME - timer.value)
     timer.value += actualDelta
+
+    if (actualDelta > 0 && now - lastRuntimeSaveAt >= RUNNING_SAVE_INTERVAL_MS) {
+      lastRuntimeSaveAt = now
+      saveToLocalStorage()
+    }
+
     return actualDelta
   }
 
@@ -680,8 +690,9 @@ export const useGameStore = defineStore('game', () => {
 
     isRunning.value = true
     lastTimestamp = Date.now()
+    lastRuntimeSaveAt = lastTimestamp
     if (timerInterval) clearInterval(timerInterval)
-    timerInterval = setInterval(gameTick, 100)
+    timerInterval = setInterval(gameTick, TIMER_TICK_INTERVAL_MS)
   }
 
   function stopTimer() {
@@ -949,6 +960,7 @@ export const useGameStore = defineStore('game', () => {
       unlockedBackgroundIds: unlockedBackgroundIds.value,
       themes: themes.value, projects: projects.value, notebook: notebook.value,
       activeView: activeView.value,
+      activeThemeId: activeThemeId.value,
       activeProjectId: activeProjectId.value, runningProjectId: runningProjectId.value, activeTreeId: activeTreeId.value,
       isRunning: isRunning.value, timer: timer.value, isNightMode: isNightMode.value 
     }
@@ -994,6 +1006,7 @@ export const useGameStore = defineStore('game', () => {
       notebook.value = (data.notebook || []).map(normalizeNote)
 
       activeView.value = data.activeView || (data.activeProjectId ? 'dashboard' : 'forest')
+      activeThemeId.value = data.activeThemeId || null
       activeProjectId.value = data.activeProjectId || null
       const savedRunningProjectId = data.runningProjectId || data.activeProjectId || null
       activeTreeId.value = data.activeTreeId || null
@@ -1142,7 +1155,11 @@ export const useGameStore = defineStore('game', () => {
       })
       return false
     }
-    const { data, error } = await supabase.from('game_saves').select('save_data').single()
+    const { data, error } = await supabase
+      .from('game_saves')
+      .select('save_data')
+      .eq('user_id', user.value.id)
+      .single()
     if (error) {
       console.error(error)
       void alertDialog('读取云存档失败: ' + error.message, {
@@ -1329,7 +1346,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   watch(
-    [coins, globalXP, unlockedTreeIds, ownedBoostIds, unlockedBackgroundIds, themes, projects, notebook, activeView, activeProjectId, runningProjectId, activeTreeId, isRunning, timer, isNightMode],
+    [coins, globalXP, unlockedTreeIds, ownedBoostIds, unlockedBackgroundIds, themes, projects, notebook, activeView, activeThemeId, activeProjectId, runningProjectId, activeTreeId, isRunning, isNightMode],
     () => { saveToLocalStorage() },
     { deep: true }
   )

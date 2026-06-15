@@ -5,10 +5,14 @@
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
+    "dev:tools": "vite --mode devtools",
     "build": "vite build",
     "preview": "vite preview",
     "app:start": "npm run build && electron .",
     "app:build": "npm run build && electron-builder",
+    "lint:check": "run-s lint:check:*",
+    "lint:check:oxlint": "oxlint .",
+    "lint:check:eslint": "eslint . --cache",
     "lint": "run-s lint:*",
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
@@ -59,14 +63,13 @@
     ],
     "win": {
       "target": "nsis",
-      "icon": "icons/icon.ico"
+      "icon": "public/favicon.ico"
     },
     "mac": {
-      "target": "dmg",
-      "icon": "icons/icon.icns"
+      "target": "dmg"
     },
     "linux": {
-      "icon": "icons/icon.png"
+      "icon": "src/assets/favicon.png"
     }
   }
 }

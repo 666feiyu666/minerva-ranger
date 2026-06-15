@@ -17,8 +17,10 @@ function createWindow () {
     title: '密涅瓦的巡林官',
     icon: getWindowIconPath(),
     webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
+      nodeIntegration: false,
+      contextIsolation: true,
+      sandbox: true,
+      devTools: !app.isPackaged
     }
   })
 
