@@ -1,120 +1,68 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { alertDialog } from '@/composables/dialogService'
-import { supabase } from '@/supabase'
-import normalTreeImg from '@/assets/tree/normal_tree.png'
-import willowTreeImg from '@/assets/tree/willow_tree.png'
-import poplarTreeImg from '@/assets/tree/poplar_tree.png'
-import magicTreeImg from '@/assets/tree/magic_tree.png'
-import goldTreeImg from '@/assets/tree/gold_tree.png'
+import { MAX_PLANTING_TIME, RUNNING_SAVE_INTERVAL_MS, TIMER_TICK_INTERVAL_MS } from '@/config/gameBalance'
+import { PREVIEW_BACKGROUND_ITEMS, PREVIEW_SKILL_ITEMS, SHOP_CATEGORIES } from '@/config/shopCatalog'
+import { TREE_TYPES } from '@/config/treeCatalog'
+import { getGlobalLevelFromXP } from '@/local-backend/domain/leveling'
+import { normalizeNote } from '@/local-backend/domain/noteModel'
+import { isSameProjectId, normalizeProject } from '@/local-backend/domain/projectModel'
+import { buildSaveSummary, normalizeSaveIndex } from '@/local-backend/domain/saveSchema'
+import {
+  createNoteRecord,
+  deleteUserNote,
+  renameUserNote,
+  updateUserNote,
+  updateUserNoteTags
+} from '@/local-backend/services/notebookService'
+import {
+  applyCompletedTreeCycles,
+  buildPlantingNoteInput,
+  getFinishedCycles,
+  getTreeYield as getTreeYieldFromHarvestService
+} from '@/local-backend/services/harvestService'
+import {
+  createProjectRecord,
+  deleteProjectFromList,
+  mergeProjectData,
+  moveProjectToTheme as moveProjectToThemeList,
+  reorderProjects as reorderProjectList
+} from '@/local-backend/services/projectService'
+import {
+  buildSaveData,
+  createSaveSlotData,
+  persistSlotDataToRepository,
+  readLegacySaveData,
+  readSaveIndex,
+  readSlotData,
+  removeSlotData,
+  shouldPersistActiveSlot,
+  writeSaveIndex
+} from '@/local-backend/services/saveService'
+import {
+  buildShopCatalog,
+  buildShopItems,
+  canPurchaseShopItem as canPurchaseCatalogItem,
+  ownsShopItem as ownsCatalogItem
+} from '@/local-backend/services/shopService'
+import {
+  createThemeRecord,
+  deleteThemeFromLists,
+  renameThemeInList
+} from '@/local-backend/services/themeService'
+import { getRunningTimerDelta } from '@/local-backend/services/timerService'
+import {
+  clearStoredSession,
+  deleteSlot as deleteSelfHostedCloudSlot,
+  getStoredSession,
+  listSlots as listSelfHostedCloudSlots,
+  login as loginSelfHosted,
+  register as registerSelfHosted,
+  upsertSlot as upsertSelfHostedCloudSlot
+} from '@/cloud-backend/selfHostedSyncApi'
 
 export const useGameStore = defineStore('game', () => {
-  const PROJECT_BASE_XP = 100
-  const PROJECT_XP_GROWTH = 1.2
-  const LEGACY_SAVE_KEY = 'minerva_save_v1'
-  const SAVE_INDEX_KEY = 'minerva_save_index_v1'
-  const SAVE_SLOT_KEY_PREFIX = 'minerva_save_slot_'
-  const TIMER_TICK_INTERVAL_MS = 1000
-  const RUNNING_SAVE_INTERVAL_MS = 15 * 1000
-
-  // === 1. 基础配置 ===
-  const TREE_TYPES = [
-    { id: 't1', name: '橡树', time: 25 * 60, xp: 100, price: 0, levelReq: 1, icon: normalTreeImg, desc: '基础树种，适合新手' },
-    { id: 't2', name: '垂柳', time: 25 * 60, xp: 250, price: 500, levelReq: 5, icon: willowTreeImg, desc: '优雅的垂柳，经验丰富' },
-    { id: 't3', name: '杨树', time: 25 * 60, xp: 600, price: 2500, levelReq: 15, icon: poplarTreeImg, desc: '长得像火炬，有一点' },
-    { id: 't4', name: '魔法树', time: 25 * 60, xp: 1500, price: 10000, levelReq: 30, icon: magicTreeImg, desc: '传说中的魔法植物' },
-    { id: 't5', name: '金钱树', time: 25 * 60, xp: 3000, price: 50000, levelReq: 50, icon: goldTreeImg, desc: '能收获金钱吗？' },
-  ]
-  const SHOP_CATEGORIES = [
-    {
-      id: 'trees',
-      name: '树种',
-      eyebrow: 'Trees',
-      desc: '选择适合当前阶段的树种。'
-    },
-    {
-      id: 'boosts',
-      name: '技能',
-      eyebrow: 'Skills',
-      desc: '提升效率的辅助道具。'
-    },
-    {
-      id: 'backgrounds',
-      name: '造景',
-      eyebrow: 'Scenes',
-      desc: '用于项目空间的外观装饰。'
-    }
-  ]
-  const PREVIEW_SKILL_ITEMS = [
-    {
-      id: 'boost_double_coins',
-      type: 'boost',
-      categoryId: 'boosts',
-      name: '双倍金币手册',
-      desc: '提升日志收益的辅助道具。',
-      price: 1200,
-      levelReq: 8,
-      availability: 'preview',
-      iconEmoji: '📘',
-      badge: '暂未开放',
-      meta: [
-        { label: '效果', value: '日志金币 x2' },
-        { label: '持续', value: '单次任务周期' }
-      ]
-    },
-    {
-      id: 'boost_focus_lens',
-      type: 'boost',
-      categoryId: 'boosts',
-      name: '专注透镜',
-      desc: '缩短种植周期的效率道具。',
-      price: 2400,
-      levelReq: 16,
-      availability: 'preview',
-      iconEmoji: '🔍',
-      badge: '暂未开放',
-      meta: [
-        { label: '效果', value: '成长时间 -20%' },
-        { label: '定位', value: '效率型技能书' }
-      ]
-    }
-  ]
-  const PREVIEW_BACKGROUND_ITEMS = [
-    {
-      id: 'background_archive_room',
-      type: 'background',
-      categoryId: 'backgrounds',
-      name: '档案室温室',
-      desc: '适用于单个项目的温室造景。',
-      price: 1800,
-      levelReq: 10,
-      availability: 'preview',
-      iconEmoji: '🪟',
-      badge: '暂未开放',
-      meta: [
-        { label: '作用域', value: '单个项目' },
-        { label: '气质', value: '记录室 / 温室' }
-      ]
-    },
-    {
-      id: 'background_watchtower',
-      type: 'background',
-      categoryId: 'backgrounds',
-      name: '巡林瞭望台',
-      desc: '适用于单个项目的瞭望台造景。',
-      price: 4200,
-      levelReq: 20,
-      availability: 'preview',
-      iconEmoji: '🗼',
-      badge: '暂未开放',
-      meta: [
-        { label: '作用域', value: '单个项目' },
-        { label: '气质', value: '瞭望台 / 野外值守' }
-      ]
-    }
-  ]
-
-  // === 2. 玩家数据 ===
+  // === 玩家数据 ===
   const coins = ref(0)
   const unlockedTreeIds = ref(['t1'])
   const ownedBoostIds = ref([])
@@ -131,7 +79,7 @@ export const useGameStore = defineStore('game', () => {
   const activeSlotId = ref(null)
   const isHydrating = ref(false)
 
-  // === 3. 运行时状态 ===
+  // === 运行时状态 ===
   const activeThemeId = ref(null)
   const activeProjectId = ref(null) 
   const runningProjectId = ref(null)
@@ -140,12 +88,10 @@ export const useGameStore = defineStore('game', () => {
   const isRunning = ref(false)
   const timer = ref(0)          
   
-  const MAX_PLANTING_TIME = 3 * 60 * 60 // 3小时最大正向计时上限 (秒)
-  
   const isNightMode = ref(false)
   const offlineEarnings = ref(null)
 
-  // === 4. 计算属性 ===
+  // === 计算属性 ===
   const globalLevel = computed(() => Math.floor(Math.sqrt(globalXP.value / 100)) + 1)
   
   const globalLevelProgress = computed(() => {
@@ -171,153 +117,44 @@ export const useGameStore = defineStore('game', () => {
   })
   
   const inventoryTrees = computed(() => TREE_TYPES.filter(t => unlockedTreeIds.value.includes(t.id)))
-  const shopItems = computed(() => {
-    const treeItems = TREE_TYPES.map(tree => ({
-      id: `tree_${tree.id}`,
-      productId: tree.id,
-      type: 'tree',
-      categoryId: 'trees',
-      name: tree.name,
-      desc: tree.desc,
-      price: tree.price,
-      levelReq: tree.levelReq,
-      availability: 'available',
-      icon: tree.icon,
-      badge: tree.levelReq <= 1 ? '基础树种' : '可购买',
-      meta: [
-        { label: '成长', value: `${(tree.time / 60).toFixed(0)}m` },
-        { label: '收益', value: `${tree.xp} XP` }
-      ]
-    }))
-
-    return [...treeItems, ...PREVIEW_SKILL_ITEMS, ...PREVIEW_BACKGROUND_ITEMS]
-  })
-  const shopCatalog = computed(() =>
-    SHOP_CATEGORIES.map(category => ({
-      ...category,
-      items: shopItems.value.filter(
-        item => item.categoryId === category.id && item.availability === 'available'
-      )
-    })).filter(category => category.items.length > 0)
+  const shopItems = computed(() =>
+    buildShopItems({
+      treeTypes: TREE_TYPES,
+      previewSkillItems: PREVIEW_SKILL_ITEMS,
+      previewBackgroundItems: PREVIEW_BACKGROUND_ITEMS
+    })
   )
+  const shopCatalog = computed(() => buildShopCatalog(SHOP_CATEGORIES, shopItems.value))
   const saveSlots = computed(() => saveIndex.value.slots || [])
   const activeSlotMeta = computed(() =>
     saveSlots.value.find(slot => slot.id === activeSlotId.value) || null
   )
 
+  function getShopOwnershipContext() {
+    return {
+      unlockedTreeIds: unlockedTreeIds.value,
+      ownedBoostIds: ownedBoostIds.value,
+      unlockedBackgroundIds: unlockedBackgroundIds.value,
+      globalLevel: globalLevel.value,
+      coins: coins.value
+    }
+  }
+
   function ownsShopItem(item) {
-    if (!item) return false
-    if (item.type === 'tree') return unlockedTreeIds.value.includes(item.productId)
-    if (item.type === 'boost') return ownedBoostIds.value.includes(item.id)
-    if (item.type === 'background') return unlockedBackgroundIds.value.includes(item.id)
-    return false
+    return ownsCatalogItem(item, getShopOwnershipContext())
   }
 
   function canPurchaseShopItem(item) {
-    if (!item || item.availability !== 'available') return false
-    if (ownsShopItem(item)) return false
-    if (globalLevel.value < (item.levelReq || 1)) return false
-    if (coins.value < (item.price || 0)) return false
-    return true
-  }
-
-  function toProjectIds(projectIds) {
-    if (Array.isArray(projectIds)) return [...new Set(projectIds.filter(Boolean))]
-    if (projectIds) return [projectIds]
-    return []
-  }
-
-  function isSameProjectId(left, right) {
-    return String(left) === String(right)
-  }
-
-  function getGlobalLevelFromXP(xp = 0) {
-    return Math.floor(Math.sqrt((xp || 0) / 100)) + 1
-  }
-
-  function getSlotStorageKey(slotId) {
-    return `${SAVE_SLOT_KEY_PREFIX}${slotId}`
-  }
-
-  function createSlotId() {
-    return `slot_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
-  }
-
-  function normalizeSaveIndex(index = {}) {
-    return {
-      version: 1,
-      lastSelectedSlotId: index.lastSelectedSlotId || null,
-      slots: Array.isArray(index.slots)
-        ? index.slots.map(slot => ({
-            id: slot.id,
-            name: slot.name || '未命名存档',
-            createdAt: slot.createdAt || new Date().toISOString(),
-            updatedAt: slot.updatedAt || slot.createdAt || new Date().toISOString(),
-            lastPlayedAt:
-              slot.lastPlayedAt || slot.updatedAt || slot.createdAt || new Date().toISOString(),
-            source: slot.source || 'local',
-            summary: {
-              globalLevel: slot.summary?.globalLevel || 1,
-              globalXP: slot.summary?.globalXP || 0,
-              coins: slot.summary?.coins || 0,
-              projectCount: slot.summary?.projectCount || 0,
-              themeCount: slot.summary?.themeCount || 0,
-              totalTrees: slot.summary?.totalTrees || 0,
-              noteCount: slot.summary?.noteCount || 0
-            }
-          }))
-        : []
-    }
-  }
-
-  function createEmptySaveData(slotId, slotName) {
-    return {
-      version: 2,
-      slotId,
-      slotName,
-      timestamp: Date.now(),
-      coins: 0,
-      globalXP: 0,
-      unlockedTreeIds: ['t1'],
-      ownedBoostIds: [],
-      unlockedBackgroundIds: ['background_default'],
-      themes: [],
-      projects: [],
-      notebook: [],
-      activeView: 'forest',
-      activeThemeId: null,
-      activeProjectId: null,
-      runningProjectId: null,
-      activeTreeId: null,
-      isRunning: false,
-      timer: 0,
-      isNightMode: false
-    }
-  }
-
-  function buildSaveSummary(saveData = {}) {
-    const projectsList = Array.isArray(saveData.projects) ? saveData.projects : []
-    const themesList = Array.isArray(saveData.themes) ? saveData.themes : []
-    const notebookList = Array.isArray(saveData.notebook) ? saveData.notebook : []
-
-    return {
-      globalLevel: getGlobalLevelFromXP(saveData.globalXP || 0),
-      globalXP: saveData.globalXP || 0,
-      coins: saveData.coins || 0,
-      projectCount: projectsList.length,
-      themeCount: themesList.length,
-      totalTrees: projectsList.reduce((sum, project) => sum + (project.totalTrees || 0), 0),
-      noteCount: notebookList.length
-    }
+    return canPurchaseCatalogItem(item, getShopOwnershipContext())
   }
 
   function saveSaveIndex() {
-    localStorage.setItem(SAVE_INDEX_KEY, JSON.stringify(saveIndex.value))
+    writeSaveIndex(saveIndex.value)
   }
 
   function loadSaveIndex() {
-    const raw = localStorage.getItem(SAVE_INDEX_KEY)
-    saveIndex.value = raw ? normalizeSaveIndex(JSON.parse(raw)) : normalizeSaveIndex()
+    const index = readSaveIndex()
+    saveIndex.value = index ? normalizeSaveIndex(index) : normalizeSaveIndex()
     return saveIndex.value
   }
 
@@ -329,115 +166,13 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function persistSlotData(slotId, saveData, options = {}) {
-    const now = new Date().toISOString()
-    const nextData = {
-      ...saveData,
-      version: 2,
+    return persistSlotDataToRepository({
+      saveIndex: saveIndex.value,
+      activeSlotName: activeSlotMeta.value?.name,
       slotId,
-      slotName: options.slotName || saveData.slotName || activeSlotMeta.value?.name || '未命名存档',
-      timestamp: Date.now()
-    }
-
-    localStorage.setItem(getSlotStorageKey(slotId), JSON.stringify(nextData))
-
-    const summary = buildSaveSummary(nextData)
-    const existing = saveSlots.value.find(slot => slot.id === slotId)
-    if (existing) {
-      existing.name = options.slotName || existing.name
-      existing.updatedAt = now
-      existing.lastPlayedAt = options.markPlayed ? now : existing.lastPlayedAt || now
-      existing.summary = summary
-      existing.source = existing.source || 'local'
-    } else {
-      saveSlots.value.push({
-        id: slotId,
-        name: options.slotName || nextData.slotName || '未命名存档',
-        createdAt: now,
-        updatedAt: now,
-        lastPlayedAt: now,
-        source: 'local',
-        summary
-      })
-    }
-
-    if (options.updateSelection !== false) {
-      saveIndex.value.lastSelectedSlotId = slotId
-    }
-    saveSaveIndex()
-    return nextData
-  }
-
-  function getProjectLevelState(totalXP = 0) {
-    let level = 1
-    let nextLevelXP = PROJECT_BASE_XP
-    let currentXP = Math.max(0, Math.floor(totalXP))
-
-    while (currentXP >= nextLevelXP) {
-      currentXP -= nextLevelXP
-      level += 1
-      nextLevelXP = Math.floor(nextLevelXP * PROJECT_XP_GROWTH)
-    }
-
-    return { level, currentXP, nextLevelXP }
-  }
-
-  function deriveTotalXPFromLegacyProject(project = {}) {
-    if (typeof project.totalXP === 'number' && Number.isFinite(project.totalXP)) {
-      return Math.max(0, Math.floor(project.totalXP))
-    }
-
-    let totalXP = Math.max(0, Math.floor(project.currentXP || 0))
-    let nextLevelXP = PROJECT_BASE_XP
-    const targetLevel = Math.max(1, Math.floor(project.level || 1))
-
-    for (let level = 1; level < targetLevel; level += 1) {
-      totalXP += nextLevelXP
-      nextLevelXP = Math.floor(nextLevelXP * PROJECT_XP_GROWTH)
-    }
-
-    return totalXP
-  }
-
-  function normalizeProject(project = {}) {
-    const totalXP = deriveTotalXPFromLegacyProject(project)
-    return {
-      ...project,
-      id: project.id,
-      name: project.name || '未命名项目',
-      icon: project.icon || '📁',
-      totalXP,
-      totalTrees: project.totalTrees || 0,
-      totalTimeSpent: project.totalTimeSpent || 0,
-      forest: project.forest || {},
-      themeId: project.themeId || null,
-      ...getProjectLevelState(totalXP)
-    }
-  }
-
-  function normalizeNote(note = {}) {
-    const createdAt = note.createdAt || note.updatedAt || new Date().toISOString()
-    const content = note.content || ''
-    const inferredType =
-      note.type || (note.title?.startsWith('[植树日志]') ? 'planting' : 'essay')
-    const normalizedType = inferredType === 'ranger' ? 'essay' : inferredType
-    const source = note.source || (inferredType === 'system' ? 'system' : 'user')
-
-    return {
-      ...note,
-      projectIds: toProjectIds(note.projectIds || note.projectId),
-      type: normalizedType,
-      source,
-      eventType: note.eventType || null,
-      content,
-      wordCount:
-        typeof note.wordCount === 'number'
-          ? note.wordCount
-          : content.replace(/\s/g, '').length,
-      coins: note.coins || 0,
-      createdAt,
-      updatedAt: note.updatedAt || createdAt,
-      date: note.date || new Date(createdAt).toLocaleString()
-    }
+      saveData,
+      options
+    })
   }
 
   function createNote({
@@ -450,67 +185,40 @@ export const useGameStore = defineStore('game', () => {
     awardCoins = source === 'user',
     id = Date.now()
   }) {
-    const cleanContent = (content || '').replace(/\s/g, '')
-    const wordCount = cleanContent.length
+    const result = createNoteRecord({
+      title,
+      content,
+      projectIds,
+      type,
+      source,
+      eventType,
+      awardCoins,
+      id
+    })
 
-    if (source === 'user' && wordCount <= 0) {
-      void alertDialog(type === 'planting' ? '未记录笔记，未能获得金币！' : '内容不能为空', {
-        title: '内容无效'
+    if (result.error) {
+      void alertDialog(result.error.message, {
+        title: result.error.title
       })
       return null
     }
 
-    const earnedCoins = awardCoins ? 10 : 0
-    if (earnedCoins > 0) coins.value += earnedCoins
-
-    const createdAt = new Date().toISOString()
-    const note = normalizeNote({
-      id,
-      title,
-      content,
-      type,
-      source,
-      eventType,
-      projectIds,
-      wordCount,
-      coins: earnedCoins,
-      createdAt,
-      updatedAt: createdAt,
-      date: new Date(createdAt).toLocaleString()
-    })
-
-    notebook.value.unshift(note)
-    return note
+    if (result.earnedCoins > 0) coins.value += result.earnedCoins
+    notebook.value.unshift(result.note)
+    return result.note
   }
 
-  // === 5. 核心逻辑 ===
+  // === 核心逻辑 ===
   function getTreeYield(tree, project) {
-    if (!project) return { trees: 0, xp: 0, multiplier: 1 }
-    let multiplier = 1
-    if (project.level >= 20) multiplier += 1 
-    if (project.level >= 50) multiplier += 1
-    if (project.level >= 99) multiplier += 1
-    return { trees: 1 * multiplier, xp: tree.xp * multiplier, multiplier }
+    return getTreeYieldFromHarvestService(tree, project)
   }
 
   function completeCycle(times = 1, projectId = runningProjectId.value) {
     const targetProject = projects.value.find(p => p.id === projectId)
     if (!targetProject || !activeTree.value) return
 
-    const yieldData = getTreeYield(activeTree.value, targetProject)
-    
-    const totalTrees = yieldData.trees * times
-    const totalXP = yieldData.xp * times
-
-    targetProject.totalTrees += totalTrees
-    targetProject.totalXP += totalXP
-    Object.assign(targetProject, getProjectLevelState(targetProject.totalXP))
-
-    if (!targetProject.forest) targetProject.forest = {}
-    if (!targetProject.forest[activeTree.value.id]) targetProject.forest[activeTree.value.id] = 0
-    targetProject.forest[activeTree.value.id] += totalTrees
-
-    globalXP.value += totalXP
+    const result = applyCompletedTreeCycles(targetProject, activeTree.value, times)
+    if (result) globalXP.value += result.totalXP
   }
 
   function uploadNote(title, content, projectIds = []) {
@@ -536,40 +244,20 @@ export const useGameStore = defineStore('game', () => {
 
   function renameNote(noteId, newTitle) {
     const note = notebook.value.find(n => n.id === noteId)
-    if (note && note.source !== 'system') {
-      note.title = newTitle
-      note.updatedAt = new Date().toISOString()
-      note.date = new Date(note.updatedAt).toLocaleString()
-    }
+    renameUserNote(note, newTitle)
   }
 
   function updateNote(noteId, payload = {}) {
     const note = notebook.value.find(n => n.id === noteId)
-    if (!note || note.source === 'system') return false
+    const result = updateUserNote(note, payload)
 
-    if (typeof payload.content === 'string') {
-      const cleanContent = payload.content.replace(/\s/g, '')
-      if (cleanContent.length <= 0) {
-        void alertDialog('日志内容不能为空', {
-          title: '内容无效'
-        })
-        return false
-      }
-      note.content = payload.content
-      note.wordCount = cleanContent.length
+    if (result.error) {
+      void alertDialog(result.error.message, {
+        title: result.error.title
+      })
     }
 
-    if (typeof payload.title === 'string' && payload.title.trim()) {
-      note.title = payload.title.trim()
-    }
-
-    if (payload.projectIds !== undefined) {
-      note.projectIds = toProjectIds(payload.projectIds)
-    }
-
-    note.updatedAt = new Date().toISOString()
-    note.date = new Date(note.updatedAt).toLocaleString()
-    return true
+    return result.ok
   }
 
   function createSystemNote({
@@ -590,51 +278,43 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function deleteNote(noteId) {
-    const index = notebook.value.findIndex(n => n.id === noteId)
-    if (index !== -1) {
-      const note = notebook.value[index]
-      if (note.source === 'system') return false
-      if (note.coins > 0) coins.value = Math.max(0, coins.value - note.coins)
-      notebook.value.splice(index, 1)
-      return true
-    }
-    return false
+    const result = deleteUserNote(notebook.value, noteId)
+    if (result.coinRefund > 0) coins.value = Math.max(0, coins.value - result.coinRefund)
+    return result.deleted
   }
 
   function updateNoteTags(noteId, newProjectIds) {
     const note = notebook.value.find(n => n.id === noteId)
-    if (note && note.source !== 'system') note.projectIds = [...newProjectIds]
+    updateUserNoteTags(note, newProjectIds)
   }
 
   function toggleNightMode() {
     isNightMode.value = !isNightMode.value
   }
 
-  // === 6. 计时器与动作控制 ===
+  // === 计时器与动作控制 ===
   let timerInterval = null
   let lastTimestamp = 0
   let lastRuntimeSaveAt = 0
 
   function syncRunningTimer(now = Date.now()) {
-    if (!isRunning.value || !activeTree.value) {
-      lastTimestamp = now
-      return 0
-    }
+    const result = getRunningTimerDelta({
+      isRunning: isRunning.value,
+      hasActiveTree: Boolean(activeTree.value),
+      timer: timer.value,
+      lastTimestamp,
+      now,
+      maxTime: MAX_PLANTING_TIME
+    })
+    lastTimestamp = result.nextTimestamp
+    timer.value = result.nextTimer
 
-    const delta = Math.max(0, (now - lastTimestamp) / 1000)
-    lastTimestamp = now
-
-    if (timer.value >= MAX_PLANTING_TIME) return 0
-
-    const actualDelta = Math.min(delta, MAX_PLANTING_TIME - timer.value)
-    timer.value += actualDelta
-
-    if (actualDelta > 0 && now - lastRuntimeSaveAt >= RUNNING_SAVE_INTERVAL_MS) {
+    if (result.actualDelta > 0 && now - lastRuntimeSaveAt >= RUNNING_SAVE_INTERVAL_MS) {
       lastRuntimeSaveAt = now
       saveToLocalStorage()
     }
 
-    return actualDelta
+    return result.actualDelta
   }
 
   function flushRuntimeState() {
@@ -729,22 +409,15 @@ export const useGameStore = defineStore('game', () => {
     const targetProject = projects.value.find(p => p.id === confirmedProjectId)
     if (!targetProject || !activeTree.value) return false
 
-    const cycleTime = activeTree.value.time
-    const finishedCycles = Math.floor(timer.value / cycleTime)
+    const finishedCycles = getFinishedCycles(timer.value, activeTree.value)
 
     if (finishedCycles > 0) {
       completeCycle(finishedCycles, targetProject.id)
       targetProject.totalTimeSpent += timer.value
 
-      if (content && content.trim().length > 0) {
-        createNote({
-          title: `[植树日志] ${targetProject.name}`,
-          content,
-          projectIds: [targetProject.id],
-          type: 'planting',
-          source: 'user'
-        })
-      }
+      const noteInput = buildPlantingNoteInput(targetProject, content)
+      if (noteInput) createNote(noteInput)
+
     }
 
     stopTimer()
@@ -765,33 +438,20 @@ export const useGameStore = defineStore('game', () => {
     activeView.value = 'forest' 
   }
 
-  // === 7. 管理功能 ===
+  // === 管理功能 ===
   function createTheme(name) { 
-    themes.value.push({ 
-      id: `theme_${Date.now()}`, 
-      name,
-      x: Math.floor(Math.random() * 70) + 15,
-      y: Math.floor(Math.random() * 70) + 15
-    }) 
+    themes.value.push(createThemeRecord(name)) 
   }
 
-  function renameTheme(id, newName) { const theme = themes.value.find(t => t.id === id); if (theme) theme.name = newName }
+  function renameTheme(id, newName) { return renameThemeInList(themes.value, id, newName) }
   function deleteTheme(id) {
-    projects.value.forEach(p => { if (p.themeId === id) p.themeId = null })
-    themes.value = themes.value.filter(t => t.id !== id)
+    const result = deleteThemeFromLists(themes.value, projects.value, id)
+    themes.value = result.nextThemes
+    projects.value = result.nextProjects
   }
 
   function createProject(name, themeId = null) { 
-    const newProj = normalizeProject({
-      id: Date.now(),
-      name,
-      icon: '📁',
-      totalXP: 0,
-      totalTrees: 0,
-      totalTimeSpent: 0,
-      forest: {},
-      themeId
-    })
+    const newProj = createProjectRecord(name, themeId)
     projects.value.push(newProj)
     selectProject(newProj.id) 
   }
@@ -799,171 +459,81 @@ export const useGameStore = defineStore('game', () => {
   function renameProject(id, newName) { const project = projects.value.find(p => p.id === id); if (project) project.name = newName }
 
   function deleteProject(id, options = {}) {
-    const targetProject = projects.value.find(p => isSameProjectId(p.id, id))
-    if (!targetProject) return false
-
-    const commitMessage = options.commitMessage?.trim()
-    const relatedLogCount = notebook.value.filter(note =>
-      normalizeNote(note).projectIds.some(projectId => isSameProjectId(projectId, id))
-    ).length
+    const result = deleteProjectFromList(projects.value, notebook.value, id, options)
+    if (!result) return false
 
     if (isSameProjectId(runningProjectId.value, id)) {
         stopTimer(); isRunning.value = false; runningProjectId.value = null; timer.value = 0
     }
     if (isSameProjectId(activeProjectId.value, id)) { activeProjectId.value = null; activeView.value = 'forest' }
-    projects.value = projects.value.filter(p => !isSameProjectId(p.id, id))
+    projects.value = result.nextProjects
 
-    createSystemNote({
-      title: '[系统日志] 项目已删除',
-      eventType: 'project_delete',
-      content: [
-        '系统记录：项目删除完成。',
-        `删除项目：${targetProject.name}`,
-        `删除前树木：${targetProject.totalTrees || 0} 棵`,
-        `删除前时长：${Math.floor(targetProject.totalTimeSpent || 0)} 秒`,
-        `删除前经验：${deriveTotalXPFromLegacyProject(targetProject)} XP`,
-        `关联日志：${relatedLogCount} 条`,
-        commitMessage ? `用户说明：${commitMessage}` : null
-      ]
-        .filter(Boolean)
-        .join('\n')
-    })
+    createSystemNote(result.systemNote)
 
     return true
   }
 
   function mergeProjects(sourceProjectId, targetProjectId, options = {}) {
-    if (!sourceProjectId || !targetProjectId || isSameProjectId(sourceProjectId, targetProjectId)) return false
+    const result = mergeProjectData(
+      projects.value,
+      notebook.value,
+      sourceProjectId,
+      targetProjectId,
+      options
+    )
+    if (!result) return false
 
-    const sourceProject = projects.value.find(p => isSameProjectId(p.id, sourceProjectId))
-    const targetProject = projects.value.find(p => isSameProjectId(p.id, targetProjectId))
-    if (!sourceProject || !targetProject) return false
-    const commitMessage = options.commitMessage?.trim()
+    if (isSameProjectId(activeProjectId.value, sourceProjectId)) activeProjectId.value = result.targetProject.id
+    if (isSameProjectId(runningProjectId.value, sourceProjectId)) runningProjectId.value = result.targetProject.id
 
-    targetProject.totalTrees += sourceProject.totalTrees || 0
-    targetProject.totalTimeSpent += sourceProject.totalTimeSpent || 0
-    targetProject.totalXP =
-      deriveTotalXPFromLegacyProject(targetProject) +
-      deriveTotalXPFromLegacyProject(sourceProject)
-    Object.assign(targetProject, getProjectLevelState(targetProject.totalXP))
+    projects.value = result.nextProjects
+    notebook.value = result.nextNotebook
 
-    const mergedForest = { ...targetProject.forest }
-    Object.entries(sourceProject.forest || {}).forEach(([treeId, count]) => {
-      mergedForest[treeId] = (mergedForest[treeId] || 0) + count
-    })
-    targetProject.forest = mergedForest
-
-    let migratedLogCount = 0
-    notebook.value = notebook.value.map(note => {
-      const normalized = normalizeNote(note)
-      if (!normalized.projectIds.some(projectId => isSameProjectId(projectId, sourceProjectId))) return normalized
-
-      migratedLogCount += 1
-      normalized.projectIds = [
-        ...new Set(
-          normalized.projectIds.map(projectId =>
-            isSameProjectId(projectId, sourceProjectId) ? targetProject.id : projectId
-          )
-        )
-      ]
-      return normalized
-    })
-
-    if (isSameProjectId(activeProjectId.value, sourceProjectId)) activeProjectId.value = targetProject.id
-    if (isSameProjectId(runningProjectId.value, sourceProjectId)) runningProjectId.value = targetProject.id
-
-    projects.value = projects.value.filter(p => !isSameProjectId(p.id, sourceProjectId))
-
-    createSystemNote({
-      title: '[系统日志] 项目已合并',
-      projectIds: [targetProjectId],
-      eventType: 'project_merge',
-      content: [
-        `系统记录：项目合并完成。`,
-        `源项目：${sourceProject.name}`,
-        `目标项目：${targetProject.name}`,
-        `迁移树木：${sourceProject.totalTrees || 0} 棵`,
-        `迁移时长：${Math.floor(sourceProject.totalTimeSpent || 0)} 秒`,
-        `迁移经验：${deriveTotalXPFromLegacyProject(sourceProject)} XP`,
-        `迁移日志：${migratedLogCount} 条`,
-        commitMessage ? `用户说明：${commitMessage}` : null
-      ]
-        .filter(Boolean)
-        .join('\n')
-    })
+    createSystemNote(result.systemNote)
 
     return true
   }
 
   function reorderProjects(sourceProjectId, targetProjectId, position = 'before') {
-    if (!sourceProjectId || !targetProjectId || isSameProjectId(sourceProjectId, targetProjectId)) return false
-
-    const nextProjects = [...projects.value]
-    const sourceIndex = nextProjects.findIndex(project => isSameProjectId(project.id, sourceProjectId))
-    const targetIndex = nextProjects.findIndex(project => isSameProjectId(project.id, targetProjectId))
-    if (sourceIndex === -1 || targetIndex === -1) return false
-
-    const [movedProject] = nextProjects.splice(sourceIndex, 1)
-    const targetProject = nextProjects.find(project => isSameProjectId(project.id, targetProjectId))
-    if (!movedProject || !targetProject) return false
-
-    movedProject.themeId = targetProject.themeId || null
-
-    const insertIndex =
-      nextProjects.findIndex(project => isSameProjectId(project.id, targetProjectId)) +
-      (position === 'after' ? 1 : 0)
-
-    nextProjects.splice(insertIndex, 0, movedProject)
+    const nextProjects = reorderProjectList(
+      projects.value,
+      sourceProjectId,
+      targetProjectId,
+      position
+    )
+    if (!nextProjects) return false
     projects.value = nextProjects
     return true
   }
 
   function moveProjectToTheme(projectId, themeId = null) {
-    const nextProjects = [...projects.value]
-    const sourceIndex = nextProjects.findIndex(project => isSameProjectId(project.id, projectId))
-    if (sourceIndex === -1) return false
-
-    const [movedProject] = nextProjects.splice(sourceIndex, 1)
-    if (!movedProject) return false
-
-    movedProject.themeId = themeId || null
-
-    const lastThemeIndex = (() => {
-      if (!themeId) {
-        return nextProjects.reduce(
-          (index, project, currentIndex) => (!project.themeId ? currentIndex : index),
-          -1
-        )
-      }
-
-      return nextProjects.reduce(
-        (index, project, currentIndex) => (project.themeId === themeId ? currentIndex : index),
-        -1
-      )
-    })()
-
-    nextProjects.splice(lastThemeIndex + 1, 0, movedProject)
+    const nextProjects = moveProjectToThemeList(projects.value, projectId, themeId)
+    if (!nextProjects) return false
     projects.value = nextProjects
     return true
   }
 
   function getSaveData() {
-    return {
-      version: 2,
-      slotId: activeSlotId.value,
-      slotName: activeSlotMeta.value?.name || '未命名存档',
-      timestamp: Date.now(),
+    return buildSaveData({
+      activeSlotId: activeSlotId.value,
+      activeSlotName: activeSlotMeta.value?.name,
       coins: coins.value,
       globalXP: globalXP.value,
       unlockedTreeIds: unlockedTreeIds.value,
       ownedBoostIds: ownedBoostIds.value,
       unlockedBackgroundIds: unlockedBackgroundIds.value,
-      themes: themes.value, projects: projects.value, notebook: notebook.value,
+      themes: themes.value,
+      projects: projects.value,
+      notebook: notebook.value,
       activeView: activeView.value,
       activeThemeId: activeThemeId.value,
-      activeProjectId: activeProjectId.value, runningProjectId: runningProjectId.value, activeTreeId: activeTreeId.value,
-      isRunning: isRunning.value, timer: timer.value, isNightMode: isNightMode.value 
-    }
+      activeProjectId: activeProjectId.value,
+      runningProjectId: runningProjectId.value,
+      activeTreeId: activeTreeId.value,
+      isRunning: isRunning.value,
+      timer: timer.value,
+      isNightMode: isNightMode.value
+    })
   }
 
   function resetGameState() {
@@ -1082,94 +652,199 @@ export const useGameStore = defineStore('game', () => {
 
   function discardOfflineEarnings() { offlineEarnings.value = null; isRunning.value = false; saveToLocalStorage() }
 
-  // === 9. 云同步与认证逻辑 ===
+  // === 云同步与认证逻辑 ===
   const user = ref(null)
+  const syncStatus = ref('idle')
+  let cloudSyncTimeout = null
 
-  async function initAuth() {
-    const { data: { session } } = await supabase.auth.getSession()
-    user.value = session?.user || null
-    supabase.auth.onAuthStateChange((_event, session) => { user.value = session?.user || null })
+  function getLocalSlotSaveData(slotId) {
+    if (!slotId) return null
+    if (slotId === activeSlotId.value && bootStage.value === 'in-game') {
+      return getSaveData()
+    }
+    return readSlotData(slotId)
   }
 
-  async function loginWithEmail(email, password) {
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
-    if (error) {
-      void alertDialog('登录失败: ' + error.message, {
-        title: '登录失败'
-      })
-      return false
-    }
-    return true
-  }
+  async function pushSlotToCloud(slotId) {
+    if (!user.value || !slotId) return false
 
-  async function registerWithEmail(email, password) {
-    const { error } = await supabase.auth.signUp({ email, password })
-    if (error) {
-      void alertDialog('注册失败: ' + error.message, {
-        title: '注册失败'
-      })
-      return false
-    }
-    void alertDialog('注册成功！已自动登录。', {
-      title: '注册成功'
+    const slot = saveSlots.value.find(item => item.id === slotId)
+    const saveData = getLocalSlotSaveData(slotId)
+    if (!slot || !saveData) return false
+
+    await upsertSelfHostedCloudSlot(slotId, {
+      name: slot.name || saveData.slotName || 'Untitled Save',
+      saveData: {
+        ...saveData,
+        slotId,
+        slotName: slot.name || saveData.slotName
+      },
+      summary: buildSaveSummary(saveData),
+      clientUpdatedAt: slot.updatedAt || new Date(saveData.timestamp || Date.now()).toISOString()
     })
     return true
   }
 
+  function scheduleActiveSlotCloudSync() {
+    if (!user.value || !activeSlotId.value) return
+    if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout)
+    cloudSyncTimeout = setTimeout(() => {
+      void pushSlotToCloud(activeSlotId.value).catch(error => {
+        console.error(error)
+      })
+    }, 5000)
+  }
+
+  async function mergeSelfHostedCloudSlots() {
+    syncStatus.value = 'syncing'
+    const cloudSlots = await listSelfHostedCloudSlots()
+
+    for (const cloudSlot of cloudSlots) {
+      const cloudSaveData = {
+        ...cloudSlot.saveData,
+        slotId: cloudSlot.slotId,
+        slotName: cloudSlot.name || cloudSlot.saveData?.slotName
+      }
+      const localSlot = saveSlots.value.find(slot => slot.id === cloudSlot.slotId)
+
+      if (!localSlot) {
+        persistSlotData(cloudSlot.slotId, cloudSaveData, {
+          markPlayed: false,
+          slotName: cloudSaveData.slotName,
+          updateSelection: false
+        })
+        updateSlotMeta(cloudSlot.slotId, {
+          source: 'cloud',
+          updatedAt: cloudSlot.clientUpdatedAt || cloudSlot.serverUpdatedAt,
+          lastPlayedAt: cloudSlot.clientUpdatedAt || cloudSlot.serverUpdatedAt
+        })
+        continue
+      }
+
+      const localTime = Date.parse(localSlot.updatedAt || localSlot.lastPlayedAt || 0)
+      const cloudTime = Date.parse(cloudSlot.clientUpdatedAt || cloudSlot.serverUpdatedAt || 0)
+
+      if (cloudTime > localTime) {
+        persistSlotData(cloudSlot.slotId, cloudSaveData, {
+          markPlayed: false,
+          slotName: cloudSaveData.slotName,
+          updateSelection: false
+        })
+        updateSlotMeta(cloudSlot.slotId, {
+          source: 'cloud',
+          updatedAt: cloudSlot.clientUpdatedAt || cloudSlot.serverUpdatedAt,
+          lastPlayedAt: cloudSlot.clientUpdatedAt || cloudSlot.serverUpdatedAt
+        })
+      } else if (localTime > cloudTime) {
+        await pushSlotToCloud(localSlot.id)
+      }
+    }
+
+    saveSaveIndex()
+    syncStatus.value = 'idle'
+    return cloudSlots.length
+  }
+
+  async function initAuth() {
+    const session = getStoredSession()
+    user.value = session?.user || null
+  }
+
+  async function loginWithEmail(email, password) {
+    try {
+      const session = await loginSelfHosted(email, password)
+      user.value = session.user
+      await mergeSelfHostedCloudSlots()
+      return true
+    } catch (error) {
+      void alertDialog('Login failed: ' + error.message, {
+        title: 'Login failed'
+      })
+      return false
+    }
+  }
+  async function registerWithEmail(email, password) {
+    try {
+      const session = await registerSelfHosted(email, password)
+      user.value = session.user
+      await uploadSaveToCloud({ silent: true })
+      void alertDialog('Account created and signed in.', {
+        title: 'Sign up complete'
+      })
+      return true
+    } catch (error) {
+      void alertDialog('Sign up failed: ' + error.message, {
+        title: 'Sign up failed'
+      })
+      return false
+    }
+  }
   async function logout() {
-    const { error } = await supabase.auth.signOut()
-    if (error) {
-      void alertDialog(error.message, {
-        title: '退出失败'
-      })
-    }
+    clearStoredSession()
+    user.value = null
   }
-
-  async function uploadSaveToCloud() {
+  async function uploadSaveToCloud(options = {}) {
     if (!user.value) {
-      void alertDialog('请先登录！', {
-        title: '未登录'
+      void alertDialog('Please sign in first.', {
+        title: 'Not signed in'
       })
       return false
     }
-    const saveData = getSaveData()
-    const { error } = await supabase.from('game_saves').upsert({ 
-        user_id: user.value.id, save_data: saveData, updated_at: new Date()
-      }, { onConflict: 'user_id' })
-    if (error) {
+
+    try {
+      syncStatus.value = 'syncing'
+      if (activeSlotId.value) saveActiveSlot(false)
+
+      let uploadedCount = 0
+      for (const slot of saveSlots.value) {
+        if (await pushSlotToCloud(slot.id)) uploadedCount += 1
+      }
+
+      syncStatus.value = 'idle'
+      if (!options.silent) {
+        void alertDialog(`Synced ${uploadedCount} save slot(s).`, {
+          title: 'Sync complete'
+        })
+      }
+      return true
+    } catch (error) {
+      syncStatus.value = 'error'
       console.error(error)
-      void alertDialog('云端保存失败: ' + error.message, {
-        title: '同步失败'
-      })
-    } else {
-      void alertDialog('☁️ 云端保存成功！', {
-        title: '同步成功'
-      })
+      if (!options.silent) {
+        void alertDialog('Cloud save failed: ' + error.message, {
+          title: 'Sync failed'
+        })
+      }
+      return false
     }
   }
-
-  async function downloadSaveFromCloud() {
+  async function downloadSaveFromCloud(options = {}) {
     if (!user.value) {
-      void alertDialog('请先登录！', {
-        title: '未登录'
+      void alertDialog('Please sign in first.', {
+        title: 'Not signed in'
       })
       return false
     }
-    const { data, error } = await supabase
-      .from('game_saves')
-      .select('save_data')
-      .eq('user_id', user.value.id)
-      .single()
-    if (error) {
-      console.error(error)
-      void alertDialog('读取云存档失败: ' + error.message, {
-        title: '读取失败'
-      })
-      return
-    }
-    if (data && data.save_data) { importSaveData(JSON.stringify(data.save_data)) }
-  }
 
+    try {
+      const count = await mergeSelfHostedCloudSlots()
+      if (!options.silent) {
+        void alertDialog(`Pulled ${count} cloud save slot(s).`, {
+          title: 'Sync complete'
+        })
+      }
+      return true
+    } catch (error) {
+      syncStatus.value = 'error'
+      console.error(error)
+      if (!options.silent) {
+        void alertDialog('Cloud load failed: ' + error.message, {
+          title: 'Load failed'
+        })
+      }
+      return false
+    }
+  }
   function saveActiveSlot(markPlayed = false) {
     if (!activeSlotId.value) return false
     persistSlotData(activeSlotId.value, getSaveData(), {
@@ -1181,24 +856,29 @@ export const useGameStore = defineStore('game', () => {
 
   function saveToLocalStorage() {
     if (
-      !activeSlotId.value ||
-      bootStage.value !== 'in-game' ||
-      offlineEarnings.value ||
-      isHydrating.value
+      !shouldPersistActiveSlot({
+        activeSlotId: activeSlotId.value,
+        bootStage: bootStage.value,
+        offlineEarnings: offlineEarnings.value,
+        isHydrating: isHydrating.value
+      })
     ) {
       return
     }
-    saveActiveSlot(false)
+    if (saveActiveSlot(false)) scheduleActiveSlotCloudSync()
   }
 
   function createSaveSlot(name, initialData = null) {
-    const slotId = createSlotId()
-    const slotName = name?.trim() || `新存档 #${saveSlots.value.length + 1}`
-    const slotData = initialData
-      ? { ...initialData, version: 2, slotId, slotName, timestamp: Date.now() }
-      : createEmptySaveData(slotId, slotName)
+    const { slotId, slotName, slotData } = createSaveSlotData(
+      name,
+      saveSlots.value.length,
+      initialData
+    )
 
     persistSlotData(slotId, slotData, { markPlayed: false, slotName })
+    void pushSlotToCloud(slotId).catch(error => {
+      console.error(error)
+    })
     return slotId
   }
 
@@ -1209,18 +889,20 @@ export const useGameStore = defineStore('game', () => {
     const slot = updateSlotMeta(slotId, { name: trimmed, updatedAt: new Date().toISOString() })
     if (!slot) return false
 
-    const raw = localStorage.getItem(getSlotStorageKey(slotId))
-    if (raw) {
-      const saveData = JSON.parse(raw)
+    const saveData = readSlotData(slotId)
+    if (saveData) {
       persistSlotData(slotId, { ...saveData, slotName: trimmed }, { slotName: trimmed, updateSelection: false })
     } else {
       saveSaveIndex()
     }
+    void pushSlotToCloud(slotId).catch(error => {
+      console.error(error)
+    })
     return true
   }
 
   function deleteSaveSlot(slotId) {
-    localStorage.removeItem(getSlotStorageKey(slotId))
+    removeSlotData(slotId)
     saveIndex.value.slots = saveSlots.value.filter(slot => slot.id !== slotId)
 
     if (activeSlotId.value === slotId) {
@@ -1234,14 +916,18 @@ export const useGameStore = defineStore('game', () => {
     }
 
     saveSaveIndex()
+    if (user.value) {
+      void deleteSelfHostedCloudSlot(slotId).catch(error => {
+        console.error(error)
+      })
+    }
     return true
   }
 
   function loadSlot(slotId) {
-    const raw = localStorage.getItem(getSlotStorageKey(slotId))
-    if (!raw) return false
+    const data = readSlotData(slotId)
+    if (!data) return false
 
-    const data = JSON.parse(raw)
     activeSlotId.value = slotId
     return applySaveData(data, true)
   }
@@ -1324,11 +1010,9 @@ export const useGameStore = defineStore('game', () => {
     loadSaveIndex()
     if (saveSlots.value.length > 0) return
 
-    const legacyRaw = localStorage.getItem(LEGACY_SAVE_KEY)
-    if (!legacyRaw) return
-
     try {
-      const legacyData = JSON.parse(legacyRaw)
+      const legacyData = readLegacySaveData()
+      if (!legacyData) return
       createSaveSlot('主档案', {
         ...legacyData,
         activeView: legacyData.activeView || (legacyData.activeProjectId ? 'dashboard' : 'forest')
@@ -1358,7 +1042,7 @@ export const useGameStore = defineStore('game', () => {
     const data =
       slotId === activeSlotId.value
         ? getSaveData()
-        : JSON.parse(localStorage.getItem(getSlotStorageKey(slotId)) || 'null')
+        : readSlotData(slotId)
     if (!data) return
 
     const slotName =
@@ -1405,7 +1089,7 @@ export const useGameStore = defineStore('game', () => {
     activeProjectId, activeProject, runningProjectId, runningProject, activeThemeId,
     activeTreeId, activeTree, timer, maxTime, isRunning, progressPercentage, 
     isNightMode, TREE_TYPES, SHOP_CATEGORIES, shopItems, shopCatalog, inventoryTrees,
-    user, offlineEarnings, MAX_PLANTING_TIME, 
+    user, syncStatus, offlineEarnings, MAX_PLANTING_TIME, 
     
     initSaveSystem, createSaveSlot, renameSaveSlot, deleteSaveSlot, enterSlot, exitToSaveSelection,
     saveActiveSlot, importSaveAsNewSlot,

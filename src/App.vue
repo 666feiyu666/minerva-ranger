@@ -301,9 +301,12 @@ const password = ref('')
 const SYSTEM_VIEWS = new Set(['shop', 'map', 'notebook'])
 
 // 初始化认证
-onMounted(() => {
-  store.initAuth()
+onMounted(async () => {
+  await store.initAuth()
   store.initSaveSystem()
+  if (store.user && import.meta.env.VITE_SYNC_API_URL) {
+    void store.downloadSaveFromCloud({ silent: true })
+  }
   document.addEventListener('click', handleDocumentClick)
 })
 

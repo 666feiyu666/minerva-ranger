@@ -64,3 +64,12 @@ ios/*
 
 release
 build
+
+# Local sync server data
+server/data/*
+!server/data/.gitkeep
+
+# dddd
+tmp
+mr-script.tar.gz
+

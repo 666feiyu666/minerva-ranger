@@ -19,7 +19,6 @@
 
 - 版本定位：`0.0.0` MVP 预览版，不是正式 `1.0.0` 版本。
 - 当前重点：本地多存档、项目制专注成长、森林巡视、日志记录和 Electron 桌面端。
-- 仍在打磨：云同步、巡林日志、成就系统、移动端适配和更完整的视觉表现。
 - 发布计划：`1.0.0` 会作为第一个正式发布版本。
 
 ## ✨ 主要功能
@@ -63,7 +62,7 @@
 - `Vite`
 - `Tailwind CSS`
 - `Electron`
-- `Supabase`
+- Self-hosted Sync API
 
 仓库中也已经包含 `Capacitor` 相关依赖，为后续移动端扩展留了空间。
 
@@ -94,13 +93,13 @@ npm run build
 ### 启动 Electron 桌面端
 
 ```bash
-npm run app:start
+npm run desktop
 ```
 
 ### 构建桌面安装包
 
 ```bash
-npm run app:build
+npm run dist
 ```
 
 当前仓库已配置 Electron 构建目标：
@@ -123,4 +122,3 @@ npm run app:build
 - [ ] 更丰富的森林 / 场景视觉系统
 - [ ] 成就系统
 - [ ] 移动端开发
-
