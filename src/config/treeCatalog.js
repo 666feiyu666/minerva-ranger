@@ -18,7 +18,7 @@ export const TREE_TYPES = [
   {
     id: 't2',
     name: '垂柳',
-    time: 25 * 60,
+    time: 30 * 60,
     xp: 250,
     price: 500,
     levelReq: 5,
@@ -28,7 +28,7 @@ export const TREE_TYPES = [
   {
     id: 't3',
     name: '杨树',
-    time: 25 * 60,
+    time: 45 * 60,
     xp: 600,
     price: 2500,
     levelReq: 15,
@@ -38,7 +38,7 @@ export const TREE_TYPES = [
   {
     id: 't4',
     name: '魔法树',
-    time: 25 * 60,
+    time: 60 * 60,
     xp: 1500,
     price: 10000,
     levelReq: 30,
@@ -48,7 +48,7 @@ export const TREE_TYPES = [
   {
     id: 't5',
     name: '金钱树',
-    time: 25 * 60,
+    time: 100 * 60,
     xp: 3000,
     price: 50000,
     levelReq: 50,

@@ -2,4 +2,3 @@ export const PROJECT_BASE_XP = 100
 export const PROJECT_XP_GROWTH = 1.2
 export const TIMER_TICK_INTERVAL_MS = 1000
 export const RUNNING_SAVE_INTERVAL_MS = 15 * 1000
-export const MAX_PLANTING_TIME = 3 * 60 * 60

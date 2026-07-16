@@ -243,29 +243,30 @@
                     <div class="text-left">
                        <div class="font-bold text-sm">{{ store.offlineEarnings.tree.name }}</div>
                        <div class="text-xs text-green-500 font-bold">
-                         计时推进到 {{ formatDuration(store.offlineEarnings.newTimer) }}
+                         <template v-if="store.offlineEarnings.mode === store.PLANTING_MODES.COUNTDOWN">
+                           剩余 {{ formatDuration(Math.max(0, store.offlineEarnings.targetDuration - store.offlineEarnings.newTimer)) }}
+                         </template>
+                         <template v-else>
+                           已计时 {{ formatDuration(store.offlineEarnings.newTimer) }}
+                         </template>
+                       </div>
+                       <div class="text-xs text-emerald-400">
+                         新完成 {{ store.offlineEarnings.completedCycles }} 个周期
                        </div>
                     </div>
                  </div>
                  <div class="text-right">
                     <div class="text-xs opacity-60">当前状态</div>
                     <div class="font-bold text-blue-500">
-                      {{ store.offlineEarnings.newTimer >= store.MAX_PLANTING_TIME ? '已到上限' : '继续挂机中' }}
+                      {{ store.offlineEarnings.newTimer >= store.taskLimit ? '已到上限' : '继续挂机中' }}
                     </div>
                  </div>
               </div>
 
-              <div class="grid grid-cols-2 gap-3">
-                <button @click="store.discardOfflineEarnings()" 
-                        class="py-3 rounded-xl border font-bold text-xs transition-colors"
-                        :class="store.isNightMode 
-                          ? 'border-gray-600 hover:bg-red-900/20 text-gray-400 hover:text-red-400' 
-                          : 'border-gray-300 hover:bg-red-50 text-gray-500 hover:text-red-500'">
-                   🗑️ 没在工作 (丢弃)
-                </button>
+              <div>
                 <button @click="store.claimOfflineEarnings()" 
-                        class="py-3 rounded-xl bg-green-600 text-white font-bold text-xs shadow-lg hover:bg-green-500 hover:scale-105 transition-all">
-                   ✅ 继续计时
+                        class="w-full py-3 rounded-xl bg-green-600 text-white font-bold text-xs shadow-lg hover:bg-green-500 hover:scale-105 transition-all">
+                   ✅ 确认离线进度
                 </button>
               </div>
           </div>

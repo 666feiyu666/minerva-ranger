@@ -25,16 +25,25 @@ export function applyCompletedTreeCycles(project, tree, times = 1) {
     return { totalTrees: 0, totalXP: 0, yieldData: getTreeYield(tree, project) }
   }
 
-  const yieldData = getTreeYield(tree, project)
-  const totalTrees = yieldData.trees * cycleCount
-  const totalXP = yieldData.xp * cycleCount
-
-  project.totalTrees = (project.totalTrees || 0) + totalTrees
-  project.totalXP = (project.totalXP || 0) + totalXP
-  Object.assign(project, getProjectLevelState(project.totalXP))
+  let totalTrees = 0
+  let totalXP = 0
+  let yieldData = getTreeYield(tree, project)
 
   if (!project.forest) project.forest = {}
-  project.forest[tree.id] = (project.forest[tree.id] || 0) + totalTrees
+
+  // Each cycle reads the level produced by the previous cycle. A batch restored
+  // from offline time can therefore cross a multiplier boundary correctly.
+  for (let cycle = 0; cycle < cycleCount; cycle += 1) {
+    yieldData = getTreeYield(tree, project)
+    totalTrees += yieldData.trees
+    totalXP += yieldData.xp
+
+    project.totalTrees = (project.totalTrees || 0) + yieldData.trees
+    project.totalXP = (project.totalXP || 0) + yieldData.xp
+    project.totalTimeSpent = (project.totalTimeSpent || 0) + (tree.time || 0)
+    project.forest[tree.id] = (project.forest[tree.id] || 0) + yieldData.trees
+    Object.assign(project, getProjectLevelState(project.totalXP))
+  }
 
   return { totalTrees, totalXP, yieldData }
 }

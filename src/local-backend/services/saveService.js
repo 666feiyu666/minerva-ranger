@@ -31,6 +31,12 @@ export function buildSaveData(snapshot) {
     activeTreeId: snapshot.activeTreeId,
     isRunning: snapshot.isRunning,
     timer: snapshot.timer,
+    settledCycles: snapshot.settledCycles,
+    taskTrees: snapshot.taskTrees,
+    taskXP: snapshot.taskXP,
+    taskStartLevel: snapshot.taskStartLevel,
+    timerMode: snapshot.timerMode,
+    targetDuration: snapshot.targetDuration,
     isNightMode: snapshot.isNightMode
   }
 }

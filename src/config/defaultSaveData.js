@@ -19,6 +19,12 @@ export function createEmptySaveData(slotId, slotName) {
     activeTreeId: null,
     isRunning: false,
     timer: 0,
+    settledCycles: 0,
+    taskTrees: 0,
+    taskXP: 0,
+    taskStartLevel: null,
+    timerMode: 'countup',
+    targetDuration: 3 * 60 * 60,
     isNightMode: false
   }
 }

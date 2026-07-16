@@ -1,10 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { alertDialog } from '@/composables/dialogService'
-import { MAX_PLANTING_TIME, RUNNING_SAVE_INTERVAL_MS, TIMER_TICK_INTERVAL_MS } from '@/config/gameBalance'
+import { RUNNING_SAVE_INTERVAL_MS, TIMER_TICK_INTERVAL_MS } from '@/config/gameBalance'
 import { PREVIEW_BACKGROUND_ITEMS, PREVIEW_SKILL_ITEMS, SHOP_CATEGORIES } from '@/config/shopCatalog'
 import { TREE_TYPES } from '@/config/treeCatalog'
-import { getGlobalLevelFromXP } from '@/local-backend/domain/leveling'
 import { normalizeNote } from '@/local-backend/domain/noteModel'
 import { isSameProjectId, normalizeProject } from '@/local-backend/domain/projectModel'
 import { buildSaveSummary, normalizeSaveIndex } from '@/local-backend/domain/saveSchema'
@@ -21,6 +20,13 @@ import {
   getFinishedCycles,
   getTreeYield as getTreeYieldFromHarvestService
 } from '@/local-backend/services/harvestService'
+import {
+  DEFAULT_COUNTUP_DURATION,
+  PLANTING_MODES,
+  getPlantingModeLabel,
+  getTaskTimeState,
+  validatePlantingMode
+} from '@/local-backend/services/plantingModeService.mjs'
 import {
   createProjectRecord,
   deleteProjectFromList,
@@ -86,7 +92,13 @@ export const useGameStore = defineStore('game', () => {
   
   const activeTreeId = ref(null)
   const isRunning = ref(false)
-  const timer = ref(0)          
+  const timer = ref(0)
+  const settledCycles = ref(0)
+  const taskTrees = ref(0)
+  const taskXP = ref(0)
+  const taskStartLevel = ref(null)
+  const timerMode = ref(PLANTING_MODES.COUNTUP)
+  const targetDuration = ref(DEFAULT_COUNTUP_DURATION)
   
   const isNightMode = ref(false)
   const offlineEarnings = ref(null)
@@ -110,10 +122,21 @@ export const useGameStore = defineStore('game', () => {
 
   const activeTree = computed(() => TREE_TYPES.find(t => t.id === activeTreeId.value))
   const maxTime = computed(() => activeTree.value ? activeTree.value.time : 25 * 60)
+  const taskLimit = computed(() => targetDuration.value || DEFAULT_COUNTUP_DURATION)
+  const timerModeLabel = computed(() => getPlantingModeLabel(timerMode.value))
+  const taskTimeState = computed(() =>
+    getTaskTimeState({
+      mode: timerMode.value,
+      elapsedDuration: timer.value,
+      targetDuration: taskLimit.value
+    })
+  )
   
   const progressPercentage = computed(() => {
     if (activeProjectId.value !== runningProjectId.value) return 0 
-    return activeTree.value ? Math.min((timer.value / maxTime.value) * 100, 100) : 0
+    if (!activeTree.value) return 0
+    const currentCycleTime = Math.max(0, timer.value - settledCycles.value * maxTime.value)
+    return Math.min((currentCycleTime / maxTime.value) * 100, 100)
   })
   
   const inventoryTrees = computed(() => TREE_TYPES.filter(t => unlockedTreeIds.value.includes(t.id)))
@@ -215,10 +238,24 @@ export const useGameStore = defineStore('game', () => {
 
   function completeCycle(times = 1, projectId = runningProjectId.value) {
     const targetProject = projects.value.find(p => p.id === projectId)
-    if (!targetProject || !activeTree.value) return
+    if (!targetProject || !activeTree.value) return null
 
     const result = applyCompletedTreeCycles(targetProject, activeTree.value, times)
-    if (result) globalXP.value += result.totalXP
+    if (result) {
+      globalXP.value += result.totalXP
+      settledCycles.value += Math.max(0, Math.floor(times))
+      taskTrees.value += result.totalTrees
+      taskXP.value += result.totalXP
+    }
+    return result
+  }
+
+  function settleFinishedCycles() {
+    if (!activeTree.value || !runningProject.value) return null
+    const finishedCycles = getFinishedCycles(timer.value, activeTree.value)
+    const pendingCycles = Math.max(0, finishedCycles - settledCycles.value)
+    if (pendingCycles <= 0) return null
+    return completeCycle(pendingCycles, runningProjectId.value)
   }
 
   function uploadNote(title, content, projectIds = []) {
@@ -304,12 +341,19 @@ export const useGameStore = defineStore('game', () => {
       timer: timer.value,
       lastTimestamp,
       now,
-      maxTime: MAX_PLANTING_TIME
+      maxTime: taskLimit.value
     })
     lastTimestamp = result.nextTimestamp
     timer.value = result.nextTimer
+    const settlement = settleFinishedCycles()
+    const reachedLimit = taskTimeState.value.reachedLimit
+    if (reachedLimit) stopTimer()
 
-    if (result.actualDelta > 0 && now - lastRuntimeSaveAt >= RUNNING_SAVE_INTERVAL_MS) {
+    if (
+      settlement ||
+      reachedLimit ||
+      (result.actualDelta > 0 && now - lastRuntimeSaveAt >= RUNNING_SAVE_INTERVAL_MS)
+    ) {
       lastRuntimeSaveAt = now
       saveToLocalStorage()
     }
@@ -360,13 +404,13 @@ export const useGameStore = defineStore('game', () => {
       return
     }
 
-    if (timer.value >= MAX_PLANTING_TIME) return
     syncRunningTimer()
+    if (taskTimeState.value.reachedLimit) stopTimer()
   }
 
   function startTimer() {
     if (isRunning.value) return 
-    if (timer.value >= MAX_PLANTING_TIME) return 
+    if (taskTimeState.value.reachedLimit) return
 
     isRunning.value = true
     lastTimestamp = Date.now()
@@ -392,37 +436,56 @@ export const useGameStore = defineStore('game', () => {
     }
   }
 
-  function startAction(treeId) {
-    if (!activeProjectId.value || !unlockedTreeIds.value.includes(treeId)) return
-    if (runningProjectId.value !== activeProjectId.value) {
-        stopTimer()
-        runningProjectId.value = activeProjectId.value 
-        timer.value = 0 
+  function startAction(treeId, options = {}) {
+    const tree = TREE_TYPES.find(item => item.id === treeId)
+    if (!activeProjectId.value || !tree || !unlockedTreeIds.value.includes(treeId)) {
+      return { ok: false, error: '当前项目或树种无效。' }
     }
-    if (activeTreeId.value !== treeId) { 
-        activeTreeId.value = treeId; timer.value = 0 
+    if (runningProjectId.value) {
+      return { ok: false, error: '请先结束当前种植任务。' }
     }
+
+    const validation = validatePlantingMode({
+      mode: options.mode || PLANTING_MODES.COUNTUP,
+      targetDuration: options.targetDuration,
+      cycleDuration: tree.time
+    })
+    if (!validation.ok) return validation
+
+    stopTimer()
+    runningProjectId.value = activeProjectId.value
+    activeTreeId.value = treeId
+    timer.value = 0
+    settledCycles.value = 0
+    taskTrees.value = 0
+    taskXP.value = 0
+    taskStartLevel.value = activeProject.value?.level || 1
+    timerMode.value = validation.mode
+    targetDuration.value = validation.targetDuration
     startTimer()
+    saveToLocalStorage()
+    return validation
   }
 
-  function submitHarvest(content, confirmedProjectId = runningProjectId.value) {
-    const targetProject = projects.value.find(p => p.id === confirmedProjectId)
+  function submitHarvest(content) {
+    const targetProject = runningProject.value
     if (!targetProject || !activeTree.value) return false
 
-    const finishedCycles = getFinishedCycles(timer.value, activeTree.value)
-
-    if (finishedCycles > 0) {
-      completeCycle(finishedCycles, targetProject.id)
-      targetProject.totalTimeSpent += timer.value
-
-      const noteInput = buildPlantingNoteInput(targetProject, content)
-      if (noteInput) createNote(noteInput)
-
-    }
+    settleFinishedCycles()
+    const noteInput = buildPlantingNoteInput(targetProject, content)
+    if (noteInput) createNote(noteInput)
 
     stopTimer()
     timer.value = 0
     runningProjectId.value = null
+    activeTreeId.value = null
+    settledCycles.value = 0
+    taskTrees.value = 0
+    taskXP.value = 0
+    taskStartLevel.value = null
+    timerMode.value = PLANTING_MODES.COUNTUP
+    targetDuration.value = DEFAULT_COUNTUP_DURATION
+    saveToLocalStorage()
     return true
   }
 
@@ -463,7 +526,17 @@ export const useGameStore = defineStore('game', () => {
     if (!result) return false
 
     if (isSameProjectId(runningProjectId.value, id)) {
-        stopTimer(); isRunning.value = false; runningProjectId.value = null; timer.value = 0
+        stopTimer()
+        isRunning.value = false
+        runningProjectId.value = null
+        activeTreeId.value = null
+        timer.value = 0
+        settledCycles.value = 0
+        taskTrees.value = 0
+        taskXP.value = 0
+        taskStartLevel.value = null
+        timerMode.value = PLANTING_MODES.COUNTUP
+        targetDuration.value = DEFAULT_COUNTUP_DURATION
     }
     if (isSameProjectId(activeProjectId.value, id)) { activeProjectId.value = null; activeView.value = 'forest' }
     projects.value = result.nextProjects
@@ -532,6 +605,12 @@ export const useGameStore = defineStore('game', () => {
       activeTreeId: activeTreeId.value,
       isRunning: isRunning.value,
       timer: timer.value,
+      settledCycles: settledCycles.value,
+      taskTrees: taskTrees.value,
+      taskXP: taskXP.value,
+      taskStartLevel: taskStartLevel.value,
+      timerMode: timerMode.value,
+      targetDuration: targetDuration.value,
       isNightMode: isNightMode.value
     })
   }
@@ -553,6 +632,12 @@ export const useGameStore = defineStore('game', () => {
     activeTreeId.value = null
     isRunning.value = false
     timer.value = 0
+    settledCycles.value = 0
+    taskTrees.value = 0
+    taskXP.value = 0
+    taskStartLevel.value = null
+    timerMode.value = PLANTING_MODES.COUNTUP
+    targetDuration.value = DEFAULT_COUNTUP_DURATION
     isNightMode.value = false
     offlineEarnings.value = null
   }
@@ -581,11 +666,32 @@ export const useGameStore = defineStore('game', () => {
       const savedRunningProjectId = data.runningProjectId || data.activeProjectId || null
       activeTreeId.value = data.activeTreeId || null
       timer.value = data.timer || 0
+      settledCycles.value = data.settledCycles || 0
+      taskTrees.value = data.taskTrees || 0
+      taskXP.value = data.taskXP || 0
+      taskStartLevel.value = data.taskStartLevel || null
+      const savedTree = TREE_TYPES.find(tree => tree.id === activeTreeId.value)
+      const savedModeValidation = validatePlantingMode({
+        mode: data.timerMode || PLANTING_MODES.COUNTUP,
+        targetDuration: data.targetDuration,
+        cycleDuration: savedTree?.time || 25 * 60
+      })
+      timerMode.value = savedModeValidation.ok
+        ? savedModeValidation.mode
+        : PLANTING_MODES.COUNTUP
+      targetDuration.value = savedModeValidation.ok
+        ? savedModeValidation.targetDuration
+        : DEFAULT_COUNTUP_DURATION
       isNightMode.value = data.isNightMode || false
 
       const wasRunning = data.isRunning || false
       const lastSave = data.timestamp || Date.now()
       offlineEarnings.value = null
+      runningProjectId.value = savedRunningProjectId
+      if (savedRunningProjectId && taskStartLevel.value === null) {
+        taskStartLevel.value = runningProject.value?.level || 1
+      }
+      settleFinishedCycles()
 
       if (wasRunning && activeTreeId.value && savedRunningProjectId) {
         const now = Date.now()
@@ -595,25 +701,29 @@ export const useGameStore = defineStore('game', () => {
           const tree = TREE_TYPES.find(t => t.id === activeTreeId.value)
           if (tree) {
             const totalTime = timer.value + secondsPassed
-            const finalTimer = Math.min(totalTime, MAX_PLANTING_TIME)
+            const finalTimer = Math.min(totalTime, taskLimit.value)
             const effectiveSeconds = Math.max(0, finalTimer - timer.value)
 
             offlineEarnings.value = {
               projectId: savedRunningProjectId,
               tree,
               secondsPassed: effectiveSeconds,
-              newTimer: finalTimer
+              newTimer: finalTimer,
+              mode: timerMode.value,
+              targetDuration: taskLimit.value,
+              completedCycles: Math.max(
+                0,
+                getFinishedCycles(finalTimer, tree) - settledCycles.value
+              )
             }
-            runningProjectId.value = savedRunningProjectId
             isRunning.value = false
           }
         } else if (secondsPassed > 0) {
           timer.value += secondsPassed
-          if (timer.value > MAX_PLANTING_TIME) timer.value = MAX_PLANTING_TIME
-          runningProjectId.value = savedRunningProjectId
+          if (timer.value > taskLimit.value) timer.value = taskLimit.value
+          settleFinishedCycles()
           startTimer()
         } else {
-          runningProjectId.value = savedRunningProjectId
           startTimer()
         }
       } else {
@@ -638,9 +748,10 @@ export const useGameStore = defineStore('game', () => {
   function claimOfflineEarnings() {
     if (!offlineEarnings.value) return
     const { newTimer } = offlineEarnings.value
-    timer.value = newTimer 
+    timer.value = newTimer
+    settleFinishedCycles()
     
-    if (timer.value < MAX_PLANTING_TIME) {
+    if (timer.value < taskLimit.value) {
       startTimer()
     } else {
       isRunning.value = false
@@ -649,8 +760,6 @@ export const useGameStore = defineStore('game', () => {
     offlineEarnings.value = null
     saveToLocalStorage()
   }
-
-  function discardOfflineEarnings() { offlineEarnings.value = null; isRunning.value = false; saveToLocalStorage() }
 
   // === 云同步与认证逻辑 ===
   const user = ref(null)
@@ -1087,9 +1196,11 @@ export const useGameStore = defineStore('game', () => {
     bootStage, saveIndex, saveSlots, activeSlotId, activeSlotMeta,
     themes, projects, globalXP, globalLevel, globalLevelProgress, coins, unlockedTreeIds, ownedBoostIds, unlockedBackgroundIds, activeView, notebook,
     activeProjectId, activeProject, runningProjectId, runningProject, activeThemeId,
-    activeTreeId, activeTree, timer, maxTime, isRunning, progressPercentage, 
+    activeTreeId, activeTree, timer, maxTime, isRunning, progressPercentage,
+    settledCycles, taskTrees, taskXP, taskStartLevel,
+    timerMode, timerModeLabel, targetDuration, taskLimit, taskTimeState,
     isNightMode, TREE_TYPES, SHOP_CATEGORIES, shopItems, shopCatalog, inventoryTrees,
-    user, syncStatus, offlineEarnings, MAX_PLANTING_TIME, 
+    user, syncStatus, offlineEarnings, PLANTING_MODES,
     
     initSaveSystem, createSaveSlot, renameSaveSlot, deleteSaveSlot, enterSlot, exitToSaveSelection,
     saveActiveSlot, importSaveAsNewSlot,
@@ -1099,6 +1210,6 @@ export const useGameStore = defineStore('game', () => {
     startAction, stopTimer, toggleAction, downloadSaveFile, importSaveData, cheatAddCoins, getTreeIcon,
     renameProject, deleteProject, mergeProjects, reorderProjects, moveProjectToTheme, updateNoteTags, toggleNightMode, 
     initAuth, loginWithEmail, registerWithEmail, logout, uploadSaveToCloud, downloadSaveFromCloud,
-    claimOfflineEarnings, discardOfflineEarnings, renameNote, updateNote, createSystemNote, createEssayNote, deleteNote
+    claimOfflineEarnings, renameNote, updateNote, createSystemNote, createEssayNote, deleteNote
   }
 })

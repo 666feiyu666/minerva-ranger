@@ -28,7 +28,7 @@
                 {{ store.activeProject?.name || '未选择项目' }}
               </h2>
               
-             <div class="flex items-center gap-3 mt-2">
+              <div class="flex items-center gap-3 mt-2">
                   <span class="px-2 py-0.5 rounded border font-bold text-xs transition-colors"
                       :class="store.isNightMode ? 'bg-blue-900/40 border-blue-800 text-blue-300' : 'bg-blue-50 border-blue-200 text-blue-600'">
                       Lv. {{ store.activeProject?.level || 1 }}
@@ -40,7 +40,7 @@
                   <span class="px-2 py-0.5 rounded border font-bold text-xs flex items-center gap-1 transition-colors"
                       :class="store.isNightMode ? 'bg-purple-900/40 border-purple-800 text-purple-300' : 'bg-purple-50 border-purple-200 text-purple-600'">
                       <span>⏱️</span>{{ formatDuration(displayedProjectTime) }}
-                  </span>
+                   </span>
               </div>
             </div>
           </div>
@@ -56,8 +56,8 @@
               <div 
                 class="absolute top-0 left-0 h-full transition-all duration-100 ease-linear shadow-[0_0_20px_rgba(16,185,129,0.5)]" 
                 :class="[
-                  isHarvestReady 
-                    ? (store.timer >= store.MAX_PLANTING_TIME ? 'bg-gradient-to-r from-red-600 to-red-400 animate-pulse shadow-[0_0_30px_rgba(220,38,38,0.8)]' : 'bg-gradient-to-r from-green-500 to-emerald-400 animate-pulse shadow-[0_0_30px_rgba(52,211,153,0.8)]')
+                  isHarvestReady
+                    ? 'bg-gradient-to-r from-red-600 to-red-400 animate-pulse shadow-[0_0_30px_rgba(220,38,38,0.8)]'
                     : (store.isNightMode ? 'bg-gradient-to-r from-emerald-900 to-emerald-600' : 'bg-gradient-to-r from-emerald-300 to-emerald-500')
                 ]"
                 :style="{ width: store.progressPercentage + '%' }"
@@ -66,7 +66,7 @@
               <div class="absolute inset-0 flex items-center justify-between px-6 z-10">
                  <div class="flex items-center gap-3">
                     <img 
-                      v-if="store.isRunning && store.activeTree && store.timer < store.MAX_PLANTING_TIME" 
+                      v-if="store.isRunning && store.activeTree && !isHarvestReady"
                       :src="store.activeTree.icon"
                       class="h-8 w-8 object-contain pixel-art animate-bounce filter drop-shadow-md" 
                     />
@@ -74,13 +74,10 @@
 
                     <span 
                       class="font-bold text-lg tracking-wide drop-shadow-md transition-colors"
-                      :class="isHarvestReady ? (store.timer >= store.MAX_PLANTING_TIME ? 'text-red-900 animate-pulse' : 'text-green-900 drop-shadow-sm') : (store.isNightMode ? 'text-gray-200' : 'text-gray-800')"
+                      :class="isHarvestReady ? 'text-red-900 animate-pulse' : (store.isNightMode ? 'text-gray-200' : 'text-gray-800')"
                     >
-                       <template v-if="store.timer >= store.MAX_PLANTING_TIME">
-                         [ CAPACITY MAXED // HARVEST REQUIRED ]
-                       </template>
-                       <template v-else-if="isHarvestReady">
-                         [ READY TO HARVEST ]
+                       <template v-if="isHarvestReady">
+                         [ TASK COMPLETE // HARVEST REQUIRED ]
                        </template>
                        <template v-else>
                          {{ store.activeTree ? `种植: ${store.activeTree.name}` : 'Ready...' }}
@@ -96,13 +93,17 @@
                     </span>
                  </div>
                  
-                 <span 
-                   class="font-mono text-xl font-bold transition-colors"
-                   :class="isHarvestReady ? (store.timer >= store.MAX_PLANTING_TIME ? 'text-red-900' : 'text-green-900') : (store.isNightMode ? 'text-white' : 'text-gray-700')" 
-                   v-if="store.activeTree"
-                 >
-                   {{ formatTime(store.timer) }} / {{ formatTime(store.activeTree.time) }}
-                 </span>
+                 <div v-if="store.activeTree" class="text-right font-mono">
+                   <div
+                     class="text-xl font-bold transition-colors"
+                     :class="isHarvestReady ? 'text-red-900' : (store.isNightMode ? 'text-white' : 'text-gray-700')"
+                   >
+                     {{ formatTime(currentCycleTime) }} / {{ formatTime(store.activeTree.time) }}
+                   </div>
+                   <div class="text-[10px] font-bold uppercase tracking-wider opacity-70">
+                     {{ taskTimeCaption }}
+                   </div>
+                 </div>
               </div>
           </template>
 
@@ -138,24 +139,132 @@
               </h3>
               
               <div class="w-full space-y-2 mb-4 text-xs font-medium">
-                 <div class="flex justify-between items-center px-3 py-1.5 rounded transition-colors"
-                   :class="store.isNightMode ? 'bg-black/20 text-gray-400' : 'bg-gray-100 text-gray-500'">
-                     <span>XP Gain</span> 
-                     <span class="font-bold text-sm" :class="store.isNightMode ? 'text-blue-400' : 'text-blue-600'">
-                       +{{ store.getTreeYield(tree, store.activeProject).xp }}
-                     </span>
-                 </div>
+                <div
+                  class="flex items-center justify-between rounded px-3 py-1.5 transition-colors"
+                  :class="store.isNightMode ? 'bg-black/20 text-gray-400' : 'bg-gray-100 text-gray-500'"
+                >
+                  <span>XP Gain</span>
+
+                  <span
+                    class="text-sm font-bold"
+                    :class="store.isNightMode ? 'text-blue-400' : 'text-blue-600'"
+                  >
+                    +{{ store.getTreeYield(tree, store.activeProject).xp }}
+                  </span>
+                </div>
+
+                <div
+                  class="flex items-center justify-between rounded px-3 py-1.5 transition-colors"
+                  :class="store.isNightMode ? 'bg-black/20 text-gray-400' : 'bg-gray-100 text-gray-500'"
+                >
+                  <span>Cycle Time</span>
+
+                  <span
+                    class="text-sm font-bold"
+                    :class="store.isNightMode ? 'text-emerald-400' : 'text-emerald-600'"
+                  >
+                    {{ formatTime(tree.time) }}
+                  </span>
+                </div>
               </div>
 
-              <button 
-                class="w-full py-2.5 text-xs font-bold uppercase tracking-widest rounded-lg transition-all shadow-sm flex items-center justify-center gap-2"
-                @click.stop="handleButtonClick(tree)"
-                :class="getButtonClass(tree)"
-              >
-                <span v-if="getButtonText(tree) !== '>_ CLAIM'">{{ getButtonIcon(tree) }}</span>
-                {{ getButtonText(tree) }}
-              </button>
+              <div class="w-full space-y-2">
+                <button
+                  class="flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-bold uppercase tracking-widest shadow-sm transition-all"
+                  :class="getButtonClass(tree)"
+                  @click.stop="handleButtonClick(tree)"
+                >
+                  <span v-if="getButtonText(tree) !== '>_ CLAIM'">
+                    {{ getButtonIcon(tree) }}
+                  </span>
+
+                  {{ getButtonText(tree) }}
+                </button>
+
+                <button
+                  class="w-full rounded-lg border px-3 py-2 text-xs font-bold transition-colors"
+                  :class="getEndButtonClass(tree)"
+                  :disabled="!canEndPlanting(tree)"
+                  @click.stop="handleEndPlanting"
+                >
+                  ■ 结束种植
+                </button>
+              </div>
            </div>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="showModeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-md">
+      <div
+        class="w-full max-w-lg rounded-2xl border p-6 shadow-2xl"
+        :class="store.isNightMode ? 'border-gray-700 bg-[#171717] text-gray-100' : 'border-emerald-200 bg-white text-gray-800'"
+      >
+        <div class="mb-6 flex items-start justify-between">
+          <div>
+            <p class="text-xs font-bold uppercase tracking-[0.25em] text-emerald-500">Planting Timer</p>
+            <h2 class="mt-2 text-2xl font-bold">选择计时模式</h2>
+          </div>
+          <button class="text-gray-400 hover:text-gray-700" @click="closeModeModal">✕</button>
+        </div>
+
+        <div class="mb-5 grid grid-cols-2 gap-3 rounded-xl bg-emerald-500/10 p-4 text-sm">
+          <div>
+            <p class="text-xs text-gray-500">当前项目</p>
+            <p class="mt-1 font-bold">{{ store.activeProject?.name }}</p>
+          </div>
+          <div>
+            <p class="text-xs text-gray-500">树种 / 单周期</p>
+            <p class="mt-1 font-bold">{{ selectedTree?.name }} · {{ formatTime(selectedTree?.time || 0) }}</p>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-3">
+          <button
+            class="rounded-xl border p-4 text-left transition-colors"
+            :class="selectedMode === store.PLANTING_MODES.COUNTUP ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600' : 'border-gray-300 text-gray-500'"
+            @click="selectTimerMode(store.PLANTING_MODES.COUNTUP)"
+          >
+            <span class="block font-bold">正计时</span>
+            <span class="mt-1 block text-xs">显示已用时间；不设置时默认 3 小时</span>
+          </button>
+          <button
+            class="rounded-xl border p-4 text-left transition-colors"
+            :class="selectedMode === store.PLANTING_MODES.COUNTDOWN ? 'border-blue-500 bg-blue-500/10 text-blue-600' : 'border-gray-300 text-gray-500'"
+            @click="selectTimerMode(store.PLANTING_MODES.COUNTDOWN)"
+          >
+            <span class="block font-bold">倒计时</span>
+            <span class="mt-1 block text-xs">显示剩余时间；归零后自动结束</span>
+          </button>
+        </div>
+
+        <label class="mt-5 block text-sm font-bold" for="planting-duration">
+          目标时长（分钟）
+        </label>
+        <input
+          id="planting-duration"
+          v-model="durationMinutes"
+          class="mt-2 w-full rounded-xl border border-gray-300 bg-transparent px-4 py-3 outline-none focus:border-emerald-500"
+          type="number"
+          :min="minimumDurationMinutes"
+          max="1440"
+          :placeholder="selectedMode === store.PLANTING_MODES.COUNTUP ? '可选，默认 180 分钟' : `至少 ${minimumDurationMinutes} 分钟`"
+          @input="modeError = ''"
+        />
+        <p class="mt-2 text-xs text-gray-500">
+          可设置 {{ minimumDurationMinutes }} 至 1440 分钟，不需要是单周期时长的整数倍。
+        </p>
+        <p v-if="modeError" class="mt-3 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-500">
+          {{ modeError }}
+        </p>
+
+        <div class="mt-6 flex justify-end gap-3">
+          <button class="rounded-xl px-4 py-2 text-sm font-bold text-gray-500" @click="closeModeModal">
+            取消
+          </button>
+          <button class="rounded-xl bg-emerald-500 px-5 py-2 text-sm font-bold text-white hover:bg-emerald-400" @click="confirmStartPlanting">
+            开始种植
+          </button>
         </div>
       </div>
     </div>
@@ -172,9 +281,15 @@
           <div class="space-y-1">
              <p>> SYSTEM: HARVEST PROTOCOL INITIATED...</p>
              <p>> TARGET_PROJECT: <span class="text-white font-bold">{{ store.runningProject?.name }}</span></p>
+             <p>> TIMER_MODE: <span class="text-white font-bold">{{ store.timerModeLabel }}</span></p>
+             <p>> TARGET_DURATION: <span class="text-white font-bold">{{ formatTime(store.taskLimit) }}</span></p>
              <p>> DURATION_LOGGED: <span class="text-white font-bold">{{ formatTime(store.timer) }}</span></p>
-             <p>> YIELD_CALCULATED: <span class="text-white font-bold">{{ harvestCycles }}x {{ store.activeTree?.name }}</span></p>
-             <p v-if="store.timer >= store.MAX_PLANTING_TIME" class="text-red-500">> WARNING: MAX CAPACITY REACHED. TIME CAPPED AT 3 HOURS.</p>
+             <p>> COMPLETED_CYCLES: <span class="text-white font-bold">{{ harvestCycles }}</span></p>
+             <p>> TREES_SETTLED: <span class="text-white font-bold">+{{ store.taskTrees }}</span></p>
+             <p>> XP_SETTLED: <span class="text-white font-bold">+{{ store.taskXP }}</span></p>
+             <p>> LEVEL_CHANGE: <span class="text-white font-bold">Lv.{{ store.taskStartLevel }} → Lv.{{ store.runningProject?.level }}</span></p>
+             <p>> END_REASON: <span class="text-white font-bold">{{ harvestEndReasonLabel }}</span></p>
+             <p v-if="isHarvestReady" class="text-red-500">> TARGET DURATION REACHED.</p>
           </div>
 
           <div class="mt-6">
@@ -186,42 +301,21 @@
                placeholder="> Await user input... (Press Ctrl+Enter to execute upload)"
                autofocus
              ></textarea>
-             <p class="text-xs mt-2 text-green-700">输入即有金币</p>
+             <p class="text-xs mt-2 text-green-700">有效日志固定奖励 10 金币</p>
           </div>
 
-          <div class="rounded-lg border border-green-800/60 bg-green-950/20 p-4 space-y-3">
-             <p>> CONFIRM_PROJECT_ALIGNMENT :</p>
+          <div class="rounded-lg border border-green-800/60 bg-green-950/20 p-4 space-y-2">
+             <p>> PROJECT_LOCKED :</p>
              <p class="text-sm text-green-300">
-               当前将归属到：
-               <span class="text-white font-bold">{{ harvestTargetProject?.name || '未选择项目' }}</span>
-             </p>
-             <p class="text-xs text-green-600">
-               请确认“你实际完成的项目”是否和这里一致；如果不一致，请先改正再提交。
-             </p>
-
-             <template v-if="harvestProjectOptions.length > 1">
-               <select
-                 v-model="harvestProjectId"
-                 class="w-full bg-[#050505] border border-green-800 rounded px-3 py-2 text-green-300 focus:outline-none focus:border-green-500"
-               >
-                 <option v-for="project in harvestProjectOptions" :key="project.id" :value="project.id">
-                   {{ project.name }}
-                 </option>
-               </select>
-             </template>
-             <template v-else>
-               <div class="text-xs text-green-500">当前只有一个项目，无需切换归属。</div>
-             </template>
-
-             <p v-if="harvestProjectId !== store.runningProjectId" class="text-xs text-amber-400">
-               > WARNING: 你正在把本次收获从初始计时项目切换到另一个项目。
+               本次成果已在周期完成时结算到
+               <span class="text-white font-bold">{{ store.runningProject?.name }}</span>，关闭总结不会再次发奖。
              </p>
           </div>
         </div>
 
         <div class="p-4 border-t border-green-800/50 flex justify-end gap-4 bg-[#050505]">
-          <button @click="closeHarvestModal" class="px-5 py-2 text-green-700 hover:text-green-500 transition-colors">
-            ABORT
+           <button @click="closeHarvestModal" class="px-5 py-2 text-green-700 hover:text-green-500 transition-colors">
+             CLOSE_WITHOUT_LOG
           </button>
           <button @click="confirmHarvest" class="px-6 py-2 bg-green-900/40 border border-green-600 text-green-400 hover:bg-green-800 hover:text-white transition-all rounded shadow-[0_0_15px_rgba(34,197,94,0.2)]">
             EXECUTE_UPLOAD
@@ -234,43 +328,69 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { alertDialog } from '@/composables/dialogService'
+import { ref, computed, watch } from 'vue'
+import { confirmDialog } from '@/composables/dialogService'
 import { useGameStore } from '@/stores/gameStore'
 
 const store = useGameStore()
 
 // --- Modal 状态管理 ---
 const showHarvestModal = ref(false)
+const showModeModal = ref(false)
 const logContent = ref('')
-const harvestProjectId = ref(null)
+const pendingTreeId = ref(null)
+const selectedTree = ref(null)
+const selectedMode = ref(store.PLANTING_MODES.COUNTUP)
+const durationMinutes = ref('')
+const modeError = ref('')
+const harvestEndReason = ref('manual')
 
 // 计算是否满足收获条件（时间达标）
 const isHarvestReady = computed(() => {
-  return store.activeTree && store.timer >= store.maxTime && store.activeProjectId === store.runningProjectId
+  return Boolean(store.activeTree && store.taskTimeState.reachedLimit)
 })
 
-const harvestProjectOptions = computed(() => store.projects)
-const harvestTargetProject = computed(() =>
-  store.projects.find(project => project.id === harvestProjectId.value) || store.runningProject
+const minimumDurationMinutes = computed(() =>
+  Math.ceil((selectedTree.value?.time || 0) / 60)
 )
 
+const taskTimeCaption = computed(() => {
+  if (store.timerMode === store.PLANTING_MODES.COUNTDOWN) {
+    return `倒计时剩余 ${formatTime(store.taskTimeState.remaining)}`
+  }
+  return `正计时 ${formatTime(store.taskTimeState.elapsed)} / ${formatTime(store.taskLimit)}`
+})
+
+const harvestEndReasonLabel = computed(() => {
+  if (harvestEndReason.value === 'limit') return '达到目标时长'
+  if (harvestEndReason.value === 'switch') return '切换种植任务'
+  return '主动结束'
+})
+
+const currentCycleTime = computed(() => {
+  if (!store.activeTree) return 0
+  return Math.max(0, store.timer - store.settledCycles * store.activeTree.time)
+})
+
 const displayedProjectTime = computed(() => {
-  const base = store.activeProject?.totalTimeSpent || 0
-  if (store.activeProjectId === store.runningProjectId) return base + store.timer
-  return base
+  return store.activeProject?.totalTimeSpent || 0
 })
 
 // 计算本次总共完成了多少轮（正向计时倍数）
 const harvestCycles = computed(() => {
-  if (!store.activeTree) return 0
-  return Math.floor(store.timer / store.activeTree.time)
+  return store.settledCycles
 })
 
 // === 格式化函数 ===
 const formatTime = (s) => {
-  const seconds = Math.floor(s) 
-  return `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`
+  const seconds = Math.max(0, Math.floor(s || 0))
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const remainingSeconds = seconds % 60
+  if (hours > 0) {
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
+  }
+  return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
 }
 
 const formatDuration = (seconds) => {
@@ -285,18 +405,27 @@ const isTreeActive = (treeId) => {
     return store.activeTreeId === treeId && store.activeProjectId === store.runningProjectId
 }
 
+const canEndPlanting = tree => {
+  return isTreeActive(tree.id) && !isHarvestReady.value
+}
+
+const getEndButtonClass = tree => {
+  if (canEndPlanting(tree)) {
+    return 'border-red-400/60 text-red-500 hover:bg-red-500 hover:text-white'
+  }
+
+  return store.isNightMode
+    ? 'cursor-not-allowed border-gray-700 bg-gray-800/40 text-gray-600 opacity-60'
+    : 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 opacity-60'
+}
+
 // === 动态样式逻辑 ===
 const getCardClass = (treeId) => {
   if (isTreeActive(treeId)) {
     if (isHarvestReady.value) {
-      if (store.timer >= store.MAX_PLANTING_TIME) {
-          return store.isNightMode 
-            ? 'border-red-600 bg-[#3a1a1a] shadow-[0_0_20px_rgba(220,38,38,0.3)]'
-            : 'border-red-500 bg-red-50 shadow-[0_0_20px_rgba(220,38,38,0.4)] ring-2 ring-red-400/30'
-      }
       return store.isNightMode
-        ? 'border-green-500 bg-[#162a1a] shadow-[0_0_20px_rgba(34,197,94,0.2)]'
-        : 'border-green-500 bg-green-50 shadow-[0_0_20px_rgba(34,197,94,0.3)] ring-2 ring-green-400/30'
+        ? 'border-red-600 bg-[#3a1a1a] shadow-[0_0_20px_rgba(220,38,38,0.3)]'
+        : 'border-red-500 bg-red-50 shadow-[0_0_20px_rgba(220,38,38,0.4)] ring-2 ring-red-400/30'
     }
     return store.isNightMode
       ? 'border-emerald-600 bg-[#2a302a]/90'  
@@ -310,10 +439,7 @@ const getCardClass = (treeId) => {
 const getButtonClass = (tree) => {
   if (isTreeActive(tree.id)) {
       if (isHarvestReady.value) {
-          if (store.timer >= store.MAX_PLANTING_TIME) {
-              return 'bg-[#0a0a0a] text-red-400 border border-red-500 font-mono font-bold hover:bg-red-900 hover:text-white shadow-[0_0_15px_rgba(220,38,38,0.5)] animate-pulse'
-          }
-          return 'bg-[#0a0a0a] text-green-400 border border-green-500 font-mono font-bold hover:bg-green-900 hover:text-white shadow-[0_0_15px_rgba(34,197,94,0.4)] animate-pulse'
+          return 'bg-[#0a0a0a] text-red-400 border border-red-500 font-mono font-bold hover:bg-red-900 hover:text-white shadow-[0_0_15px_rgba(220,38,38,0.5)] animate-pulse'
       }
       return store.isRunning 
         ? 'bg-amber-500 text-white hover:bg-amber-600 hover:shadow-lg' 
@@ -341,42 +467,106 @@ const getButtonIcon = (tree) => {
 }
 
 // === 交互行为 ===
-const handleButtonClick = (tree) => {
+const openHarvestSummary = (reason = 'manual') => {
+  store.stopTimer()
+  logContent.value = ''
+  harvestEndReason.value = reason
+  showHarvestModal.value = true
+}
+
+const openModeModal = tree => {
+  selectedTree.value = tree
+  selectedMode.value = store.PLANTING_MODES.COUNTUP
+  durationMinutes.value = ''
+  modeError.value = ''
+  showModeModal.value = true
+}
+
+const closeModeModal = () => {
+  showModeModal.value = false
+  selectedTree.value = null
+  modeError.value = ''
+}
+
+const selectTimerMode = mode => {
+  selectedMode.value = mode
+  durationMinutes.value = ''
+  modeError.value = ''
+}
+
+const confirmStartPlanting = () => {
+  if (!selectedTree.value) return
+  const targetDuration = durationMinutes.value === ''
+    ? ''
+    : Number(durationMinutes.value) * 60
+  const result = store.startAction(selectedTree.value.id, {
+    mode: selectedMode.value,
+    targetDuration
+  })
+  if (!result.ok) {
+    modeError.value = result.error
+    return
+  }
+  closeModeModal()
+}
+
+const handleEndPlanting = async () => {
+  const confirmed = await confirmDialog(
+    '是否结束当前种植任务？已完成周期的种植成果会保留，当前未完成周期不会获得树木和经验。',
+    { title: '结束种植', confirmText: '结束任务' }
+  )
+  if (confirmed) openHarvestSummary('manual')
+}
+
+const handleButtonClick = async tree => {
   if (isTreeActive(tree.id)) {
       if (isHarvestReady.value) {
-          store.stopTimer()
-          logContent.value = ''
-          harvestProjectId.value = store.runningProjectId
-          showHarvestModal.value = true
+          openHarvestSummary('limit')
       } else {
           store.toggleAction()
       }
   } else {
-      store.startAction(tree.id)
+      if (store.runningProjectId) {
+        const confirmed = await confirmDialog(
+          '是否切换种植任务？已完成周期的成果会保留，当前未完成周期将被清空。',
+          { title: '切换种植任务', confirmText: '结束并切换' }
+        )
+        if (!confirmed) return
+        pendingTreeId.value = tree.id
+        openHarvestSummary('switch')
+        return
+      }
+      openModeModal(tree)
   }
 }
 
 const closeHarvestModal = () => {
-  showHarvestModal.value = false
-  logContent.value = ''
-  harvestProjectId.value = store.runningProjectId
+  finishHarvest('')
 }
 
-const confirmHarvest = () => {
-  if (!harvestProjectId.value) {
-    void alertDialog('请先确认本次收获的项目归属', {
-      title: '无法收获'
-    })
-    return
-  }
-
-  const submitted = store.submitHarvest(logContent.value, harvestProjectId.value)
+const finishHarvest = content => {
+  const submitted = store.submitHarvest(content)
   if (!submitted) return
 
   showHarvestModal.value = false
   logContent.value = ''
-  harvestProjectId.value = null
+  const nextTreeId = pendingTreeId.value
+  pendingTreeId.value = null
+  if (nextTreeId) {
+    const nextTree = store.inventoryTrees.find(tree => tree.id === nextTreeId)
+    if (nextTree) openModeModal(nextTree)
+  }
 }
+
+const confirmHarvest = () => finishHarvest(logContent.value)
+
+watch(
+  isHarvestReady,
+  reachedLimit => {
+    if (reachedLimit && !showHarvestModal.value) openHarvestSummary('limit')
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>
