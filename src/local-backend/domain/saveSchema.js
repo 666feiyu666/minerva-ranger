@@ -1,17 +1,25 @@
+import { SAVE_DATA_VERSION } from '@/config/defaultSaveData'
 import { getGlobalLevelFromXP } from './leveling'
 
 const SAVE_ARRAY_FIELDS = [
   'unlockedTreeIds',
   'ownedBoostIds',
   'unlockedBackgroundIds',
-  'themes',
-  'projects',
-  'notebook'
+  'skills',
+  'actions',
+  'notebook',
 ]
 
 export function validateSaveDataShape(saveData) {
   if (!saveData || typeof saveData !== 'object' || Array.isArray(saveData)) {
     return { ok: false, error: '存档根节点必须是一个对象。' }
+  }
+
+  if (saveData.version !== SAVE_DATA_VERSION) {
+    return {
+      ok: false,
+      error: `存档版本必须是 ${SAVE_DATA_VERSION}。`
+    }
   }
 
   for (const field of SAVE_ARRAY_FIELDS) {
@@ -28,7 +36,7 @@ export function normalizeSaveIndex(index = {}) {
     version: 1,
     lastSelectedSlotId: index.lastSelectedSlotId || null,
     slots: Array.isArray(index.slots)
-      ? index.slots.map(slot => ({
+      ? index.slots.map((slot) => ({
           id: slot.id,
           name: slot.name || '未命名身份档案',
           createdAt: slot.createdAt || new Date().toISOString(),
@@ -40,28 +48,28 @@ export function normalizeSaveIndex(index = {}) {
             globalLevel: slot.summary?.globalLevel || 1,
             globalXP: slot.summary?.globalXP || 0,
             coins: slot.summary?.coins || 0,
-            projectCount: slot.summary?.projectCount || 0,
-            themeCount: slot.summary?.themeCount || 0,
+            actionCount: slot.summary?.actionCount || 0,
+            skillCount: slot.summary?.skillCount || 0,
             totalTrees: slot.summary?.totalTrees || 0,
-            noteCount: slot.summary?.noteCount || 0
-          }
+            noteCount: slot.summary?.noteCount || 0,
+          },
         }))
-      : []
+      : [],
   }
 }
 
 export function buildSaveSummary(saveData = {}) {
-  const projectsList = Array.isArray(saveData.projects) ? saveData.projects : []
-  const themesList = Array.isArray(saveData.themes) ? saveData.themes : []
+  const actionsList = Array.isArray(saveData.actions) ? saveData.actions : []
+  const skillsList = Array.isArray(saveData.skills) ? saveData.skills : []
   const notebookList = Array.isArray(saveData.notebook) ? saveData.notebook : []
 
   return {
     globalLevel: getGlobalLevelFromXP(saveData.globalXP || 0),
     globalXP: saveData.globalXP || 0,
     coins: saveData.coins || 0,
-    projectCount: projectsList.length,
-    themeCount: themesList.length,
-    totalTrees: projectsList.reduce((sum, project) => sum + (project.totalTrees || 0), 0),
-    noteCount: notebookList.length
+    actionCount: actionsList.length,
+    skillCount: skillsList.length,
+    totalTrees: actionsList.reduce((sum, action) => sum + (action.totalTrees || 0), 0),
+    noteCount: notebookList.length,
   }
 }

@@ -15,11 +15,17 @@ test('Store创建两种计时任务并按完整周期结算', async () => {
     stdin: {
       contents: `
         import { createPinia, setActivePinia } from 'pinia'
-        import { useGameStore } from '@/stores/gameStore'
+        import { usePlantingStore } from '@/stores/plantingStore'
+        import { useActionWorkflow } from '@/application/workflows/actionWorkflow'
+        import { useActionStore } from '@/stores/actionStore'
 
-        export function createTestGameStore() {
+        export function createTestArchitecture() {
           setActivePinia(createPinia())
-          return useGameStore()
+          return {
+            planting: usePlantingStore(),
+            action: useActionStore(),
+            actionWorkflow: useActionWorkflow()
+          }
         }
       `,
       resolveDir: repoRoot,
@@ -39,40 +45,40 @@ test('Store创建两种计时任务并按完整周期结算', async () => {
   })
 
   try {
-    const { createTestGameStore } = await import(pathToFileURL(bundledStorePath).href)
-    const store = createTestGameStore()
-    store.createProject('计时模式测试项目')
+    const { createTestArchitecture } = await import(pathToFileURL(bundledStorePath).href)
+    const { planting, action, actionWorkflow } = createTestArchitecture()
+    actionWorkflow.createAction('计时模式测试行动')
 
-    const invalidCountdown = store.startAction('t1', {
+    const invalidCountdown = planting.startAction('t1', {
       mode: 'countdown',
       targetDuration: ''
     })
     assert.equal(invalidCountdown.ok, false)
-    assert.equal(store.runningProjectId, null)
+    assert.equal(planting.runningActionId, null)
 
-    const defaultCountup = store.startAction('t1', {
+    const defaultCountup = planting.startAction('t1', {
       mode: 'countup',
       targetDuration: ''
     })
     assert.equal(defaultCountup.ok, true)
-    assert.equal(store.taskLimit, 3 * 60 * 60)
-    store.stopTimer()
-    store.timer = store.taskLimit
-    assert.equal(store.taskTimeState.reachedLimit, true)
-    store.submitHarvest('')
+    assert.equal(planting.taskLimit, 3 * 60 * 60)
+    planting.stopTimer()
+    planting.timer = planting.taskLimit
+    assert.equal(planting.taskTimeState.reachedLimit, true)
+    planting.submitHarvest('')
 
-    const countdown = store.startAction('t1', {
+    const countdown = planting.startAction('t1', {
       mode: 'countdown',
       targetDuration: 37 * 60
     })
     assert.equal(countdown.ok, true)
-    assert.equal(store.taskLimit, 37 * 60)
-    store.stopTimer()
-    store.timer = 25 * 60
-    store.submitHarvest('')
+    assert.equal(planting.taskLimit, 37 * 60)
+    planting.stopTimer()
+    planting.timer = 25 * 60
+    planting.submitHarvest('')
 
-    assert.equal(store.projects[0].totalTrees, 8)
-    assert.equal(store.projects[0].totalTimeSpent, 8 * 25 * 60)
+    assert.equal(action.actions[0].totalTrees, 8)
+    assert.equal(action.actions[0].totalTimeSpent, 8 * 25 * 60)
   } finally {
     rmSync(bundledStorePath, { force: true })
   }

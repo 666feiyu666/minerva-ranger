@@ -1,4 +1,4 @@
-import { createEmptySaveData } from '@/config/defaultSaveData'
+import { createEmptySaveData, SAVE_DATA_VERSION } from '@/config/defaultSaveData'
 import { buildSaveSummary } from '@/local-backend/domain/saveSchema'
 import {
   createSlotId,
@@ -10,14 +10,14 @@ import {
   readSlotData,
   removeSlotData,
   writeSaveIndex,
-  writeSlotData
+  writeSlotData,
 } from '@/local-backend/storage/saveSlotRepository'
 
 export { hasBootstrappedDefaultIdentity, markDefaultIdentityBootstrapped }
 
 export function buildSaveData(snapshot) {
   return {
-    version: 2,
+    version: SAVE_DATA_VERSION,
     slotId: snapshot.activeSlotId,
     slotName: snapshot.activeSlotName || '未命名身份档案',
     timestamp: Date.now(),
@@ -26,13 +26,13 @@ export function buildSaveData(snapshot) {
     unlockedTreeIds: snapshot.unlockedTreeIds,
     ownedBoostIds: snapshot.ownedBoostIds,
     unlockedBackgroundIds: snapshot.unlockedBackgroundIds,
-    themes: snapshot.themes,
-    projects: snapshot.projects,
+    skills: snapshot.skills,
+    actions: snapshot.actions,
     notebook: snapshot.notebook,
     activeView: snapshot.activeView,
-    activeThemeId: snapshot.activeThemeId,
-    activeProjectId: snapshot.activeProjectId,
-    runningProjectId: snapshot.runningProjectId,
+    activeSkillId: snapshot.activeSkillId,
+    activeActionId: snapshot.activeActionId,
+    runningActionId: snapshot.runningActionId,
     activeTreeId: snapshot.activeTreeId,
     isRunning: snapshot.isRunning,
     timer: snapshot.timer,
@@ -42,16 +42,11 @@ export function buildSaveData(snapshot) {
     taskStartLevel: snapshot.taskStartLevel,
     timerMode: snapshot.timerMode,
     targetDuration: snapshot.targetDuration,
-    isNightMode: snapshot.isNightMode
+    isNightMode: snapshot.isNightMode,
   }
 }
 
-export function shouldPersistActiveSlot({
-  activeSlotId,
-  bootStage,
-  offlineEarnings,
-  isHydrating
-}) {
+export function shouldPersistActiveSlot({ activeSlotId, bootStage, offlineEarnings, isHydrating }) {
   return Boolean(activeSlotId && bootStage === 'in-game' && !offlineEarnings && !isHydrating)
 }
 
@@ -59,7 +54,7 @@ export function createSaveSlotData(name, slotCount, initialData = null, options 
   const slotId = createSlotId()
   const slotName = name?.trim() || (slotCount === 0 ? '开发设计师' : `新身份档案 #${slotCount + 1}`)
   const slotData = initialData
-    ? { ...initialData, version: 2, slotId, slotName, timestamp: Date.now() }
+    ? { ...initialData, version: SAVE_DATA_VERSION, slotId, slotName, timestamp: Date.now() }
     : createEmptySaveData(slotId, slotName, options)
 
   return { slotId, slotName, slotData }
@@ -70,28 +65,28 @@ export function persistSlotDataToRepository({
   activeSlotName,
   slotId,
   saveData,
-  options = {}
+  options = {},
 }) {
   const now = new Date().toISOString()
   const nextIndex = {
     ...saveIndex,
-    slots: (saveIndex.slots || []).map(slot => ({
+    slots: (saveIndex.slots || []).map((slot) => ({
       ...slot,
-      summary: { ...slot.summary }
-    }))
+      summary: { ...slot.summary },
+    })),
   }
   const nextData = {
     ...saveData,
-    version: 2,
+    version: SAVE_DATA_VERSION,
     slotId,
     slotName: options.slotName || saveData.slotName || activeSlotName || '未命名身份档案',
-    timestamp: Date.now()
+    timestamp: Date.now(),
   }
 
   writeSlotData(slotId, nextData)
 
   const summary = buildSaveSummary(nextData)
-  const existing = nextIndex.slots.find(slot => slot.id === slotId)
+  const existing = nextIndex.slots.find((slot) => slot.id === slotId)
   if (existing) {
     existing.name = options.slotName || existing.name
     existing.updatedAt = now
@@ -106,7 +101,7 @@ export function persistSlotDataToRepository({
       updatedAt: now,
       lastPlayedAt: now,
       source: 'local',
-      summary
+      summary,
     })
   }
 
@@ -136,7 +131,7 @@ export function rebuildSaveIndexFromStoredSlots() {
         updatedAt,
         lastPlayedAt: updatedAt,
         source: 'local',
-        summary: buildSaveSummary(saveData)
+        summary: buildSaveSummary(saveData),
       })
     } catch (error) {
       console.error(`Failed to recover local save slot ${slotId}.`, error)
@@ -147,14 +142,8 @@ export function rebuildSaveIndexFromStoredSlots() {
   return {
     version: 1,
     lastSelectedSlotId: slots[0]?.id || null,
-    slots
+    slots,
   }
 }
 
-export {
-  readLegacySaveData,
-  readSaveIndex,
-  readSlotData,
-  removeSlotData,
-  writeSaveIndex
-}
+export { readLegacySaveData, readSaveIndex, readSlotData, removeSlotData, writeSaveIndex }

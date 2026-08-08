@@ -30,9 +30,7 @@
             <div
               class="rounded-2xl border px-4 py-4"
               :class="
-                store.isNightMode
-                  ? 'border-white/10 bg-black/25'
-                  : 'border-white/70 bg-white/70'
+                store.isNightMode ? 'border-white/10 bg-black/25' : 'border-white/70 bg-white/70'
               "
             >
               <div
@@ -49,9 +47,7 @@
             <div
               class="rounded-2xl border px-4 py-4"
               :class="
-                store.isNightMode
-                  ? 'border-white/10 bg-black/25'
-                  : 'border-white/70 bg-white/70'
+                store.isNightMode ? 'border-white/10 bg-black/25' : 'border-white/70 bg-white/70'
               "
             >
               <div
@@ -103,9 +99,7 @@
         <div
           class="border-b px-6 py-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between"
           :class="
-            store.isNightMode
-              ? 'border-white/10 bg-black/20'
-              : 'border-[#dee6db] bg-white/55'
+            store.isNightMode ? 'border-white/10 bg-black/20' : 'border-[#dee6db] bg-white/55'
           "
         >
           <div>
@@ -116,10 +110,7 @@
               {{ selectedCategory.eyebrow }}
             </div>
             <h3 class="mt-2 text-2xl font-black">{{ selectedCategory.name }}</h3>
-            <p
-              class="mt-2 text-sm"
-              :class="store.isNightMode ? 'text-gray-300' : 'text-[#60705f]'"
-            >
+            <p class="mt-2 text-sm" :class="store.isNightMode ? 'text-gray-300' : 'text-[#60705f]'">
               {{ selectedCategory.desc }}
             </p>
           </div>
@@ -163,9 +154,7 @@
               <div
                 class="w-16 h-16 shrink-0 rounded-2xl border flex items-center justify-center overflow-hidden"
                 :class="
-                  store.isNightMode
-                    ? 'border-white/10 bg-black/25'
-                    : 'border-white/70 bg-white/80'
+                  store.isNightMode ? 'border-white/10 bg-black/25' : 'border-white/70 bg-white/80'
                 "
               >
                 <img
@@ -184,9 +173,7 @@
                 :key="`${item.id}-${meta.label}`"
                 class="rounded-2xl border px-3 py-3"
                 :class="
-                  store.isNightMode
-                    ? 'border-white/10 bg-black/20'
-                    : 'border-[#dbe3d7] bg-white/70'
+                  store.isNightMode ? 'border-white/10 bg-black/20' : 'border-[#dbe3d7] bg-white/70'
                 "
               >
                 <div
@@ -207,9 +194,7 @@
                 >
                   Price
                 </div>
-                <div class="mt-1 text-lg font-black text-yellow-500">
-                  🪙 {{ item.price }}
-                </div>
+                <div class="mt-1 text-lg font-black text-yellow-500">🪙 {{ item.price }}</div>
               </div>
 
               <div
@@ -256,34 +241,44 @@
 </template>
 
 <script setup>
-import { computed, ref, watch } from 'vue'
-import { useGameStore } from '../stores/gameStore'
+import { storeToRefs } from 'pinia'
+import { computed, reactive, ref, watch } from 'vue'
+import { useAppStore } from '@/stores/appStore'
+import { usePlayerStore } from '@/stores/playerStore'
 
-const store = useGameStore()
+const appStore = useAppStore()
+const playerStore = usePlayerStore()
+const store = reactive({
+  ...storeToRefs(appStore),
+  ...storeToRefs(playerStore),
+  ownsShopItem: playerStore.ownsShopItem,
+  canPurchaseShopItem: playerStore.canPurchaseShopItem,
+  purchaseShopItem: playerStore.purchaseShopItem,
+})
 const selectedCategoryId = ref(null)
 
 const categories = computed(() => store.shopCatalog)
 
 watch(
   categories,
-  nextCategories => {
+  (nextCategories) => {
     if (!nextCategories.length) {
       selectedCategoryId.value = null
       return
     }
 
-    if (!nextCategories.some(category => category.id === selectedCategoryId.value)) {
+    if (!nextCategories.some((category) => category.id === selectedCategoryId.value)) {
       selectedCategoryId.value = nextCategories[0].id
     }
   },
-  { immediate: true }
+  { immediate: true },
 )
 
 const selectedCategory = computed(
-  () => categories.value.find(category => category.id === selectedCategoryId.value) || null
+  () => categories.value.find((category) => category.id === selectedCategoryId.value) || null,
 )
 
-const categoryTabClass = categoryId => {
+const categoryTabClass = (categoryId) => {
   if (selectedCategoryId.value === categoryId) {
     return store.isNightMode
       ? 'border-emerald-700 bg-emerald-900/30 text-white shadow-[0_0_30px_rgba(16,185,129,0.08)]'
@@ -295,7 +290,7 @@ const categoryTabClass = categoryId => {
     : 'border-white/70 bg-white/70 text-gray-700 hover:bg-white'
 }
 
-const badgeClass = item => {
+const badgeClass = (item) => {
   if (item.availability === 'preview') {
     return store.isNightMode
       ? 'border-amber-800 bg-amber-900/20 text-amber-300'
@@ -307,7 +302,7 @@ const badgeClass = item => {
     : 'border-emerald-200 bg-emerald-50 text-emerald-700'
 }
 
-const cardClass = item => {
+const cardClass = (item) => {
   if (item.availability === 'preview') {
     return store.isNightMode
       ? 'border-[#4d4122] bg-[#1b1710] text-white'
@@ -319,7 +314,7 @@ const cardClass = item => {
     : 'border-white/80 bg-white/85 text-gray-800 hover:border-emerald-200'
 }
 
-const buttonLabel = item => {
+const buttonLabel = (item) => {
   if (store.ownsShopItem(item)) return '已收录'
   if (item.availability === 'preview') return '暂未开放'
   if (store.globalLevel < item.levelReq) return '等级不足'
@@ -327,7 +322,7 @@ const buttonLabel = item => {
   return item.type === 'tree' ? '购买树种' : '购买'
 }
 
-const buttonClass = item => {
+const buttonClass = (item) => {
   if (store.ownsShopItem(item)) {
     return store.isNightMode
       ? 'border border-white/10 bg-black/25 text-gray-500 cursor-not-allowed'

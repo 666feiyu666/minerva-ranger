@@ -1,6 +1,6 @@
-export function toProjectIds(projectIds) {
-  if (Array.isArray(projectIds)) return [...new Set(projectIds.filter(Boolean))]
-  if (projectIds) return [projectIds]
+export function toActionIds(actionIds) {
+  if (Array.isArray(actionIds)) return [...new Set(actionIds.filter(Boolean))]
+  if (actionIds) return [actionIds]
   return []
 }
 
@@ -13,7 +13,7 @@ export function normalizeNote(note = {}) {
 
   return {
     ...note,
-    projectIds: toProjectIds(note.projectIds || note.projectId),
+    actionIds: toActionIds(note.actionIds || note.actionId),
     type: normalizedType,
     source,
     eventType: note.eventType || null,
@@ -23,6 +23,6 @@ export function normalizeNote(note = {}) {
     coins: note.coins || 0,
     createdAt,
     updatedAt: note.updatedAt || createdAt,
-    date: note.date || new Date(createdAt).toLocaleString()
+    date: note.date || new Date(createdAt).toLocaleString(),
   }
 }

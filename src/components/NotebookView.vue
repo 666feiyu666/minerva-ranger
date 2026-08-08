@@ -67,12 +67,9 @@
     </section>
 
     <div class="flex-1 overflow-y-auto pr-2 pt-4 custom-scrollbar pb-24">
-      <section
-        v-if="currentPage === 'home'"
-        class="grid gap-4 md:grid-cols-2 xl:grid-cols-3"
-      >
+      <section v-if="currentPage === 'home'" class="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
         <button
-          @click="openSection('projects')"
+          @click="openSection('actions')"
           class="rounded-[2rem] border p-6 text-left shadow-xl transition-all hover:-translate-y-1"
           :class="
             store.isNightMode
@@ -100,9 +97,7 @@
             <div
               class="w-16 h-16 rounded-2xl border flex items-center justify-center text-3xl shrink-0"
               :class="
-                store.isNightMode
-                  ? 'border-white/10 bg-black/25'
-                  : 'border-[#e6e0d4] bg-[#fffdfa]'
+                store.isNightMode ? 'border-white/10 bg-black/25' : 'border-[#e6e0d4] bg-[#fffdfa]'
               "
             >
               📁
@@ -113,28 +108,22 @@
             <div
               class="rounded-2xl border px-4 py-4"
               :class="
-                store.isNightMode
-                  ? 'border-white/10 bg-black/20'
-                  : 'border-[#e7e0d3] bg-[#fffdfa]'
+                store.isNightMode ? 'border-white/10 bg-black/20' : 'border-[#e7e0d3] bg-[#fffdfa]'
               "
             >
               <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">
                 Actions
               </div>
-              <div class="mt-1 text-lg font-black">{{ store.projects.length }}</div>
+              <div class="mt-1 text-lg font-black">{{ store.actions.length }}</div>
             </div>
             <div
               class="rounded-2xl border px-4 py-4"
               :class="
-                store.isNightMode
-                  ? 'border-white/10 bg-black/20'
-                  : 'border-[#e7e0d3] bg-[#fffdfa]'
+                store.isNightMode ? 'border-white/10 bg-black/20' : 'border-[#e7e0d3] bg-[#fffdfa]'
               "
             >
-              <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">
-                Logs
-              </div>
-              <div class="mt-1 text-lg font-black">{{ projectLogCount }}</div>
+              <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">Logs</div>
+              <div class="mt-1 text-lg font-black">{{ actionLogCount }}</div>
             </div>
           </div>
         </button>
@@ -168,9 +157,7 @@
             <div
               class="w-16 h-16 rounded-2xl border flex items-center justify-center text-3xl shrink-0"
               :class="
-                store.isNightMode
-                  ? 'border-white/10 bg-black/25'
-                  : 'border-[#e6e0d4] bg-[#fffdfa]'
+                store.isNightMode ? 'border-white/10 bg-black/25' : 'border-[#e6e0d4] bg-[#fffdfa]'
               "
             >
               🪶
@@ -181,27 +168,19 @@
             <div
               class="rounded-2xl border px-4 py-4"
               :class="
-                store.isNightMode
-                  ? 'border-white/10 bg-black/20'
-                  : 'border-[#e7e0d3] bg-[#fffdfa]'
+                store.isNightMode ? 'border-white/10 bg-black/20' : 'border-[#e7e0d3] bg-[#fffdfa]'
               "
             >
-              <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">
-                Essays
-              </div>
+              <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">Essays</div>
               <div class="mt-1 text-lg font-black">{{ essayNotes.length }}</div>
             </div>
             <div
               class="rounded-2xl border px-4 py-4"
               :class="
-                store.isNightMode
-                  ? 'border-white/10 bg-black/20'
-                  : 'border-[#e7e0d3] bg-[#fffdfa]'
+                store.isNightMode ? 'border-white/10 bg-black/20' : 'border-[#e7e0d3] bg-[#fffdfa]'
               "
             >
-              <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">
-                Latest
-              </div>
+              <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">Latest</div>
               <div class="mt-1 text-sm font-black truncate">
                 {{ essayNotes[0]?.date || '暂无随笔' }}
               </div>
@@ -238,9 +217,7 @@
             <div
               class="w-16 h-16 rounded-2xl border flex items-center justify-center text-3xl shrink-0"
               :class="
-                store.isNightMode
-                  ? 'border-white/10 bg-black/25'
-                  : 'border-[#eddcc0] bg-white/70'
+                store.isNightMode ? 'border-white/10 bg-black/25' : 'border-[#eddcc0] bg-white/70'
               "
             >
               📜
@@ -251,9 +228,7 @@
             <div
               class="rounded-2xl border px-4 py-4"
               :class="
-                store.isNightMode
-                  ? 'border-white/10 bg-black/20'
-                  : 'border-[#eddcc0] bg-white/70'
+                store.isNightMode ? 'border-white/10 bg-black/20' : 'border-[#eddcc0] bg-white/70'
               "
             >
               <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">
@@ -264,14 +239,10 @@
             <div
               class="rounded-2xl border px-4 py-4"
               :class="
-                store.isNightMode
-                  ? 'border-white/10 bg-black/20'
-                  : 'border-[#eddcc0] bg-white/70'
+                store.isNightMode ? 'border-white/10 bg-black/20' : 'border-[#eddcc0] bg-white/70'
               "
             >
-              <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">
-                Latest
-              </div>
+              <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">Latest</div>
               <div class="mt-1 text-sm font-black truncate">
                 {{ systemLogs[0]?.date || '暂无记录' }}
               </div>
@@ -281,46 +252,42 @@
       </section>
 
       <section
-        v-else-if="currentPage === 'project-list'"
+        v-else-if="currentPage === 'action-list'"
         class="rounded-[2rem] border shadow-xl overflow-hidden"
         :class="
-          store.isNightMode
-            ? 'bg-[#121613] border-[#33463a]'
-            : 'bg-[#fbfaf5] border-[#ddd8cc]'
+          store.isNightMode ? 'bg-[#121613] border-[#33463a]' : 'bg-[#fbfaf5] border-[#ddd8cc]'
         "
       >
         <div
           class="px-6 py-5 border-b"
           :class="
-            store.isNightMode
-              ? 'border-white/10 bg-black/15'
-              : 'border-[#e5dfd1] bg-white/60'
+            store.isNightMode ? 'border-white/10 bg-black/15' : 'border-[#e5dfd1] bg-white/60'
           "
         >
           <div class="flex flex-wrap gap-2">
             <button
-              v-for="theme in themeOptions"
-              :key="theme.id"
-              @click="selectedThemeId = theme.id"
+              v-for="skill in skillOptions"
+              :key="skill.id"
+              @click="selectedSkillId = skill.id"
               class="rounded-full border px-4 py-2 text-sm font-bold transition-all"
-              :class="themeTabClass(theme.id)"
+              :class="skillTabClass(skill.id)"
             >
-              {{ theme.label }}
-              <span class="ml-2 opacity-70">{{ theme.projectCount }}</span>
+              {{ skill.label }}
+              <span class="ml-2 opacity-70">{{ skill.actionCount }}</span>
             </button>
           </div>
         </div>
 
-        <div v-if="filteredProjects.length === 0" class="px-6 py-16 text-center">
+        <div v-if="filteredActions.length === 0" class="px-6 py-16 text-center">
           <div class="text-4xl mb-3">🗂️</div>
-          <p class="font-semibold">{{ currentThemeLabel }}下还没有行动。</p>
+          <p class="font-semibold">{{ currentSkillLabel }}下还没有行动。</p>
         </div>
 
         <div v-else class="grid gap-4 p-6 md:grid-cols-2 2xl:grid-cols-3">
           <button
-            v-for="project in filteredProjects"
-            :key="project.id"
-            @click="openProject(project.id)"
+            v-for="action in filteredActions"
+            :key="action.id"
+            @click="openAction(action.id)"
             class="rounded-[1.75rem] border p-5 text-left transition-all hover:-translate-y-1"
             :class="
               store.isNightMode
@@ -334,9 +301,9 @@
                   class="text-[11px] uppercase tracking-[0.2em] font-bold"
                   :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
                 >
-                  {{ getThemeLabel(project.themeId) }}
+                  {{ getSkillLabel(action.skillId) }}
                 </div>
-                <h4 class="mt-2 text-xl font-black truncate">{{ project.name }}</h4>
+                <h4 class="mt-2 text-xl font-black truncate">{{ action.name }}</h4>
               </div>
               <div
                 class="w-14 h-14 rounded-2xl border flex items-center justify-center text-2xl shrink-0"
@@ -346,7 +313,7 @@
                     : 'border-[#e6e0d4] bg-[#fffdfa]'
                 "
               >
-                {{ project.icon || '📁' }}
+                {{ action.icon || '📁' }}
               </div>
             </div>
 
@@ -362,7 +329,7 @@
                 <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">
                   Level
                 </div>
-                <div class="mt-1 text-sm font-black">Lv. {{ project.level }}</div>
+                <div class="mt-1 text-sm font-black">Lv. {{ action.level }}</div>
               </div>
               <div
                 class="rounded-2xl border px-3 py-3"
@@ -375,7 +342,7 @@
                 <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">
                   Trees
                 </div>
-                <div class="mt-1 text-sm font-black">{{ project.totalTrees }}</div>
+                <div class="mt-1 text-sm font-black">{{ action.totalTrees }}</div>
               </div>
               <div
                 class="rounded-2xl border px-3 py-3"
@@ -385,10 +352,8 @@
                     : 'border-[#e7e0d3] bg-[#fffdfa]'
                 "
               >
-                <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">
-                  Logs
-                </div>
-                <div class="mt-1 text-sm font-black">{{ projectNoteCount(project.id) }}</div>
+                <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">Logs</div>
+                <div class="mt-1 text-sm font-black">{{ actionNoteCount(action.id) }}</div>
               </div>
             </div>
 
@@ -396,7 +361,7 @@
               class="mt-5 flex items-center justify-between text-sm"
               :class="store.isNightMode ? 'text-gray-300' : 'text-[#5f6258]'"
             >
-              <span>{{ formatDuration(project.totalTimeSpent) }}</span>
+              <span>{{ formatDuration(action.totalTimeSpent) }}</span>
               <span class="font-bold">进入 →</span>
             </div>
           </button>
@@ -407,17 +372,13 @@
         v-else-if="currentPage === 'essay-list'"
         class="rounded-[2rem] border shadow-xl overflow-hidden"
         :class="
-          store.isNightMode
-            ? 'bg-[#15131a] border-[#4a3d62]'
-            : 'bg-[#fbf8ff] border-[#ddd2ec]'
+          store.isNightMode ? 'bg-[#15131a] border-[#4a3d62]' : 'bg-[#fbf8ff] border-[#ddd2ec]'
         "
       >
         <div
           class="px-6 py-5 border-b flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between"
           :class="
-            store.isNightMode
-              ? 'border-white/10 bg-black/15'
-              : 'border-[#e7def2] bg-white/60'
+            store.isNightMode ? 'border-white/10 bg-black/15' : 'border-[#e7def2] bg-white/60'
           "
         >
           <div class="flex-1 space-y-4">
@@ -450,7 +411,11 @@
                 v-if="essaySearchQuery"
                 @click="essaySearchQuery = ''"
                 class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold transition-colors"
-                :class="store.isNightMode ? 'text-gray-400 hover:text-white' : 'text-gray-400 hover:text-gray-700'"
+                :class="
+                  store.isNightMode
+                    ? 'text-gray-400 hover:text-white'
+                    : 'text-gray-400 hover:text-gray-700'
+                "
               >
                 清除
               </button>
@@ -460,7 +425,9 @@
           <button
             @click="startEssayCreate"
             class="rounded-full px-4 py-2 text-sm font-bold text-white shadow transition-colors"
-            :class="store.isNightMode ? 'bg-sky-700 hover:bg-sky-600' : 'bg-sky-600 hover:bg-sky-500'"
+            :class="
+              store.isNightMode ? 'bg-sky-700 hover:bg-sky-600' : 'bg-sky-600 hover:bg-sky-500'
+            "
           >
             + 新建随笔
           </button>
@@ -471,10 +438,7 @@
           <p class="font-semibold">
             {{ essaySearchQuery ? '没有找到匹配的巡林随笔。' : '还没有巡林随笔。' }}
           </p>
-          <p
-            class="mt-2 text-sm"
-            :class="store.isNightMode ? 'text-gray-400' : 'text-[#6f6a60]'"
-          >
+          <p class="mt-2 text-sm" :class="store.isNightMode ? 'text-gray-400' : 'text-[#6f6a60]'">
             {{
               essaySearchQuery
                 ? '试试更短的关键词，或者切换到别的行动范围。'
@@ -516,7 +480,7 @@
                         : 'border-[#e3dbef] bg-[#faf8ff] text-[#6a617a]'
                     "
                   >
-                    {{ essayProjectLabel(note) }}
+                    {{ essayActionLabel(note) }}
                   </span>
                 </div>
                 <h4 class="mt-3 text-xl font-black break-words">{{ note.title }}</h4>
@@ -540,8 +504,10 @@
               {{ notePreview(note.content) }}
             </p>
 
-            <div class="mt-5 flex items-center justify-between text-xs"
-                 :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">
+            <div
+              class="mt-5 flex items-center justify-between text-xs"
+              :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'"
+            >
               <span>更新于 {{ note.date }}</span>
               <span>字数 {{ note.wordCount }}</span>
             </div>
@@ -553,9 +519,7 @@
         v-else-if="currentPage === 'system-list'"
         class="rounded-[2rem] border shadow-xl overflow-hidden"
         :class="
-          store.isNightMode
-            ? 'bg-[#17120d] border-[#4f3f28]'
-            : 'bg-[#fff8ee] border-[#ead6b2]'
+          store.isNightMode ? 'bg-[#17120d] border-[#4f3f28]' : 'bg-[#fff8ee] border-[#ead6b2]'
         "
       >
         <div v-if="systemLogs.length === 0" class="px-6 py-16 text-center">
@@ -620,17 +584,13 @@
         v-else-if="currentPage === 'essay-detail'"
         class="rounded-[2rem] border shadow-xl overflow-hidden"
         :class="
-          store.isNightMode
-            ? 'bg-[#15131a] border-[#4a3d62]'
-            : 'bg-[#fbf8ff] border-[#ddd2ec]'
+          store.isNightMode ? 'bg-[#15131a] border-[#4a3d62]' : 'bg-[#fbf8ff] border-[#ddd2ec]'
         "
       >
         <div
           class="px-6 py-5 border-b"
           :class="
-            store.isNightMode
-              ? 'border-white/10 bg-black/15'
-              : 'border-[#e7def2] bg-white/60'
+            store.isNightMode ? 'border-white/10 bg-black/15' : 'border-[#e7def2] bg-white/60'
           "
         >
           <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -655,7 +615,7 @@
                       : 'border-[#e3dbef] bg-[#faf8ff] text-[#6a617a]'
                   "
                 >
-                  {{ selectedEssayNote ? essayProjectLabel(selectedEssayNote) : '未关联行动' }}
+                  {{ selectedEssayNote ? essayActionLabel(selectedEssayNote) : '未关联行动' }}
                 </span>
               </div>
 
@@ -675,14 +635,22 @@
                     <button
                       @click="saveEssayRename"
                       class="rounded-xl px-4 py-3 text-sm font-bold text-white transition-colors"
-                      :class="store.isNightMode ? 'bg-sky-700 hover:bg-sky-600' : 'bg-sky-600 hover:bg-sky-500'"
+                      :class="
+                        store.isNightMode
+                          ? 'bg-sky-700 hover:bg-sky-600'
+                          : 'bg-sky-600 hover:bg-sky-500'
+                      "
                     >
                       保存标题
                     </button>
                     <button
                       @click="cancelEssayRename"
                       class="rounded-xl px-4 py-3 text-sm font-bold transition-colors"
-                      :class="store.isNightMode ? 'bg-white/10 text-gray-300 hover:text-white' : 'bg-gray-100 text-gray-600 hover:text-gray-800'"
+                      :class="
+                        store.isNightMode
+                          ? 'bg-white/10 text-gray-300 hover:text-white'
+                          : 'bg-gray-100 text-gray-600 hover:text-gray-800'
+                      "
                     >
                       取消
                     </button>
@@ -698,7 +666,11 @@
                   class="mt-2 text-sm"
                   :class="store.isNightMode ? 'text-gray-300' : 'text-[#5f6258]'"
                 >
-                  {{ isEssayCreating ? '写下阶段思考、灵感和总结。' : `更新于 ${selectedEssayNote?.date || ''}` }}
+                  {{
+                    isEssayCreating
+                      ? '写下阶段思考、灵感和总结。'
+                      : `更新于 ${selectedEssayNote?.date || ''}`
+                  }}
                 </p>
               </template>
             </div>
@@ -794,7 +766,7 @@
                     关联行动
                   </label>
                   <select
-                    v-model="essayDraft.projectId"
+                    v-model="essayDraft.actionId"
                     class="w-full rounded-xl px-4 py-3 border outline-none transition-colors"
                     :class="
                       store.isNightMode
@@ -803,11 +775,11 @@
                     "
                   >
                     <option
-                      v-for="project in editableProjectOptions"
-                      :key="project.id"
-                      :value="project.id"
+                      v-for="action in editableActionOptions"
+                      :key="action.id"
+                      :value="action.id"
                     >
-                      {{ project.label }}
+                      {{ action.label }}
                     </option>
                   </select>
                 </div>
@@ -827,14 +799,22 @@
                   <button
                     @click="saveEssayDraft"
                     class="w-full py-3 rounded-xl font-bold text-white transition-colors"
-                    :class="store.isNightMode ? 'bg-sky-700 hover:bg-sky-600' : 'bg-sky-600 hover:bg-sky-500'"
+                    :class="
+                      store.isNightMode
+                        ? 'bg-sky-700 hover:bg-sky-600'
+                        : 'bg-sky-600 hover:bg-sky-500'
+                    "
                   >
                     {{ essayEditorMode === 'create' ? '创建随笔' : '保存修改' }}
                   </button>
                   <button
                     @click="cancelEssayEditor"
                     class="w-full py-3 rounded-xl font-bold transition-colors"
-                    :class="store.isNightMode ? 'bg-white/10 text-gray-300 hover:text-white' : 'bg-gray-100 text-gray-600 hover:text-gray-800'"
+                    :class="
+                      store.isNightMode
+                        ? 'bg-white/10 text-gray-300 hover:text-white'
+                        : 'bg-gray-100 text-gray-600 hover:text-gray-800'
+                    "
                   >
                     取消
                   </button>
@@ -872,7 +852,7 @@
                     : 'border-[#e3dbef] bg-[#faf8ff] text-[#6a617a]'
                 "
               >
-                {{ essayProjectLabel(selectedEssayNote) }}
+                {{ essayActionLabel(selectedEssayNote) }}
               </span>
             </div>
           </div>
@@ -880,20 +860,16 @@
       </section>
 
       <section
-        v-else-if="currentPage === 'project-detail' && selectedProject"
+        v-else-if="currentPage === 'action-detail' && selectedAction"
         class="rounded-[2rem] border shadow-xl overflow-hidden"
         :class="
-          store.isNightMode
-            ? 'bg-[#121613] border-[#33463a]'
-            : 'bg-[#fbfaf5] border-[#ddd8cc]'
+          store.isNightMode ? 'bg-[#121613] border-[#33463a]' : 'bg-[#fbfaf5] border-[#ddd8cc]'
         "
       >
         <div
           class="px-6 py-5 border-b"
           :class="
-            store.isNightMode
-              ? 'border-white/10 bg-black/15'
-              : 'border-[#e5dfd1] bg-white/60'
+            store.isNightMode ? 'border-white/10 bg-black/15' : 'border-[#e5dfd1] bg-white/60'
           "
         >
           <div class="flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
@@ -902,69 +878,61 @@
                 class="text-xs uppercase tracking-[0.24em] font-bold"
                 :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
               >
-                {{ getThemeLabel(selectedProject.themeId) }}
+                {{ getSkillLabel(selectedAction.skillId) }}
               </div>
-              <h3 class="mt-2 text-2xl font-black">{{ selectedProject.name }}</h3>
+              <h3 class="mt-2 text-2xl font-black">{{ selectedAction.name }}</h3>
             </div>
 
             <div class="grid gap-3 sm:grid-cols-2 xl:min-w-[32rem] xl:grid-cols-4">
               <div
                 class="rounded-2xl border px-4 py-4"
                 :class="
-                  store.isNightMode
-                    ? 'border-white/10 bg-black/25'
-                    : 'border-[#e1dbcf] bg-white/80'
+                  store.isNightMode ? 'border-white/10 bg-black/25' : 'border-[#e1dbcf] bg-white/80'
                 "
               >
                 <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">
                   Level
                 </div>
-                <div class="mt-1 text-lg font-black">Lv. {{ selectedProject.level }}</div>
+                <div class="mt-1 text-lg font-black">Lv. {{ selectedAction.level }}</div>
               </div>
               <div
                 class="rounded-2xl border px-4 py-4"
                 :class="
-                  store.isNightMode
-                    ? 'border-white/10 bg-black/25'
-                    : 'border-[#e1dbcf] bg-white/80'
+                  store.isNightMode ? 'border-white/10 bg-black/25' : 'border-[#e1dbcf] bg-white/80'
                 "
               >
                 <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">
                   Trees
                 </div>
-                <div class="mt-1 text-lg font-black">{{ selectedProject.totalTrees }}</div>
+                <div class="mt-1 text-lg font-black">{{ selectedAction.totalTrees }}</div>
               </div>
               <div
                 class="rounded-2xl border px-4 py-4"
                 :class="
-                  store.isNightMode
-                    ? 'border-white/10 bg-black/25'
-                    : 'border-[#e1dbcf] bg-white/80'
+                  store.isNightMode ? 'border-white/10 bg-black/25' : 'border-[#e1dbcf] bg-white/80'
                 "
               >
                 <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">
                   Records
                 </div>
-                <div class="mt-1 text-lg font-black">{{ projectLogs.length }}</div>
+                <div class="mt-1 text-lg font-black">{{ actionLogs.length }}</div>
               </div>
               <div
                 class="rounded-2xl border px-4 py-4"
                 :class="
-                  store.isNightMode
-                    ? 'border-white/10 bg-black/25'
-                    : 'border-[#e1dbcf] bg-white/80'
+                  store.isNightMode ? 'border-white/10 bg-black/25' : 'border-[#e1dbcf] bg-white/80'
                 "
               >
                 <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">
                   Essays
                 </div>
-                <div class="mt-1 text-lg font-black">{{ projectEssayLogs.length }}</div>
+                <div class="mt-1 text-lg font-black">{{ actionEssayLogs.length }}</div>
               </div>
             </div>
           </div>
         </div>
 
-        <div v-if="projectLogs.length === 0" class="px-6 py-16 text-center">
+        <div v-if="actionLogs.length === 0" class="px-6 py-16 text-center">
           <div class="text-4xl mb-3">🌱</div>
           <p class="font-semibold">该行动还没有巡林会话记录。</p>
         </div>
@@ -989,18 +957,23 @@
                     : 'border-[#e5dfd1] bg-white/80 text-gray-600'
                 "
               >
-                {{ projectPlantingLogs.length }} 条
+                {{ actionPlantingLogs.length }} 条
               </span>
             </div>
 
-            <div v-if="projectPlantingLogs.length === 0" class="rounded-2xl border px-5 py-10 text-center"
-                 :class="store.isNightMode ? 'border-white/10 bg-black/15' : 'border-[#e5dfd1] bg-white/75'">
+            <div
+              v-if="actionPlantingLogs.length === 0"
+              class="rounded-2xl border px-5 py-10 text-center"
+              :class="
+                store.isNightMode ? 'border-white/10 bg-black/15' : 'border-[#e5dfd1] bg-white/75'
+              "
+            >
               <p class="font-semibold">这个行动还没有巡林会话记录。</p>
             </div>
 
             <div v-else class="space-y-4">
               <article
-                v-for="note in projectPlantingLogs"
+                v-for="note in actionPlantingLogs"
                 :key="note.id"
                 class="rounded-2xl border shadow-sm transition-all overflow-hidden"
                 :class="noteCardClass(note)"
@@ -1079,7 +1052,7 @@
                             所属行动
                           </label>
                           <select
-                            v-model="editDraft.projectId"
+                            v-model="editDraft.actionId"
                             class="w-full rounded-xl px-4 py-3 border outline-none transition-colors"
                             :class="
                               store.isNightMode
@@ -1088,11 +1061,11 @@
                             "
                           >
                             <option
-                              v-for="project in editableProjectOptions"
-                              :key="project.id"
-                              :value="project.id"
+                              v-for="action in editableActionOptions"
+                              :key="action.id"
+                              :value="action.id"
                             >
-                              {{ project.label }}
+                              {{ action.label }}
                             </option>
                           </select>
                         </div>
@@ -1218,16 +1191,23 @@
                 <h4 class="mt-1 text-xl font-black">关联随笔</h4>
               </div>
               <button
-                @click="startEssayCreateWithProject(selectedProject.id)"
+                @click="startEssayCreateWithAction(selectedAction.id)"
                 class="rounded-full px-4 py-2 text-sm font-bold text-white shadow transition-colors"
-                :class="store.isNightMode ? 'bg-sky-700 hover:bg-sky-600' : 'bg-sky-600 hover:bg-sky-500'"
+                :class="
+                  store.isNightMode ? 'bg-sky-700 hover:bg-sky-600' : 'bg-sky-600 hover:bg-sky-500'
+                "
               >
                 + 写一篇随笔
               </button>
             </div>
 
-            <div v-if="projectEssayLogs.length === 0" class="rounded-2xl border px-5 py-10 text-center"
-                 :class="store.isNightMode ? 'border-white/10 bg-black/15' : 'border-[#e5dfd1] bg-white/75'">
+            <div
+              v-if="actionEssayLogs.length === 0"
+              class="rounded-2xl border px-5 py-10 text-center"
+              :class="
+                store.isNightMode ? 'border-white/10 bg-black/15' : 'border-[#e5dfd1] bg-white/75'
+              "
+            >
               <p class="font-semibold">这个行动还没有关联随笔。</p>
               <p
                 class="mt-2 text-sm"
@@ -1239,7 +1219,7 @@
 
             <div v-else class="grid gap-4 xl:grid-cols-2">
               <button
-                v-for="note in projectEssayLogs"
+                v-for="note in actionEssayLogs"
                 :key="note.id"
                 @click="openEssay(note.id)"
                 class="rounded-[1.5rem] border p-5 text-left transition-all hover:-translate-y-1"
@@ -1278,8 +1258,10 @@
                   {{ notePreview(note.content) }}
                 </p>
 
-                <div class="mt-5 flex items-center justify-between text-xs"
-                     :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">
+                <div
+                  class="mt-5 flex items-center justify-between text-xs"
+                  :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'"
+                >
                   <span>字数 {{ note.wordCount }}</span>
                   <span class="font-bold">查看随笔 →</span>
                 </div>
@@ -1293,17 +1275,13 @@
         v-else-if="currentPage === 'system-detail' && selectedSystemNote"
         class="rounded-[2rem] border shadow-xl overflow-hidden"
         :class="
-          store.isNightMode
-            ? 'bg-[#17120d] border-[#4f3f28]'
-            : 'bg-[#fff8ee] border-[#ead6b2]'
+          store.isNightMode ? 'bg-[#17120d] border-[#4f3f28]' : 'bg-[#fff8ee] border-[#ead6b2]'
         "
       >
         <div
           class="px-6 py-5 border-b"
           :class="
-            store.isNightMode
-              ? 'border-white/10 bg-black/20'
-              : 'border-[#eddcc0] bg-white/60'
+            store.isNightMode ? 'border-white/10 bg-black/20' : 'border-[#eddcc0] bg-white/60'
           "
         >
           <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
@@ -1353,7 +1331,7 @@
 
           <div class="mt-4 flex flex-wrap gap-2 text-xs">
             <span
-              v-if="selectedSystemNote.projectIds?.length"
+              v-if="selectedSystemNote.actionIds?.length"
               class="px-2 py-1 rounded-full border"
               :class="
                 store.isNightMode
@@ -1361,7 +1339,7 @@
                   : 'border-blue-200 text-blue-700 bg-blue-50'
               "
             >
-              {{ getProjectNames(selectedSystemNote.projectIds) }}
+              {{ getActionNames(selectedSystemNote.actionIds) }}
             </span>
             <span
               class="px-2 py-1 rounded-full border"
@@ -1381,17 +1359,31 @@
 </template>
 
 <script setup>
+import { storeToRefs } from 'pinia'
 import { computed, reactive, ref, watch } from 'vue'
 import { alertDialog, confirmDialog } from '@/composables/dialogService'
-import { useGameStore } from '@/stores/gameStore'
+import { useAppStore } from '@/stores/appStore'
+import { useNotebookStore } from '@/stores/notebookStore'
+import { useActionStore } from '@/stores/actionStore'
 
-const UNCATEGORIZED_THEME_ID = '__uncategorized__'
+const UNCATEGORIZED_SKILL_ID = '__uncategorized__'
 
-const store = useGameStore()
+const appStore = useAppStore()
+const notebookStore = useNotebookStore()
+const actionStore = useActionStore()
+const store = reactive({
+  ...storeToRefs(appStore),
+  ...storeToRefs(notebookStore),
+  ...storeToRefs(actionStore),
+  createEssayNote: notebookStore.createEssayNote,
+  deleteNote: notebookStore.deleteNote,
+  renameNote: notebookStore.renameNote,
+  updateNote: notebookStore.updateNote,
+})
 
 const currentPage = ref('home')
-const selectedThemeId = ref('all')
-const selectedProjectId = ref(null)
+const selectedSkillId = ref('all')
+const selectedActionId = ref(null)
 const selectedEssayNoteId = ref(null)
 const selectedSystemNoteId = ref(null)
 const editingNoteId = ref(null)
@@ -1399,108 +1391,102 @@ const essaySearchQuery = ref('')
 const editDraft = reactive({
   title: '',
   content: '',
-  projectId: 'all'
+  actionId: 'all',
 })
 const essayEditorMode = ref('view')
 const essayRenameDraft = ref('')
 const essayDraft = reactive({
   title: '',
   content: '',
-  projectId: 'all'
+  actionId: 'all',
 })
 
-const uncategorizedProjects = computed(() =>
-  store.projects.filter(project => !project.themeId)
-)
+const uncategorizedActions = computed(() => store.actions.filter((action) => !action.skillId))
 
-const themeOptions = computed(() => {
+const skillOptions = computed(() => {
   const options = [
     {
       id: 'all',
       label: '全部',
-      projectCount: store.projects.length
-    }
+      actionCount: store.actions.length,
+    },
   ]
 
-  store.themes.forEach(theme => {
+  store.skills.forEach((skill) => {
     options.push({
-      id: theme.id,
-      label: theme.name,
-      projectCount: store.projects.filter(project => project.themeId === theme.id).length
+      id: skill.id,
+      label: skill.name,
+      actionCount: store.actions.filter((action) => action.skillId === skill.id).length,
     })
   })
 
-  if (uncategorizedProjects.value.length > 0) {
+  if (uncategorizedActions.value.length > 0) {
     options.push({
-      id: UNCATEGORIZED_THEME_ID,
+      id: UNCATEGORIZED_SKILL_ID,
       label: '未归属技能',
-      projectCount: uncategorizedProjects.value.length
+      actionCount: uncategorizedActions.value.length,
     })
   }
 
   return options
 })
 
-const filteredProjects = computed(() => {
-  if (selectedThemeId.value === 'all') return store.projects
-  if (selectedThemeId.value === UNCATEGORIZED_THEME_ID) return uncategorizedProjects.value
-  return store.projects.filter(project => project.themeId === selectedThemeId.value)
+const filteredActions = computed(() => {
+  if (selectedSkillId.value === 'all') return store.actions
+  if (selectedSkillId.value === UNCATEGORIZED_SKILL_ID) return uncategorizedActions.value
+  return store.actions.filter((action) => action.skillId === selectedSkillId.value)
 })
 
-const selectedProject = computed(
-  () => store.projects.find(project => project.id === selectedProjectId.value) || null
+const selectedAction = computed(
+  () => store.actions.find((action) => action.id === selectedActionId.value) || null,
 )
 
 const selectedEssayNote = computed(
-  () => essayNotes.value.find(note => note.id === selectedEssayNoteId.value) || null
+  () => essayNotes.value.find((note) => note.id === selectedEssayNoteId.value) || null,
 )
 
 const selectedSystemNote = computed(
-  () => systemLogs.value.find(note => note.id === selectedSystemNoteId.value) || null
+  () => systemLogs.value.find((note) => note.id === selectedSystemNoteId.value) || null,
 )
 
-const editableProjectOptions = computed(() =>
-  [
-    {
-      id: 'all',
-      label: '不关联行动'
-    },
-    ...store.projects.map(project => ({
-      id: project.id,
-      label: project.name
-    }))
-  ]
-)
+const editableActionOptions = computed(() => [
+  {
+    id: 'all',
+    label: '不关联行动',
+  },
+  ...store.actions.map((action) => ({
+    id: action.id,
+    label: action.name,
+  })),
+])
 
-const currentThemeLabel = computed(() => {
-  const theme = themeOptions.value.find(option => option.id === selectedThemeId.value)
-  return theme ? theme.label : '全部'
+const currentSkillLabel = computed(() => {
+  const skill = skillOptions.value.find((option) => option.id === selectedSkillId.value)
+  return skill ? skill.label : '全部'
 })
 
-const projectLogs = computed(() => {
-  if (!selectedProject.value) return []
-  return store.notebook.filter(note => {
-    const noteInProject = note.projectIds?.includes(selectedProject.value.id)
-    return noteInProject && note.type !== 'system'
+const actionLogs = computed(() => {
+  if (!selectedAction.value) return []
+  return store.notebook.filter((note) => {
+    const noteInAction = note.actionIds?.includes(selectedAction.value.id)
+    return noteInAction && note.type !== 'system'
   })
 })
 
-const projectPlantingLogs = computed(() =>
-  projectLogs.value.filter(note => note.type === 'planting')
+const actionPlantingLogs = computed(() =>
+  actionLogs.value.filter((note) => note.type === 'planting'),
 )
 
-const projectEssayLogs = computed(() =>
-  projectLogs.value.filter(note => note.type === 'essay')
-)
+const actionEssayLogs = computed(() => actionLogs.value.filter((note) => note.type === 'essay'))
 
-const systemLogs = computed(() =>
-  store.notebook.filter(note => note.type === 'system')
-)
+const systemLogs = computed(() => store.notebook.filter((note) => note.type === 'system'))
 
 const essayNotes = computed(() =>
   [...store.notebook]
-    .filter(note => note.type === 'essay' && note.source !== 'system')
-    .sort((left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime())
+    .filter((note) => note.type === 'essay' && note.source !== 'system')
+    .sort(
+      (left, right) => new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime(),
+    ),
 )
 
 const selectedEssayScope = ref('all')
@@ -1510,22 +1496,22 @@ const essayScopeOptions = computed(() => {
     {
       id: 'all',
       label: '全部',
-      count: essayNotes.value.length
+      count: essayNotes.value.length,
     },
     {
       id: 'global',
       label: '未关联',
-      count: essayNotes.value.filter(note => !note.projectIds?.length).length
-    }
+      count: essayNotes.value.filter((note) => !note.actionIds?.length).length,
+    },
   ]
 
-  store.projects.forEach(project => {
-    const count = essayNotes.value.filter(note => note.projectIds?.includes(project.id)).length
+  store.actions.forEach((action) => {
+    const count = essayNotes.value.filter((note) => note.actionIds?.includes(action.id)).length
     if (count > 0) {
       options.push({
-        id: project.id,
-        label: project.name,
-        count
+        id: action.id,
+        label: action.name,
+        count,
       })
     }
   })
@@ -1536,31 +1522,31 @@ const essayScopeOptions = computed(() => {
 const scopedEssayNotes = computed(() => {
   if (selectedEssayScope.value === 'all') return essayNotes.value
   if (selectedEssayScope.value === 'global') {
-    return essayNotes.value.filter(note => !note.projectIds?.length)
+    return essayNotes.value.filter((note) => !note.actionIds?.length)
   }
-  return essayNotes.value.filter(note => note.projectIds?.includes(selectedEssayScope.value))
+  return essayNotes.value.filter((note) => note.actionIds?.includes(selectedEssayScope.value))
 })
 
 const filteredEssayNotes = computed(() => {
   const keyword = essaySearchQuery.value.trim().toLowerCase()
   if (!keyword) return scopedEssayNotes.value
 
-  return scopedEssayNotes.value.filter(note =>
-    [note.title, note.content, essayProjectLabel(note)]
+  return scopedEssayNotes.value.filter((note) =>
+    [note.title, note.content, essayActionLabel(note)]
       .filter(Boolean)
-      .some(field => field.toLowerCase().includes(keyword))
+      .some((field) => field.toLowerCase().includes(keyword)),
   )
 })
 
-const projectLogCount = computed(() =>
-  store.notebook.filter(note => note.type !== 'system').length
+const actionLogCount = computed(
+  () => store.notebook.filter((note) => note.type !== 'system').length,
 )
 
 const isEssayCreating = computed(() => essayEditorMode.value === 'create')
 
 const pageTitle = computed(() => {
-  if (currentPage.value === 'project-list') return '行动档案'
-  if (currentPage.value === 'project-detail') return selectedProject.value?.name || '行动档案'
+  if (currentPage.value === 'action-list') return '行动档案'
+  if (currentPage.value === 'action-detail') return selectedAction.value?.name || '行动档案'
   if (currentPage.value === 'essay-list') return '巡林随笔'
   if (currentPage.value === 'essay-detail') {
     if (essayEditorMode.value === 'create') return '新建巡林随笔'
@@ -1572,8 +1558,8 @@ const pageTitle = computed(() => {
 })
 
 const pageDescription = computed(() => {
-  if (currentPage.value === 'project-list') return '按技能查看行动。'
-  if (currentPage.value === 'project-detail') return '浏览这个行动的全部巡林记录。'
+  if (currentPage.value === 'action-list') return '按技能查看行动。'
+  if (currentPage.value === 'action-detail') return '浏览这个行动的全部巡林记录。'
   if (currentPage.value === 'essay-list') return '记录行动过程中的想法、总结和灵感。'
   if (currentPage.value === 'essay-detail') {
     return essayEditorMode.value === 'create'
@@ -1586,13 +1572,16 @@ const pageDescription = computed(() => {
 })
 
 const breadcrumbs = computed(() => {
-  if (currentPage.value === 'project-list') return ['栏目', '行动档案']
-  if (currentPage.value === 'project-detail') {
-    return ['行动档案', selectedProject.value?.name || '行动']
+  if (currentPage.value === 'action-list') return ['栏目', '行动档案']
+  if (currentPage.value === 'action-detail') {
+    return ['行动档案', selectedAction.value?.name || '行动']
   }
   if (currentPage.value === 'essay-list') return ['栏目', '巡林随笔']
   if (currentPage.value === 'essay-detail') {
-    return ['巡林随笔', essayEditorMode.value === 'create' ? '新建' : selectedEssayNote.value?.title || '详情']
+    return [
+      '巡林随笔',
+      essayEditorMode.value === 'create' ? '新建' : selectedEssayNote.value?.title || '详情',
+    ]
   }
   if (currentPage.value === 'system-list') return ['栏目', '系统记录']
   if (currentPage.value === 'system-detail') {
@@ -1602,93 +1591,94 @@ const breadcrumbs = computed(() => {
 })
 
 const backLabel = computed(() => {
-  if (currentPage.value === 'project-detail') return '← 返回行动列表'
+  if (currentPage.value === 'action-detail') return '← 返回行动列表'
   if (currentPage.value === 'essay-detail') return '← 返回随笔列表'
   if (currentPage.value === 'system-detail') return '← 返回系统记录'
   return '← 返回栏目'
 })
 
-watch(selectedThemeId, () => {
+watch(selectedSkillId, () => {
   if (
-    currentPage.value === 'project-detail' &&
-    !filteredProjects.value.some(project => project.id === selectedProjectId.value)
+    currentPage.value === 'action-detail' &&
+    !filteredActions.value.some((action) => action.id === selectedActionId.value)
   ) {
-    goToProjectList()
+    goToActionList()
   }
 })
 
-watch(selectedProject, project => {
-  if (currentPage.value === 'project-detail' && !project) {
-    goToProjectList()
+watch(selectedAction, (action) => {
+  if (currentPage.value === 'action-detail' && !action) {
+    goToActionList()
   }
 })
 
-watch(essayScopeOptions, options => {
-  if (!options.some(option => option.id === selectedEssayScope.value)) {
+watch(essayScopeOptions, (options) => {
+  if (!options.some((option) => option.id === selectedEssayScope.value)) {
     selectedEssayScope.value = 'all'
   }
 })
 
-watch(selectedEssayNote, note => {
+watch(selectedEssayNote, (note) => {
   if (currentPage.value === 'essay-detail' && essayEditorMode.value !== 'create' && !note) {
     goToEssayList()
   }
 })
 
-watch(selectedSystemNote, note => {
+watch(selectedSystemNote, (note) => {
   if (currentPage.value === 'system-detail' && !note) {
     goToSystemList()
   }
 })
 
-const getThemeLabel = themeId => {
-  if (!themeId) return '未归属技能'
-  return store.themes.find(theme => theme.id === themeId)?.name || '未归属技能'
+const getSkillLabel = (skillId) => {
+  if (!skillId) return '未归属技能'
+  return store.skills.find((skill) => skill.id === skillId)?.name || '未归属技能'
 }
 
-const getProjectNames = ids => {
+const getActionNames = (ids) => {
   if (!ids || ids.length === 0) return '未关联行动'
   return ids
-    .map(id => store.projects.find(project => project.id === id)?.name || '未知行动')
+    .map((id) => store.actions.find((action) => action.id === id)?.name || '未知行动')
     .join('、')
 }
 
-const essayProjectLabel = note => {
-  if (!note?.projectIds?.length) return '未关联行动'
-  return getProjectNames(note.projectIds)
+const essayActionLabel = (note) => {
+  if (!note?.actionIds?.length) return '未关联行动'
+  return getActionNames(note.actionIds)
 }
 
-const projectNoteCount = projectId =>
-  store.notebook.filter(note => note.projectIds?.includes(projectId) && note.type !== 'system').length
+const actionNoteCount = (actionId) =>
+  store.notebook.filter((note) => note.actionIds?.includes(actionId) && note.type !== 'system')
+    .length
 
-const systemEventLabel = eventType => {
-  if (eventType === 'project_merge') return '行动合并'
-  if (eventType === 'project_delete') return '行动删除'
+const systemEventLabel = (eventType) => {
+  if (eventType === 'action_merge') return '行动合并'
+  if (eventType === 'action_delete') return '行动删除'
   return ''
 }
 
-const formatDuration = seconds => {
+const formatDuration = (seconds) => {
   if (!seconds) return '0m'
   const h = Math.floor(seconds / 3600)
   const m = Math.floor((seconds % 3600) / 60)
   return h > 0 ? `${h}h ${m}m` : `${m}m`
 }
 
-const notePreview = content => {
+const notePreview = (content) => {
   if (!content) return '暂无内容'
   return content.length > 80 ? `${content.slice(0, 80)}...` : content
 }
 
-const noteTypeLabel = type => {
+const noteTypeLabel = (type) => {
   if (type === 'essay') return '巡林随笔'
   return '植树记录'
 }
 
-const openSection = section => {
+const openSection = (section) => {
   cancelEditing()
-  if (section === 'projects') {
-    currentPage.value = 'project-list'
-    selectedProjectId.value = null
+  if (section === 'actions') {
+    currentPage.value = 'action-list'
+    selectedActionId.value = null
     return
   }
 
@@ -1701,40 +1691,40 @@ const openSection = section => {
   selectedSystemNoteId.value = null
 }
 
-const syncThemeWithProject = projectId => {
-  const project = store.projects.find(item => item.id === projectId)
-  if (!project) return
+const syncSkillWithAction = (actionId) => {
+  const action = store.actions.find((item) => item.id === actionId)
+  if (!action) return
 
-  if (!project.themeId) {
-    selectedThemeId.value = UNCATEGORIZED_THEME_ID
+  if (!action.skillId) {
+    selectedSkillId.value = UNCATEGORIZED_SKILL_ID
     return
   }
 
-  selectedThemeId.value = project.themeId
+  selectedSkillId.value = action.skillId
 }
 
-const openProject = projectId => {
-  syncThemeWithProject(projectId)
-  selectedProjectId.value = projectId
-  currentPage.value = 'project-detail'
+const openAction = (actionId) => {
+  syncSkillWithAction(actionId)
+  selectedActionId.value = actionId
+  currentPage.value = 'action-detail'
   cancelEditing()
 }
 
-const openSystemNote = noteId => {
+const openSystemNote = (noteId) => {
   selectedSystemNoteId.value = noteId
   currentPage.value = 'system-detail'
 }
 
-const openEssay = noteId => {
+const openEssay = (noteId) => {
   selectedEssayNoteId.value = noteId
   essayEditorMode.value = 'view'
   essayRenameDraft.value = ''
   currentPage.value = 'essay-detail'
 }
 
-function goToProjectList() {
-  currentPage.value = 'project-list'
-  selectedProjectId.value = null
+function goToActionList() {
+  currentPage.value = 'action-list'
+  selectedActionId.value = null
   cancelEditing()
 }
 
@@ -1752,8 +1742,8 @@ function goToSystemList() {
 }
 
 function goBack() {
-  if (currentPage.value === 'project-detail') {
-    goToProjectList()
+  if (currentPage.value === 'action-detail') {
+    goToActionList()
     return
   }
 
@@ -1770,8 +1760,8 @@ function goBack() {
   currentPage.value = 'home'
 }
 
-const themeTabClass = themeId => {
-  if (selectedThemeId.value === themeId) {
+const skillTabClass = (skillId) => {
+  if (selectedSkillId.value === skillId) {
     return store.isNightMode
       ? 'border-emerald-700 bg-emerald-900/20 text-white'
       : 'border-emerald-300 bg-emerald-50 text-gray-800'
@@ -1782,7 +1772,7 @@ const themeTabClass = themeId => {
     : 'border-[#e5dfd1] bg-white/85 text-gray-700 hover:bg-white'
 }
 
-const essayScopeClass = scopeId => {
+const essayScopeClass = (scopeId) => {
   if (selectedEssayScope.value === scopeId) {
     return store.isNightMode
       ? 'border-sky-700 bg-sky-900/20 text-white'
@@ -1797,14 +1787,12 @@ const essayScopeClass = scopeId => {
 const systemListCardClass = computed(() =>
   store.isNightMode
     ? 'bg-[#17110a] border-amber-900/60 hover:border-amber-700'
-    : 'bg-amber-50/80 border-amber-200 hover:border-amber-300'
+    : 'bg-amber-50/80 border-amber-200 hover:border-amber-300',
 )
 
-const noteCardClass = note => {
+const noteCardClass = (note) => {
   if (note.type === 'essay') {
-    return store.isNightMode
-      ? 'bg-[#151923] border-sky-900/40'
-      : 'bg-sky-50/70 border-sky-200'
+    return store.isNightMode ? 'bg-[#151923] border-sky-900/40' : 'bg-sky-50/70 border-sky-200'
   }
 
   return store.isNightMode
@@ -1812,7 +1800,7 @@ const noteCardClass = note => {
     : 'bg-white/85 border-[#e5dfd1] hover:border-emerald-200'
 }
 
-const noteBadgeClass = note => {
+const noteBadgeClass = (note) => {
   if (note.type === 'essay') {
     return store.isNightMode
       ? 'text-sky-200 border-sky-700 bg-sky-900/30'
@@ -1824,31 +1812,31 @@ const noteBadgeClass = note => {
     : 'text-green-700 border-green-200 bg-green-50'
 }
 
-const startEditing = note => {
+const startEditing = (note) => {
   editingNoteId.value = note.id
   editDraft.title = note.title
   editDraft.content = note.content
-  editDraft.projectId =
-    note.projectIds?.[0] || selectedProject.value?.id || editableProjectOptions.value[0]?.id || 'all'
+  editDraft.actionId =
+    note.actionIds?.[0] || selectedAction.value?.id || editableActionOptions.value[0]?.id || 'all'
 }
 
 function cancelEditing() {
   editingNoteId.value = null
   editDraft.title = ''
   editDraft.content = ''
-  editDraft.projectId = 'all'
+  editDraft.actionId = 'all'
 }
 
 function resetEssayDraft() {
   essayDraft.title = ''
   essayDraft.content = ''
-  essayDraft.projectId = 'all'
+  essayDraft.actionId = 'all'
 }
 
-const fillEssayDraft = note => {
+const fillEssayDraft = (note) => {
   essayDraft.title = note?.title || ''
   essayDraft.content = note?.content || ''
-  essayDraft.projectId = note?.projectIds?.[0] || 'all'
+  essayDraft.actionId = note?.actionIds?.[0] || 'all'
 }
 
 const startEssayCreate = () => {
@@ -1859,9 +1847,9 @@ const startEssayCreate = () => {
   currentPage.value = 'essay-detail'
 }
 
-const startEssayCreateWithProject = projectId => {
+const startEssayCreateWithAction = (actionId) => {
   startEssayCreate()
-  essayDraft.projectId = projectId || 'all'
+  essayDraft.actionId = actionId || 'all'
 }
 
 const startEssayEdit = () => {
@@ -1903,17 +1891,17 @@ const saveEssayRename = () => {
 const saveEssayDraft = async () => {
   const title = essayDraft.title.trim()
   const content = essayDraft.content
-  const projectIds = essayDraft.projectId === 'all' ? [] : [essayDraft.projectId]
+  const actionIds = essayDraft.actionId === 'all' ? [] : [essayDraft.actionId]
 
   if (!title) {
     await alertDialog('请填写随笔标题', {
-      title: '缺少标题'
+      title: '缺少标题',
     })
     return
   }
 
   if (essayEditorMode.value === 'create') {
-    const created = store.createEssayNote(title, content, projectIds)
+    const created = store.createEssayNote(title, content, actionIds)
     if (!created) return
     selectedEssayNoteId.value = created.id
     essayEditorMode.value = 'view'
@@ -1925,37 +1913,37 @@ const saveEssayDraft = async () => {
   const updated = store.updateNote(selectedEssayNote.value.id, {
     title,
     content,
-    projectIds
+    actionIds,
   })
   if (!updated) return
   essayEditorMode.value = 'view'
   resetEssayDraft()
 }
 
-const deleteEssay = async noteId => {
-  const note = essayNotes.value.find(item => item.id === noteId)
+const deleteEssay = async (noteId) => {
+  const note = essayNotes.value.find((item) => item.id === noteId)
   if (!note) return
   const confirmed = await confirmDialog(`确定要删除随笔 "${note.title}" 吗？`, {
     title: '删除随笔',
-    confirmText: '删除'
+    confirmText: '删除',
   })
   if (!confirmed) return
   store.deleteNote(noteId)
   goToEssayList()
 }
 
-const saveEditing = noteId => {
+const saveEditing = (noteId) => {
   const updated = store.updateNote(noteId, {
     title: editDraft.title,
     content: editDraft.content,
-    projectIds: editDraft.projectId === 'all' ? [] : [editDraft.projectId]
+    actionIds: editDraft.actionId === 'all' ? [] : [editDraft.actionId],
   })
 
   if (!updated) return
 
-  if (editDraft.projectId !== 'all') {
-    syncThemeWithProject(editDraft.projectId)
-    selectedProjectId.value = editDraft.projectId
+  if (editDraft.actionId !== 'all') {
+    syncSkillWithAction(editDraft.actionId)
+    selectedActionId.value = editDraft.actionId
   }
 
   cancelEditing()

@@ -1,15 +1,15 @@
-import { normalizeNote, toProjectIds } from '@/local-backend/domain/noteModel'
+import { normalizeNote, toActionIds } from '@/local-backend/domain/noteModel'
 
 export function createNoteRecord({
   title,
   content,
-  projectIds = [],
+  actionIds = [],
   type = 'planting',
   source = 'user',
   eventType = null,
   awardCoins = source === 'user',
   id = Date.now(),
-  now = new Date()
+  now = new Date(),
 }) {
   const cleanContent = (content || '').replace(/\s/g, '')
   const wordCount = cleanContent.length
@@ -20,8 +20,8 @@ export function createNoteRecord({
       earnedCoins: 0,
       error: {
         title: '内容无效',
-        message: type === 'planting' ? '未记录笔记，未能获得金币！' : '内容不能为空'
-      }
+        message: type === 'planting' ? '未记录笔记，未能获得金币！' : '内容不能为空',
+      },
     }
   }
 
@@ -34,12 +34,12 @@ export function createNoteRecord({
     type,
     source,
     eventType,
-    projectIds,
+    actionIds,
     wordCount,
     coins: earnedCoins,
     createdAt,
     updatedAt: createdAt,
-    date: now.toLocaleString()
+    date: now.toLocaleString(),
   })
 
   return { note, earnedCoins, error: null }
@@ -63,8 +63,8 @@ export function updateUserNote(note, payload = {}, now = new Date()) {
         ok: false,
         error: {
           title: '内容无效',
-          message: '日志内容不能为空'
-        }
+          message: '日志内容不能为空',
+        },
       }
     }
     note.content = payload.content
@@ -75,8 +75,8 @@ export function updateUserNote(note, payload = {}, now = new Date()) {
     note.title = payload.title.trim()
   }
 
-  if (payload.projectIds !== undefined) {
-    note.projectIds = toProjectIds(payload.projectIds)
+  if (payload.actionIds !== undefined) {
+    note.actionIds = toActionIds(payload.actionIds)
   }
 
   note.updatedAt = now.toISOString()
@@ -85,7 +85,7 @@ export function updateUserNote(note, payload = {}, now = new Date()) {
 }
 
 export function deleteUserNote(notebook, noteId) {
-  const index = notebook.findIndex(note => note.id === noteId)
+  const index = notebook.findIndex((note) => note.id === noteId)
   if (index === -1) return { deleted: false, coinRefund: 0 }
 
   const note = notebook[index]
@@ -95,8 +95,8 @@ export function deleteUserNote(notebook, noteId) {
   return { deleted: true, coinRefund: note.coins || 0 }
 }
 
-export function updateUserNoteTags(note, newProjectIds) {
+export function updateUserNoteTags(note, newActionIds) {
   if (!note || note.source === 'system') return false
-  note.projectIds = [...newProjectIds]
+  note.actionIds = [...newActionIds]
   return true
 }

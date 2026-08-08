@@ -9,7 +9,9 @@
         </div>
         <h3 class="text-2xl font-black text-white">开发场景装载</h3>
         <div class="mt-2 flex flex-wrap gap-2 text-xs font-bold uppercase tracking-wide">
-          <span class="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-cyan-100">
+          <span
+            class="rounded-full border border-cyan-200/20 bg-cyan-200/10 px-3 py-1 text-cyan-100"
+          >
             {{ modeLabel }}
           </span>
           <span class="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-slate-300">
@@ -80,9 +82,9 @@
 import { ref } from 'vue'
 import { alertDialog, confirmDialog } from '@/composables/dialogService'
 import { devSaveFixtures } from '@/devtools/saveFixtures'
-import { useGameStore } from '@/stores/gameStore'
+import { useSaveStore } from '@/stores/saveStore'
 
-const store = useGameStore()
+const store = useSaveStore()
 const fileInput = ref(null)
 const modeLabel = `mode:${import.meta.env.MODE}`
 
@@ -103,17 +105,17 @@ const loadFixture = async (fixture, shouldEnter) => {
 
   if (!shouldEnter) {
     await alertDialog(`Loaded ${fixture.name}`, {
-      title: 'Dev Tools'
+      title: 'Dev Tools',
     })
   }
 }
 
-const handleJsonFile = event => {
+const handleJsonFile = (event) => {
   const file = event.target.files?.[0]
   if (!file) return
 
   const reader = new FileReader()
-  reader.onload = e => {
+  reader.onload = (e) => {
     const content = e.target?.result
     if (typeof content !== 'string') return
 
@@ -127,11 +129,11 @@ const handleJsonFile = event => {
 const clearLocalSaves = async () => {
   const confirmed = await confirmDialog('Clear all local Minerva save data?', {
     title: 'Dev Tools',
-    confirmText: 'Clear'
+    confirmText: 'Clear',
   })
   if (!confirmed) return
 
-  const slotIds = store.saveSlots.map(slot => slot.id)
+  const slotIds = store.saveSlots.map((slot) => slot.id)
   for (const slotId of slotIds) {
     store.deleteSaveSlot(slotId)
   }

@@ -1,3 +1,5 @@
+export const SAVE_DATA_VERSION = 3
+
 export function createEmptySaveData(slotId, slotName, options = {}) {
   const createdAt = Date.now()
   const defaultSkills = options.includeDefaultSkills
@@ -5,12 +7,12 @@ export function createEmptySaveData(slotId, slotName, options = {}) {
         id: `${createdAt}-${index}`,
         name,
         x: 24 + index * 26,
-        y: index === 1 ? 62 : 36
+        y: index === 1 ? 62 : 36,
       }))
     : []
 
   return {
-    version: 2,
+    version: SAVE_DATA_VERSION,
     slotId,
     slotName,
     timestamp: Date.now(),
@@ -19,13 +21,13 @@ export function createEmptySaveData(slotId, slotName, options = {}) {
     unlockedTreeIds: ['t1'],
     ownedBoostIds: [],
     unlockedBackgroundIds: ['background_default'],
-    themes: defaultSkills,
-    projects: [],
+    skills: defaultSkills,
+    actions: [],
     notebook: [],
     activeView: 'forest',
-    activeThemeId: null,
-    activeProjectId: null,
-    runningProjectId: null,
+    activeSkillId: null,
+    activeActionId: null,
+    runningActionId: null,
     activeTreeId: null,
     isRunning: false,
     timer: 0,
@@ -35,6 +37,6 @@ export function createEmptySaveData(slotId, slotName, options = {}) {
     taskStartLevel: null,
     timerMode: 'countup',
     targetDuration: 3 * 60 * 60,
-    isNightMode: false
+    isNightMode: false,
   }
 }

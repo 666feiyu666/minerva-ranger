@@ -7,9 +7,7 @@
         <div class="text-sm uppercase tracking-[0.35em] text-emerald-300/80 mb-6">
           Minerva Ranger
         </div>
-        <h1 class="text-5xl font-black leading-tight text-white mb-6">
-          选择你的身份档案
-        </h1>
+        <h1 class="text-5xl font-black leading-tight text-white mb-6">选择你的身份档案</h1>
         <p class="text-lg leading-8 text-slate-300 max-w-md">
           每份身份档案代表一个长期身份。进入后，通过技能组织你反复实践的行动。
         </p>
@@ -27,7 +25,9 @@
     </aside>
 
     <main class="flex-1 relative overflow-y-auto">
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(52,211,153,0.16),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.14),transparent_25%)]"></div>
+      <div
+        class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(52,211,153,0.16),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.14),transparent_25%)]"
+      ></div>
       <div class="relative max-w-6xl mx-auto px-6 py-10 lg:px-10">
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
@@ -35,9 +35,7 @@
               Identity Profiles
             </div>
             <h2 class="text-4xl font-black text-white mb-2">选择要进入的身份档案</h2>
-            <p class="text-slate-300">
-              当前共有 {{ store.saveSlots.length }} 个身份档案。
-            </p>
+            <p class="text-slate-300">当前共有 {{ store.saveSlots.length }} 个身份档案。</p>
           </div>
 
           <div class="flex flex-wrap gap-3">
@@ -60,7 +58,10 @@
           v-if="store.isCloudSyncEnabled"
           class="mb-8 rounded-3xl border border-white/10 bg-black/20 p-5 backdrop-blur-md"
         >
-          <div v-if="store.user" class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div
+            v-if="store.user"
+            class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
+          >
             <div class="min-w-0">
               <div class="text-xs uppercase tracking-[0.24em] text-emerald-300/80">
                 Cloud Account
@@ -135,7 +136,10 @@
 
         <component :is="DevToolsPanel" v-if="DevToolsPanel" class="mb-8" />
 
-        <div v-if="store.saveSlots.length === 0" class="rounded-[2rem] border border-dashed border-white/15 bg-black/20 p-10 text-center">
+        <div
+          v-if="store.saveSlots.length === 0"
+          class="rounded-[2rem] border border-dashed border-white/15 bg-black/20 p-10 text-center"
+        >
           <div class="text-5xl mb-4">🌲</div>
           <h3 class="text-2xl font-bold mb-3">还没有身份档案</h3>
           <p class="text-slate-300 mb-6">可以先创建“开发设计师”身份档案，或导入已有 JSON 档案。</p>
@@ -169,7 +173,9 @@
             <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2 mb-3">
-                  <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-white/10 text-slate-200 border border-white/10">
+                  <span
+                    class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-white/10 text-slate-200 border border-white/10"
+                  >
                     身份档案
                   </span>
                   <span
@@ -191,15 +197,17 @@
                 <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
                   <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
                     <div class="text-xs uppercase tracking-wide text-slate-400 mb-1">等级</div>
-                    <div class="text-lg font-bold text-white">Lv. {{ slot.summary.globalLevel }}</div>
+                    <div class="text-lg font-bold text-white">
+                      Lv. {{ slot.summary.globalLevel }}
+                    </div>
                   </div>
                   <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
                     <div class="text-xs uppercase tracking-wide text-slate-400 mb-1">技能</div>
-                    <div class="text-lg font-bold text-white">{{ slot.summary.themeCount }}</div>
+                    <div class="text-lg font-bold text-white">{{ slot.summary.skillCount }}</div>
                   </div>
                   <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
                     <div class="text-xs uppercase tracking-wide text-slate-400 mb-1">行动</div>
-                    <div class="text-lg font-bold text-white">{{ slot.summary.projectCount }}</div>
+                    <div class="text-lg font-bold text-white">{{ slot.summary.actionCount }}</div>
                   </div>
                   <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
                     <div class="text-xs uppercase tracking-wide text-slate-400 mb-1">会话记录</div>
@@ -265,23 +273,38 @@
         </div>
       </div>
 
-      <input
-        ref="fileInput"
-        type="file"
-        accept=".json"
-        class="hidden"
-        @change="handleImportFile"
-      />
+      <input ref="fileInput" type="file" accept=".json" class="hidden" @change="handleImportFile" />
     </main>
   </div>
 </template>
 
 <script setup>
-import { defineAsyncComponent, ref } from 'vue'
+import { storeToRefs } from 'pinia'
+import { defineAsyncComponent, reactive, ref } from 'vue'
 import { confirmDialog, promptDialog } from '@/composables/dialogService'
-import { useGameStore } from '@/stores/gameStore'
+import { useSaveStore } from '@/stores/saveStore'
+import { useSyncStore } from '@/stores/syncStore'
 
-const store = useGameStore()
+const saveStore = useSaveStore()
+const syncStore = useSyncStore()
+const store = reactive({
+  ...storeToRefs(saveStore),
+  ...storeToRefs(syncStore),
+  isCloudSyncEnabled: syncStore.isCloudSyncEnabled,
+  createSaveSlot: saveStore.createSaveSlot,
+  deleteSaveSlot: saveStore.deleteSaveSlot,
+  downloadSaveFile: saveStore.downloadSaveFile,
+  enterSlot: saveStore.enterSlot,
+  importSaveAsNewSlot: saveStore.importSaveAsNewSlot,
+  importSaveData: saveStore.importSaveData,
+  moveSaveSlot: saveStore.moveSaveSlot,
+  renameSaveSlot: saveStore.renameSaveSlot,
+  downloadSaveFromCloud: syncStore.downloadSaveFromCloud,
+  loginWithEmail: syncStore.loginWithEmail,
+  logout: syncStore.logout,
+  registerWithEmail: syncStore.registerWithEmail,
+  uploadSaveToCloud: syncStore.uploadSaveToCloud,
+})
 const fileInput = ref(null)
 const importMode = ref({ type: 'new', slotId: null })
 const email = ref('')
@@ -291,7 +314,7 @@ const DevToolsPanel = isDevToolsMode
   ? defineAsyncComponent(() => import('@/components/DevToolsPanel.vue'))
   : null
 
-const formatDate = value => {
+const formatDate = (value) => {
   if (!value) return '未进入过'
   return new Date(value).toLocaleString()
 }
@@ -299,8 +322,9 @@ const formatDate = value => {
 const createSlot = async () => {
   const name = await promptDialog('请输入身份档案名称', {
     title: '新建身份档案',
-    defaultValue: store.saveSlots.length === 0 ? '开发设计师' : `新身份档案 #${store.saveSlots.length + 1}`,
-    confirmText: '创建'
+    defaultValue:
+      store.saveSlots.length === 0 ? '开发设计师' : `新身份档案 #${store.saveSlots.length + 1}`,
+    confirmText: '创建',
   })
   if (name === null) return
   const slotId = store.createSaveSlot(name)
@@ -327,20 +351,20 @@ const handleCloudPush = () => {
   store.uploadSaveToCloud()
 }
 
-const renameSlot = async slot => {
+const renameSlot = async (slot) => {
   const name = await promptDialog('请输入新的身份档案名称', {
     title: '重命名身份档案',
     defaultValue: slot.name,
-    confirmText: '保存'
+    confirmText: '保存',
   })
   if (name === null) return
   store.renameSaveSlot(slot.id, name)
 }
 
-const deleteSlot = async slot => {
+const deleteSlot = async (slot) => {
   const confirmed = await confirmDialog(`确认删除身份档案 "${slot.name}" 吗？该操作不可恢复。`, {
     title: '删除身份档案',
-    confirmText: '删除'
+    confirmText: '删除',
   })
   if (!confirmed) return
   store.deleteSaveSlot(slot.id)
@@ -351,17 +375,17 @@ const startImportAsNew = () => {
   fileInput.value?.click()
 }
 
-const startOverwriteImport = slotId => {
+const startOverwriteImport = (slotId) => {
   importMode.value = { type: 'overwrite', slotId }
   fileInput.value?.click()
 }
 
-const handleImportFile = event => {
+const handleImportFile = (event) => {
   const file = event.target.files?.[0]
   if (!file) return
 
   const reader = new FileReader()
-  reader.onload = e => {
+  reader.onload = (e) => {
     const content = e.target?.result
     if (typeof content !== 'string') return
 
