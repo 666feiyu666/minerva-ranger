@@ -31,6 +31,7 @@ test('Store创建两种计时任务并按完整周期结算', async () => {
     outfile: bundledStorePath,
     loader: { '.png': 'dataurl' },
     define: {
+      'import.meta.env.VITE_ENABLE_CLOUD_SYNC': '"false"',
       'import.meta.env.VITE_SYNC_API_URL': '""',
       'import.meta.env.DEV': 'false'
     },

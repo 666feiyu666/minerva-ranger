@@ -22,7 +22,7 @@ export default defineConfig([
   },
 
   {
-    files: ['electron/**/*.js'],
+    files: ['electron/**/*.js', 'server/**/*.js'],
     languageOptions: {
       globals: {
         ...globals.node,

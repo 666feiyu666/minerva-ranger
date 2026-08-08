@@ -3,7 +3,7 @@
     
     <div class="absolute top-6 left-1/2 -translate-x-1/2 z-10 px-8 py-3 rounded-lg border-2 border-[#8b5a2b]/30 bg-[#f4ebd0]/90 backdrop-blur-sm shadow-lg text-center pointer-events-none">
       <h2 class="text-2xl font-serif font-bold text-[#5c3a21] tracking-widest uppercase">The Realm of Minerva</h2>
-      <p class="text-xs text-[#8b5a2b] font-mono mt-1">Drag to arrange · Click to enter forest overview</p>
+      <p class="text-xs text-[#8b5a2b] font-mono mt-1">拖动排列技能 · 点击查看技能下的行动森林</p>
     </div>
 
     <div 
@@ -12,7 +12,7 @@
       :style="mapStyle"
     >
       <div 
-        v-for="theme in store.themes" 
+        v-for="theme in store.skillSummaries"
         :key="theme.id"
         class="absolute transform -translate-x-1/2 -translate-y-1/2 group cursor-grab active:cursor-grabbing"
         :style="{ 
@@ -28,6 +28,12 @@
           </div>
           <div class="mt-2 px-3 py-1 bg-black/70 backdrop-blur-md rounded border border-[#8b5a2b] text-white text-xs font-bold whitespace-nowrap opacity-80 group-hover:opacity-100 transition-opacity">
             {{ theme.name }}
+          </div>
+          <div class="mt-1 px-2 py-0.5 rounded bg-black/55 text-[10px] text-emerald-100 whitespace-nowrap">
+            {{ theme.actionCount }} 个行动 · {{ theme.totalTrees }} 棵树
+          </div>
+          <div class="mt-1 px-2 py-0.5 rounded bg-black/55 text-[10px] text-sky-100 whitespace-nowrap">
+            {{ theme.totalXP }} XP · {{ formatDuration(theme.totalTimeSpent) }}
           </div>
         </div>
       </div>
@@ -46,6 +52,13 @@ const mapContainer = ref(null)
 const mapStyle = {
   backgroundImage: `url(${mapImage})`,
   boxShadow: 'inset 0 0 100px rgba(0,0,0,0.5)'
+}
+
+const formatDuration = seconds => {
+  if (!seconds) return '0 分钟'
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  return hours > 0 ? `${hours} 小时 ${minutes} 分钟` : `${minutes} 分钟`
 }
 
 // === 拖拽交互逻辑 ===

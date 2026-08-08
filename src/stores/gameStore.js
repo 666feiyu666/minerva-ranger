@@ -1,12 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref, computed, watch } from 'vue'
 import { alertDialog } from '@/composables/dialogService'
+import { CLOUD_SYNC_ENABLED } from '@/config/featureFlags'
 import { RUNNING_SAVE_INTERVAL_MS, TIMER_TICK_INTERVAL_MS } from '@/config/gameBalance'
 import { PREVIEW_BACKGROUND_ITEMS, PREVIEW_SKILL_ITEMS, SHOP_CATEGORIES } from '@/config/shopCatalog'
 import { TREE_TYPES } from '@/config/treeCatalog'
 import { normalizeNote } from '@/local-backend/domain/noteModel'
 import { isSameProjectId, normalizeProject } from '@/local-backend/domain/projectModel'
-import { buildSaveSummary, normalizeSaveIndex } from '@/local-backend/domain/saveSchema'
+import {
+  buildSaveSummary,
+  normalizeSaveIndex,
+  validateSaveDataShape
+} from '@/local-backend/domain/saveSchema'
 import {
   createNoteRecord,
   deleteUserNote,
@@ -37,10 +42,13 @@ import {
 import {
   buildSaveData,
   createSaveSlotData,
+  hasBootstrappedDefaultIdentity,
+  markDefaultIdentityBootstrapped,
   persistSlotDataToRepository,
   readLegacySaveData,
   readSaveIndex,
   readSlotData,
+  rebuildSaveIndexFromStoredSlots,
   removeSlotData,
   shouldPersistActiveSlot,
   writeSaveIndex
@@ -84,6 +92,7 @@ export const useGameStore = defineStore('game', () => {
   const saveIndex = ref({ version: 1, lastSelectedSlotId: null, slots: [] })
   const activeSlotId = ref(null)
   const isHydrating = ref(false)
+  const persistenceError = ref(null)
 
   // === 运行时状态 ===
   const activeThemeId = ref(null)
@@ -102,6 +111,34 @@ export const useGameStore = defineStore('game', () => {
   
   const isNightMode = ref(false)
   const offlineEarnings = ref(null)
+  const isCloudSyncEnabled = CLOUD_SYNC_ENABLED
+
+  let notifiedPersistenceError = null
+
+  function clearPersistenceError() {
+    persistenceError.value = null
+    notifiedPersistenceError = null
+  }
+
+  function reportPersistenceError(action, error) {
+    const message = error?.message || String(error)
+    persistenceError.value = {
+      action,
+      message,
+      occurredAt: new Date().toISOString()
+    }
+    console.error(`${action} failed.`, error)
+
+    const notificationKey = `${action}:${message}`
+    if (notifiedPersistenceError !== notificationKey) {
+      notifiedPersistenceError = notificationKey
+      void alertDialog(
+        `${action}失败。本地数据尚未确认写入，请先导出当前身份档案并检查可用空间。\n\n${message}`,
+        { title: '本地身份档案错误' }
+      )
+    }
+    return false
+  }
 
   // === 计算属性 ===
   const globalLevel = computed(() => Math.floor(Math.sqrt(globalXP.value / 100)) + 1)
@@ -119,6 +156,18 @@ export const useGameStore = defineStore('game', () => {
   
   const activeProject = computed(() => projects.value.find(p => p.id === activeProjectId.value))
   const runningProject = computed(() => projects.value.find(p => p.id === runningProjectId.value))
+  const skillSummaries = computed(() =>
+    themes.value.map(skill => {
+      const actions = projects.value.filter(action => action.themeId === skill.id)
+      return {
+        ...skill,
+        actionCount: actions.length,
+        totalXP: actions.reduce((sum, action) => sum + (action.totalXP || 0), 0),
+        totalTrees: actions.reduce((sum, action) => sum + (action.totalTrees || 0), 0),
+        totalTimeSpent: actions.reduce((sum, action) => sum + (action.totalTimeSpent || 0), 0)
+      }
+    })
+  )
 
   const activeTree = computed(() => TREE_TYPES.find(t => t.id === activeTreeId.value))
   const maxTime = computed(() => activeTree.value ? activeTree.value.time : 25 * 60)
@@ -172,12 +221,32 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function saveSaveIndex() {
-    writeSaveIndex(saveIndex.value)
+    try {
+      writeSaveIndex(saveIndex.value)
+      clearPersistenceError()
+      return true
+    } catch (error) {
+      return reportPersistenceError('保存存档索引', error)
+    }
   }
 
   function loadSaveIndex() {
-    const index = readSaveIndex()
-    saveIndex.value = index ? normalizeSaveIndex(index) : normalizeSaveIndex()
+    try {
+      const index = readSaveIndex()
+      saveIndex.value = index ? normalizeSaveIndex(index) : normalizeSaveIndex()
+      clearPersistenceError()
+    } catch (error) {
+      const rebuiltIndex = rebuildSaveIndexFromStoredSlots()
+      saveIndex.value = normalizeSaveIndex(rebuiltIndex)
+      if (saveSaveIndex()) {
+        void alertDialog(
+          `存档索引无法读取，已从 ${saveSlots.value.length} 个本地存档中重建。`,
+          { title: '本地存档已恢复' }
+        )
+      } else {
+        reportPersistenceError('读取存档索引', error)
+      }
+    }
     return saveIndex.value
   }
 
@@ -189,13 +258,20 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function persistSlotData(slotId, saveData, options = {}) {
-    return persistSlotDataToRepository({
-      saveIndex: saveIndex.value,
-      activeSlotName: activeSlotMeta.value?.name,
-      slotId,
-      saveData,
-      options
-    })
+    try {
+      const result = persistSlotDataToRepository({
+        saveIndex: saveIndex.value,
+        activeSlotName: activeSlotMeta.value?.name,
+        slotId,
+        saveData,
+        options
+      })
+      clearPersistenceError()
+      return result
+    } catch (error) {
+      reportPersistenceError('保存本地存档', error)
+      return null
+    }
   }
 
   function createNote({
@@ -439,7 +515,7 @@ export const useGameStore = defineStore('game', () => {
   function startAction(treeId, options = {}) {
     const tree = TREE_TYPES.find(item => item.id === treeId)
     if (!activeProjectId.value || !tree || !unlockedTreeIds.value.includes(treeId)) {
-      return { ok: false, error: '当前项目或树种无效。' }
+      return { ok: false, error: '当前行动或树种无效。' }
     }
     if (runningProjectId.value) {
       return { ok: false, error: '请先结束当前种植任务。' }
@@ -663,8 +739,24 @@ export const useGameStore = defineStore('game', () => {
       activeView.value = data.activeView || (data.activeProjectId ? 'dashboard' : 'forest')
       activeThemeId.value = data.activeThemeId || null
       activeProjectId.value = data.activeProjectId || null
-      const savedRunningProjectId = data.runningProjectId || data.activeProjectId || null
       activeTreeId.value = data.activeTreeId || null
+      const hasExplicitRunningProject = Boolean(data.runningProjectId && activeTreeId.value)
+      const hasLegacyRunningTask = Boolean(
+        !data.runningProjectId &&
+        data.activeProjectId &&
+        activeTreeId.value &&
+        (data.isRunning || Number(data.timer) > 0)
+      )
+      const candidateRunningProjectId = hasExplicitRunningProject
+        ? data.runningProjectId
+        : hasLegacyRunningTask
+          ? data.activeProjectId
+          : null
+      const savedRunningProjectId = projects.value.some(project =>
+        isSameProjectId(project.id, candidateRunningProjectId)
+      )
+        ? candidateRunningProjectId
+        : null
       timer.value = data.timer || 0
       settledCycles.value = data.settledCycles || 0
       taskTrees.value = data.taskTrees || 0
@@ -688,6 +780,14 @@ export const useGameStore = defineStore('game', () => {
       const lastSave = data.timestamp || Date.now()
       offlineEarnings.value = null
       runningProjectId.value = savedRunningProjectId
+      if (!savedRunningProjectId) {
+        activeTreeId.value = null
+        timer.value = 0
+        settledCycles.value = 0
+        taskTrees.value = 0
+        taskXP.value = 0
+        taskStartLevel.value = null
+      }
       if (savedRunningProjectId && taskStartLevel.value === null) {
         taskStartLevel.value = runningProject.value?.level || 1
       }
@@ -775,7 +875,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   async function pushSlotToCloud(slotId) {
-    if (!user.value || !slotId) return false
+    if (!isCloudSyncEnabled || !user.value || !slotId) return false
 
     const slot = saveSlots.value.find(item => item.id === slotId)
     const saveData = getLocalSlotSaveData(slotId)
@@ -795,7 +895,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function scheduleActiveSlotCloudSync() {
-    if (!user.value || !activeSlotId.value) return
+    if (!isCloudSyncEnabled || !user.value || !activeSlotId.value) return
     if (cloudSyncTimeout) clearTimeout(cloudSyncTimeout)
     cloudSyncTimeout = setTimeout(() => {
       void pushSlotToCloud(activeSlotId.value).catch(error => {
@@ -805,6 +905,7 @@ export const useGameStore = defineStore('game', () => {
   }
 
   async function mergeSelfHostedCloudSlots() {
+    if (!isCloudSyncEnabled) return 0
     syncStatus.value = 'syncing'
     const cloudSlots = await listSelfHostedCloudSlots()
 
@@ -855,11 +956,16 @@ export const useGameStore = defineStore('game', () => {
   }
 
   async function initAuth() {
+    if (!isCloudSyncEnabled) {
+      user.value = null
+      return
+    }
     const session = getStoredSession()
     user.value = session?.user || null
   }
 
   async function loginWithEmail(email, password) {
+    if (!isCloudSyncEnabled) return false
     try {
       const session = await loginSelfHosted(email, password)
       user.value = session.user
@@ -873,6 +979,7 @@ export const useGameStore = defineStore('game', () => {
     }
   }
   async function registerWithEmail(email, password) {
+    if (!isCloudSyncEnabled) return false
     try {
       const session = await registerSelfHosted(email, password)
       user.value = session.user
@@ -893,6 +1000,7 @@ export const useGameStore = defineStore('game', () => {
     user.value = null
   }
   async function uploadSaveToCloud(options = {}) {
+    if (!isCloudSyncEnabled) return false
     if (!user.value) {
       void alertDialog('Please sign in first.', {
         title: 'Not signed in'
@@ -928,6 +1036,7 @@ export const useGameStore = defineStore('game', () => {
     }
   }
   async function downloadSaveFromCloud(options = {}) {
+    if (!isCloudSyncEnabled) return false
     if (!user.value) {
       void alertDialog('Please sign in first.', {
         title: 'Not signed in'
@@ -956,11 +1065,11 @@ export const useGameStore = defineStore('game', () => {
   }
   function saveActiveSlot(markPlayed = false) {
     if (!activeSlotId.value) return false
-    persistSlotData(activeSlotId.value, getSaveData(), {
+    const savedData = persistSlotData(activeSlotId.value, getSaveData(), {
       markPlayed,
       slotName: activeSlotMeta.value?.name
     })
-    return true
+    return Boolean(savedData)
   }
 
   function saveToLocalStorage() {
@@ -972,22 +1081,27 @@ export const useGameStore = defineStore('game', () => {
         isHydrating: isHydrating.value
       })
     ) {
-      return
+      return false
     }
     if (saveActiveSlot(false)) scheduleActiveSlotCloudSync()
+    return !persistenceError.value
   }
 
-  function createSaveSlot(name, initialData = null) {
+  function createSaveSlot(name, initialData = null, options = {}) {
     const { slotId, slotName, slotData } = createSaveSlotData(
       name,
       saveSlots.value.length,
-      initialData
+      initialData,
+      options
     )
 
-    persistSlotData(slotId, slotData, { markPlayed: false, slotName })
-    void pushSlotToCloud(slotId).catch(error => {
-      console.error(error)
-    })
+    const persisted = persistSlotData(slotId, slotData, { markPlayed: false, slotName })
+    if (!persisted) return null
+    if (isCloudSyncEnabled) {
+      void pushSlotToCloud(slotId).catch(error => {
+        console.error(error)
+      })
+    }
     return slotId
   }
 
@@ -995,24 +1109,67 @@ export const useGameStore = defineStore('game', () => {
     const trimmed = newName?.trim()
     if (!trimmed) return false
 
-    const slot = updateSlotMeta(slotId, { name: trimmed, updatedAt: new Date().toISOString() })
+    const slot = saveSlots.value.find(item => item.id === slotId)
     if (!slot) return false
 
-    const saveData = readSlotData(slotId)
-    if (saveData) {
-      persistSlotData(slotId, { ...saveData, slotName: trimmed }, { slotName: trimmed, updateSelection: false })
-    } else {
-      saveSaveIndex()
+    try {
+      const saveData = readSlotData(slotId)
+      if (!saveData) return false
+      const persisted = persistSlotData(
+        slotId,
+        { ...saveData, slotName: trimmed },
+        { slotName: trimmed, updateSelection: false }
+      )
+      if (!persisted) return false
+    } catch (error) {
+      return reportPersistenceError('重命名身份档案', error)
     }
-    void pushSlotToCloud(slotId).catch(error => {
-      console.error(error)
-    })
+    if (isCloudSyncEnabled) {
+      void pushSlotToCloud(slotId).catch(error => {
+        console.error(error)
+      })
+    }
     return true
   }
 
+  function moveSaveSlot(slotId, direction) {
+    const currentIndex = saveSlots.value.findIndex(slot => slot.id === slotId)
+    const targetIndex = currentIndex + direction
+    if (currentIndex < 0 || targetIndex < 0 || targetIndex >= saveSlots.value.length) return false
+
+    const nextSlots = [...saveSlots.value]
+    const [movedSlot] = nextSlots.splice(currentIndex, 1)
+    nextSlots.splice(targetIndex, 0, movedSlot)
+    const nextIndex = { ...saveIndex.value, slots: nextSlots }
+
+    try {
+      writeSaveIndex(nextIndex)
+      saveIndex.value = nextIndex
+      clearPersistenceError()
+      return true
+    } catch (error) {
+      return reportPersistenceError('调整身份档案顺序', error)
+    }
+  }
+
   function deleteSaveSlot(slotId) {
-    removeSlotData(slotId)
-    saveIndex.value.slots = saveSlots.value.filter(slot => slot.id !== slotId)
+    const nextIndex = {
+      ...saveIndex.value,
+      slots: saveSlots.value.filter(slot => slot.id !== slotId)
+    }
+
+    if (nextIndex.lastSelectedSlotId === slotId) {
+      nextIndex.lastSelectedSlotId = nextIndex.slots[0]?.id || null
+    }
+
+    try {
+      writeSaveIndex(nextIndex)
+      removeSlotData(slotId)
+      saveIndex.value = nextIndex
+      clearPersistenceError()
+    } catch (error) {
+      return reportPersistenceError('删除身份档案', error)
+    }
 
     if (activeSlotId.value === slotId) {
       activeSlotId.value = null
@@ -1020,12 +1177,7 @@ export const useGameStore = defineStore('game', () => {
       bootStage.value = 'slot-select'
     }
 
-    if (saveIndex.value.lastSelectedSlotId === slotId) {
-      saveIndex.value.lastSelectedSlotId = saveSlots.value[0]?.id || null
-    }
-
-    saveSaveIndex()
-    if (user.value) {
+    if (isCloudSyncEnabled && user.value) {
       void deleteSelfHostedCloudSlot(slotId).catch(error => {
         console.error(error)
       })
@@ -1034,11 +1186,24 @@ export const useGameStore = defineStore('game', () => {
   }
 
   function loadSlot(slotId) {
-    const data = readSlotData(slotId)
-    if (!data) return false
+    const previousActiveSlotId = activeSlotId.value
+    try {
+      const data = readSlotData(slotId)
+      if (!data) return false
+      const validation = validateSaveDataShape(data)
+      if (!validation.ok) throw new Error(validation.error)
 
-    activeSlotId.value = slotId
-    return applySaveData(data, true)
+      activeSlotId.value = slotId
+      if (applySaveData(data, true)) {
+        clearPersistenceError()
+        return true
+      }
+    } catch (error) {
+      reportPersistenceError('读取本地存档', error)
+    }
+
+    activeSlotId.value = previousActiveSlotId
+    return false
   }
 
   function enterSlot(slotId) {
@@ -1073,6 +1238,8 @@ export const useGameStore = defineStore('game', () => {
 
     try {
       const data = JSON.parse(jsonString)
+      const validation = validateSaveDataShape(data)
+      if (!validation.ok) throw new Error(validation.error)
 
       if (createNewSlot) {
         const newSlotId = createSaveSlot(slotName || data.slotName || data.name, data)
@@ -1082,11 +1249,12 @@ export const useGameStore = defineStore('game', () => {
       if (!targetSlotId) return false
 
       const targetMeta = saveSlots.value.find(slot => slot.id === targetSlotId)
-      persistSlotData(
+      const persisted = persistSlotData(
         targetSlotId,
         { ...data, slotId: targetSlotId, slotName: targetMeta?.name || slotName || data.slotName },
         { markPlayed: false, slotName: targetMeta?.name || slotName || data.slotName, updateSelection: false }
       )
+      if (!persisted) return false
 
       if (activeSlotId.value === targetSlotId) {
         applySaveData(
@@ -1122,6 +1290,8 @@ export const useGameStore = defineStore('game', () => {
     try {
       const legacyData = readLegacySaveData()
       if (!legacyData) return
+      const validation = validateSaveDataShape(legacyData)
+      if (!validation.ok) throw new Error(validation.error)
       createSaveSlot('主档案', {
         ...legacyData,
         activeView: legacyData.activeView || (legacyData.activeProjectId ? 'dashboard' : 'forest')
@@ -1134,6 +1304,12 @@ export const useGameStore = defineStore('game', () => {
   function initSaveSystem() {
     migrateLegacySingleSaveIfNeeded()
     loadSaveIndex()
+    if (!hasBootstrappedDefaultIdentity()) {
+      const defaultSlotReady =
+        saveSlots.value.length > 0 ||
+        Boolean(createSaveSlot('开发设计师', null, { includeDefaultSkills: true }))
+      if (defaultSlotReady) markDefaultIdentityBootstrapped()
+    }
     if (!activeSlotId.value) resetGameState()
     bootStage.value = 'slot-select'
   }
@@ -1148,10 +1324,16 @@ export const useGameStore = defineStore('game', () => {
   function downloadSaveFile(slotId = activeSlotId.value) { 
     if (!slotId) return
 
-    const data =
-      slotId === activeSlotId.value
-        ? getSaveData()
-        : readSlotData(slotId)
+    let data
+    try {
+      data =
+        slotId === activeSlotId.value
+          ? getSaveData()
+          : readSlotData(slotId)
+    } catch (error) {
+      reportPersistenceError('导出身份档案', error)
+      return
+    }
     if (!data) return
 
     const slotName =
@@ -1193,16 +1375,16 @@ export const useGameStore = defineStore('game', () => {
   function cheatAddCoins() { coins.value += 1000; globalXP.value += 1000 }
 
   return { 
-    bootStage, saveIndex, saveSlots, activeSlotId, activeSlotMeta,
+    bootStage, saveIndex, saveSlots, activeSlotId, activeSlotMeta, persistenceError,
     themes, projects, globalXP, globalLevel, globalLevelProgress, coins, unlockedTreeIds, ownedBoostIds, unlockedBackgroundIds, activeView, notebook,
-    activeProjectId, activeProject, runningProjectId, runningProject, activeThemeId,
+    activeProjectId, activeProject, runningProjectId, runningProject, activeThemeId, skillSummaries,
     activeTreeId, activeTree, timer, maxTime, isRunning, progressPercentage,
     settledCycles, taskTrees, taskXP, taskStartLevel,
     timerMode, timerModeLabel, targetDuration, taskLimit, taskTimeState,
     isNightMode, TREE_TYPES, SHOP_CATEGORIES, shopItems, shopCatalog, inventoryTrees,
-    user, syncStatus, offlineEarnings, PLANTING_MODES,
+    user, syncStatus, offlineEarnings, PLANTING_MODES, isCloudSyncEnabled,
     
-    initSaveSystem, createSaveSlot, renameSaveSlot, deleteSaveSlot, enterSlot, exitToSaveSelection,
+    initSaveSystem, createSaveSlot, renameSaveSlot, moveSaveSlot, deleteSaveSlot, enterSlot, exitToSaveSelection,
     saveActiveSlot, importSaveAsNewSlot,
     createTheme, renameTheme, deleteTheme, submitHarvest,
     getTreeYield, buyTree, purchaseShopItem, ownsShopItem, canPurchaseShopItem, createProject, selectProject, 

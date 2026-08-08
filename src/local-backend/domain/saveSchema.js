@@ -1,5 +1,28 @@
 import { getGlobalLevelFromXP } from './leveling'
 
+const SAVE_ARRAY_FIELDS = [
+  'unlockedTreeIds',
+  'ownedBoostIds',
+  'unlockedBackgroundIds',
+  'themes',
+  'projects',
+  'notebook'
+]
+
+export function validateSaveDataShape(saveData) {
+  if (!saveData || typeof saveData !== 'object' || Array.isArray(saveData)) {
+    return { ok: false, error: '存档根节点必须是一个对象。' }
+  }
+
+  for (const field of SAVE_ARRAY_FIELDS) {
+    if (saveData[field] !== undefined && !Array.isArray(saveData[field])) {
+      return { ok: false, error: `存档字段 ${field} 必须是数组。` }
+    }
+  }
+
+  return { ok: true, error: null }
+}
+
 export function normalizeSaveIndex(index = {}) {
   return {
     version: 1,
@@ -7,7 +30,7 @@ export function normalizeSaveIndex(index = {}) {
     slots: Array.isArray(index.slots)
       ? index.slots.map(slot => ({
           id: slot.id,
-          name: slot.name || '未命名存档',
+          name: slot.name || '未命名身份档案',
           createdAt: slot.createdAt || new Date().toISOString(),
           updatedAt: slot.updatedAt || slot.createdAt || new Date().toISOString(),
           lastPlayedAt:

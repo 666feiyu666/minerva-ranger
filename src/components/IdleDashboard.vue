@@ -21,11 +21,11 @@
             <div>
               <div class="text-xs uppercase tracking-widest mb-1 font-bold transition-colors"
                 :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
-                Current Project
+                Current Action
               </div>
               <h2 class="text-3xl font-bold tracking-wide transition-colors duration-300"
                 :class="store.isNightMode ? 'text-white' : 'text-gray-800'">
-                {{ store.activeProject?.name || '未选择项目' }}
+                {{ store.activeProject?.name || '未选择行动' }}
               </h2>
               
               <div class="flex items-center gap-3 mt-2">
@@ -195,9 +195,10 @@
       </div>
     </div>
 
-    <div v-if="showModeModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 px-4 backdrop-blur-md">
+    <Teleport to="body">
+    <div v-if="showModeModal" class="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/70 px-4 py-6 backdrop-blur-md">
       <div
-        class="w-full max-w-lg rounded-2xl border p-6 shadow-2xl"
+        class="my-auto w-full max-w-lg rounded-2xl border p-6 shadow-2xl"
         :class="store.isNightMode ? 'border-gray-700 bg-[#171717] text-gray-100' : 'border-emerald-200 bg-white text-gray-800'"
       >
         <div class="mb-6 flex items-start justify-between">
@@ -210,7 +211,7 @@
 
         <div class="mb-5 grid grid-cols-2 gap-3 rounded-xl bg-emerald-500/10 p-4 text-sm">
           <div>
-            <p class="text-xs text-gray-500">当前项目</p>
+            <p class="text-xs text-gray-500">当前行动</p>
             <p class="mt-1 font-bold">{{ store.activeProject?.name }}</p>
           </div>
           <div>
@@ -268,19 +269,21 @@
         </div>
       </div>
     </div>
+    </Teleport>
 
-    <div v-if="showHarvestModal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-md px-4">
-      <div class="w-full max-w-2xl bg-[#0a0a0a] border-2 border-green-500/50 rounded-lg shadow-[0_0_40px_rgba(34,197,94,0.15)] overflow-hidden font-mono text-green-500 flex flex-col">
+    <Teleport to="body">
+    <div v-if="showHarvestModal" class="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/70 px-4 py-6 backdrop-blur-md">
+      <div class="my-auto flex max-h-[calc(100vh-3rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border-2 border-green-500/50 bg-[#0a0a0a] font-mono text-green-500 shadow-[0_0_40px_rgba(34,197,94,0.15)]">
         
         <div class="bg-green-900/30 px-4 py-2 text-xs text-green-400 border-b border-green-800/50 flex justify-between items-center">
           <span class="animate-pulse">TERMINAL // RANGER_NOTES.EXE</span>
           <button @click="closeHarvestModal" class="hover:text-white transition-colors">[_X]</button>
         </div>
 
-        <div class="p-6 text-sm md:text-base space-y-4">
+        <div class="custom-scrollbar-terminal space-y-4 overflow-y-auto p-6 text-sm md:text-base">
           <div class="space-y-1">
              <p>> SYSTEM: HARVEST PROTOCOL INITIATED...</p>
-             <p>> TARGET_PROJECT: <span class="text-white font-bold">{{ store.runningProject?.name }}</span></p>
+             <p>> TARGET_ACTION: <span class="text-white font-bold">{{ store.runningProject?.name }}</span></p>
              <p>> TIMER_MODE: <span class="text-white font-bold">{{ store.timerModeLabel }}</span></p>
              <p>> TARGET_DURATION: <span class="text-white font-bold">{{ formatTime(store.taskLimit) }}</span></p>
              <p>> DURATION_LOGGED: <span class="text-white font-bold">{{ formatTime(store.timer) }}</span></p>
@@ -305,7 +308,7 @@
           </div>
 
           <div class="rounded-lg border border-green-800/60 bg-green-950/20 p-4 space-y-2">
-             <p>> PROJECT_LOCKED :</p>
+             <p>> ACTION_LOCKED :</p>
              <p class="text-sm text-green-300">
                本次成果已在周期完成时结算到
                <span class="text-white font-bold">{{ store.runningProject?.name }}</span>，关闭总结不会再次发奖。
@@ -323,6 +326,7 @@
         </div>
       </div>
     </div>
+    </Teleport>
 
   </div>
 </template>
@@ -564,8 +568,7 @@ watch(
   isHarvestReady,
   reachedLimit => {
     if (reachedLimit && !showHarvestModal.value) openHarvestSummary('limit')
-  },
-  { immediate: true }
+  }
 )
 </script>
 

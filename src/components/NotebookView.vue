@@ -88,12 +88,12 @@
               >
                 Archive
               </div>
-              <h3 class="mt-3 text-2xl font-black">项目档案</h3>
+              <h3 class="mt-3 text-2xl font-black">行动档案</h3>
               <p
                 class="mt-3 text-sm"
                 :class="store.isNightMode ? 'text-gray-300' : 'text-[#5f6258]'"
               >
-                按主题查看项目，再进入对应记录。
+                按技能查看行动，再进入对应巡林会话记录。
               </p>
             </div>
 
@@ -119,7 +119,7 @@
               "
             >
               <div class="text-[11px] uppercase tracking-[0.18em] font-bold opacity-60">
-                Projects
+                Actions
               </div>
               <div class="mt-1 text-lg font-black">{{ store.projects.length }}</div>
             </div>
@@ -161,7 +161,7 @@
                 class="mt-3 text-sm"
                 :class="store.isNightMode ? 'text-gray-300' : 'text-[#5f6258]'"
               >
-                记录项目之外的想法、阶段总结和长文表达。
+                记录行动之外的想法、阶段总结和长文表达。
               </p>
             </div>
 
@@ -313,7 +313,7 @@
 
         <div v-if="filteredProjects.length === 0" class="px-6 py-16 text-center">
           <div class="text-4xl mb-3">🗂️</div>
-          <p class="font-semibold">{{ currentThemeLabel }}下还没有项目。</p>
+          <p class="font-semibold">{{ currentThemeLabel }}下还没有行动。</p>
         </div>
 
         <div v-else class="grid gap-4 p-6 md:grid-cols-2 2xl:grid-cols-3">
@@ -477,8 +477,8 @@
           >
             {{
               essaySearchQuery
-                ? '试试更短的关键词，或者切换到别的项目范围。'
-                : '当你想记录阶段想法、灵感片段或项目总结时，可以从这里开始。'
+                ? '试试更短的关键词，或者切换到别的行动范围。'
+                : '当你想记录阶段想法、灵感片段或行动总结时，可以从这里开始。'
             }}
           </p>
         </div>
@@ -655,7 +655,7 @@
                       : 'border-[#e3dbef] bg-[#faf8ff] text-[#6a617a]'
                   "
                 >
-                  {{ selectedEssayNote ? essayProjectLabel(selectedEssayNote) : '未关联项目' }}
+                  {{ selectedEssayNote ? essayProjectLabel(selectedEssayNote) : '未关联行动' }}
                 </span>
               </div>
 
@@ -791,7 +791,7 @@
                     class="text-xs font-bold uppercase tracking-wider"
                     :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
                   >
-                    关联项目
+                    关联行动
                   </label>
                   <select
                     v-model="essayDraft.projectId"
@@ -966,7 +966,7 @@
 
         <div v-if="projectLogs.length === 0" class="px-6 py-16 text-center">
           <div class="text-4xl mb-3">🌱</div>
-          <p class="font-semibold">该项目还没有记录。</p>
+          <p class="font-semibold">该行动还没有巡林会话记录。</p>
         </div>
 
         <div v-else class="space-y-8 p-6">
@@ -995,7 +995,7 @@
 
             <div v-if="projectPlantingLogs.length === 0" class="rounded-2xl border px-5 py-10 text-center"
                  :class="store.isNightMode ? 'border-white/10 bg-black/15' : 'border-[#e5dfd1] bg-white/75'">
-              <p class="font-semibold">这个项目还没有植树记录。</p>
+              <p class="font-semibold">这个行动还没有巡林会话记录。</p>
             </div>
 
             <div v-else class="space-y-4">
@@ -1076,7 +1076,7 @@
                             class="text-xs font-bold uppercase tracking-wider"
                             :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
                           >
-                            所属项目
+                            所属行动
                           </label>
                           <select
                             v-model="editDraft.projectId"
@@ -1228,7 +1228,7 @@
 
             <div v-if="projectEssayLogs.length === 0" class="rounded-2xl border px-5 py-10 text-center"
                  :class="store.isNightMode ? 'border-white/10 bg-black/15' : 'border-[#e5dfd1] bg-white/75'">
-              <p class="font-semibold">这个项目还没有关联随笔。</p>
+              <p class="font-semibold">这个行动还没有关联随笔。</p>
               <p
                 class="mt-2 text-sm"
                 :class="store.isNightMode ? 'text-gray-400' : 'text-[#6f6a60]'"
@@ -1433,7 +1433,7 @@ const themeOptions = computed(() => {
   if (uncategorizedProjects.value.length > 0) {
     options.push({
       id: UNCATEGORIZED_THEME_ID,
-      label: '未分类',
+      label: '未归属技能',
       projectCount: uncategorizedProjects.value.length
     })
   }
@@ -1463,7 +1463,7 @@ const editableProjectOptions = computed(() =>
   [
     {
       id: 'all',
-      label: '不关联项目'
+      label: '不关联行动'
     },
     ...store.projects.map(project => ({
       id: project.id,
@@ -1559,8 +1559,8 @@ const projectLogCount = computed(() =>
 const isEssayCreating = computed(() => essayEditorMode.value === 'create')
 
 const pageTitle = computed(() => {
-  if (currentPage.value === 'project-list') return '项目档案'
-  if (currentPage.value === 'project-detail') return selectedProject.value?.name || '项目档案'
+  if (currentPage.value === 'project-list') return '行动档案'
+  if (currentPage.value === 'project-detail') return selectedProject.value?.name || '行动档案'
   if (currentPage.value === 'essay-list') return '巡林随笔'
   if (currentPage.value === 'essay-detail') {
     if (essayEditorMode.value === 'create') return '新建巡林随笔'
@@ -1572,9 +1572,9 @@ const pageTitle = computed(() => {
 })
 
 const pageDescription = computed(() => {
-  if (currentPage.value === 'project-list') return '按主题查看项目。'
-  if (currentPage.value === 'project-detail') return '浏览这个项目的全部记录。'
-  if (currentPage.value === 'essay-list') return '记录项目过程中的想法、总结和灵感。'
+  if (currentPage.value === 'project-list') return '按技能查看行动。'
+  if (currentPage.value === 'project-detail') return '浏览这个行动的全部巡林记录。'
+  if (currentPage.value === 'essay-list') return '记录行动过程中的想法、总结和灵感。'
   if (currentPage.value === 'essay-detail') {
     return essayEditorMode.value === 'create'
       ? '写下一篇新的巡林随笔。'
@@ -1586,9 +1586,9 @@ const pageDescription = computed(() => {
 })
 
 const breadcrumbs = computed(() => {
-  if (currentPage.value === 'project-list') return ['栏目', '项目档案']
+  if (currentPage.value === 'project-list') return ['栏目', '行动档案']
   if (currentPage.value === 'project-detail') {
-    return ['项目档案', selectedProject.value?.name || '项目']
+    return ['行动档案', selectedProject.value?.name || '行动']
   }
   if (currentPage.value === 'essay-list') return ['栏目', '巡林随笔']
   if (currentPage.value === 'essay-detail') {
@@ -1602,7 +1602,7 @@ const breadcrumbs = computed(() => {
 })
 
 const backLabel = computed(() => {
-  if (currentPage.value === 'project-detail') return '← 返回项目列表'
+  if (currentPage.value === 'project-detail') return '← 返回行动列表'
   if (currentPage.value === 'essay-detail') return '← 返回随笔列表'
   if (currentPage.value === 'system-detail') return '← 返回系统记录'
   return '← 返回栏目'
@@ -1642,19 +1642,19 @@ watch(selectedSystemNote, note => {
 })
 
 const getThemeLabel = themeId => {
-  if (!themeId) return '未分类'
-  return store.themes.find(theme => theme.id === themeId)?.name || '未分类'
+  if (!themeId) return '未归属技能'
+  return store.themes.find(theme => theme.id === themeId)?.name || '未归属技能'
 }
 
 const getProjectNames = ids => {
-  if (!ids || ids.length === 0) return '未分类'
+  if (!ids || ids.length === 0) return '未关联行动'
   return ids
-    .map(id => store.projects.find(project => project.id === id)?.name || '未知项目')
+    .map(id => store.projects.find(project => project.id === id)?.name || '未知行动')
     .join('、')
 }
 
 const essayProjectLabel = note => {
-  if (!note?.projectIds?.length) return '未关联项目'
+  if (!note?.projectIds?.length) return '未关联行动'
   return getProjectNames(note.projectIds)
 }
 
@@ -1662,8 +1662,8 @@ const projectNoteCount = projectId =>
   store.notebook.filter(note => note.projectIds?.includes(projectId) && note.type !== 'system').length
 
 const systemEventLabel = eventType => {
-  if (eventType === 'project_merge') return '项目合并'
-  if (eventType === 'project_delete') return '项目删除'
+  if (eventType === 'project_merge') return '行动合并'
+  if (eventType === 'project_delete') return '行动删除'
   return ''
 }
 

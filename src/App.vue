@@ -57,8 +57,14 @@
                 Utility Panel
               </div>
               <div class="mt-2 text-sm">
-                当前存档：
-                <span class="font-bold">{{ store.activeSlotMeta?.name || '未命名存档' }}</span>
+                当前身份档案：
+                <span class="font-bold">{{ store.activeSlotMeta?.name || '未命名身份档案' }}</span>
+              </div>
+              <div
+                v-if="store.persistenceError"
+                class="mt-3 rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-500"
+              >
+                本地保存异常：{{ store.persistenceError.action }}。请尽快导出当前身份档案。
               </div>
             </div>
 
@@ -68,31 +74,34 @@
                 class="w-full px-4 py-3 rounded-2xl text-left font-semibold transition-colors"
                 :class="store.isNightMode ? 'bg-amber-900/30 hover:bg-amber-800/40 text-amber-200' : 'bg-amber-50 hover:bg-amber-100 text-amber-800'"
               >
-                🗂️ 返回存档列表
+                🗂️ 返回身份档案
               </button>
-              <button
-                @click="handleCloudUpload"
-                class="w-full px-4 py-3 rounded-2xl text-left font-semibold transition-colors"
-                :class="store.isNightMode ? 'bg-emerald-900/30 hover:bg-emerald-800/40 text-emerald-200' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800'"
-              >
-                ☁️ 云保存
-              </button>
-              <button
-                @click="handleCloudLoad"
-                class="w-full px-4 py-3 rounded-2xl text-left font-semibold transition-colors"
-                :class="store.isNightMode ? 'bg-sky-900/30 hover:bg-sky-800/40 text-sky-200' : 'bg-sky-50 hover:bg-sky-100 text-sky-800'"
-              >
-                ⬇️ 云读取
-              </button>
+              <template v-if="store.isCloudSyncEnabled">
+                <button
+                  @click="handleCloudUpload"
+                  class="w-full px-4 py-3 rounded-2xl text-left font-semibold transition-colors"
+                  :class="store.isNightMode ? 'bg-emerald-900/30 hover:bg-emerald-800/40 text-emerald-200' : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800'"
+                >
+                  ☁️ 云保存
+                </button>
+                <button
+                  @click="handleCloudLoad"
+                  class="w-full px-4 py-3 rounded-2xl text-left font-semibold transition-colors"
+                  :class="store.isNightMode ? 'bg-sky-900/30 hover:bg-sky-800/40 text-sky-200' : 'bg-sky-50 hover:bg-sky-100 text-sky-800'"
+                >
+                  ⬇️ 云读取
+                </button>
+              </template>
               <div
+                v-else
                 class="w-full px-4 py-3 rounded-2xl text-left font-semibold border"
                 :class="store.isNightMode ? 'border-white/10 bg-white/5 text-gray-500' : 'border-gray-200 bg-gray-50 text-gray-400'"
               >
-                🔄 云同步（未来开发）
+                💾 当前阶段：身份档案仅存本地
               </div>
             </div>
 
-            <div class="mt-4 pt-4 border-t"
+            <div v-if="store.isCloudSyncEnabled" class="mt-4 pt-4 border-t"
                  :class="store.isNightMode ? 'border-white/10' : 'border-gray-200'">
               <template v-if="store.user">
                 <div class="flex items-center justify-between gap-3 mb-3">
@@ -193,7 +202,7 @@
           
           <div v-else class="flex-1 flex flex-col items-center justify-center">
             <div class="text-6xl mb-4 opacity-50">⬅️</div>
-            <p class="text-xl">Select a Project</p>
+            <p class="text-xl">请选择一个行动</p>
           </div>
       </div>
 
@@ -303,9 +312,9 @@ const SYSTEM_VIEWS = new Set(['shop', 'map', 'notebook'])
 
 // 初始化认证
 onMounted(async () => {
-  await store.initAuth()
+  if (store.isCloudSyncEnabled) await store.initAuth()
   store.initSaveSystem()
-  if (store.user && import.meta.env.VITE_SYNC_API_URL) {
+  if (store.isCloudSyncEnabled && store.user && import.meta.env.VITE_SYNC_API_URL) {
     void store.downloadSaveFromCloud({ silent: true })
   }
   document.addEventListener('click', handleDocumentClick)

@@ -72,4 +72,4 @@ server/data/*
 # dddd
 tmp
 mr-script.tar.gz
-
+.agents

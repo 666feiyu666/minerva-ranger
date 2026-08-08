@@ -57,13 +57,13 @@
 
     <div class="px-4 py-2 text-xs font-bold uppercase tracking-widest mt-2 flex justify-between items-center"
          :class="store.isNightMode ? 'text-green-200/60' : 'text-[#6d7d58]'">
-      <span>Your Forest</span>
+      <span>技能与行动</span>
     </div>
     
     <div class="flex-1 overflow-y-auto p-2 custom-scrollbar overflow-x-visible">
       <div v-if="groupedProjects.length === 0" class="p-4 text-center text-sm mt-4"
            :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
-        <p>暂无项目与主题</p>
+        <p>暂无技能与行动</p>
       </div>
 
       <div v-for="group in groupedProjects" :key="group.id || 'unclassified'" class="mb-2">
@@ -90,16 +90,16 @@
             </div>
 
             <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-               <button v-if="group.id && editingThemeId !== group.id" @click.stop="startRenameTheme(group)" class="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded" title="Rename Theme">✏️</button>
-               <button v-if="group.id" @click.stop="handleDeleteTheme(group)" class="p-1 hover:bg-red-500/20 text-red-500 rounded" title="Delete Theme">🗑️</button>
-               <span v-if="!group.id" class="text-[10px]">未分类</span>
+               <button v-if="group.id && editingThemeId !== group.id" @click.stop="startRenameTheme(group)" class="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded" title="重命名技能">✏️</button>
+               <button v-if="group.id" @click.stop="handleDeleteTheme(group)" class="p-1 hover:bg-red-500/20 text-red-500 rounded" title="删除技能">🗑️</button>
+               <span v-if="!group.id" class="text-[10px]">未归属技能</span>
             </div>
          </div>
 
          <div v-show="expandedThemes.has(group.id)" class="mt-1 space-y-1">
             <div v-if="group.projects.length === 0" class="text-center text-[10px] py-2 opacity-50" 
                  :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
-                暂无项目
+                暂无行动
             </div>
 
             <div v-for="project in group.projects" :key="project.id"
@@ -203,9 +203,9 @@
       
       <div v-if="createMode !== null" class="flex flex-col gap-2">
          <div class="text-xs font-bold mb-1 uppercase tracking-widest" :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'">
-            {{ createMode === 'theme' ? '新建主题' : '新建项目' }}
+            {{ createMode === 'theme' ? '新建技能' : '新建行动' }}
          </div>
-         <input v-model="newItemName" @keyup.enter="confirmCreate" ref="inputRef" type="text" :placeholder="createMode === 'theme' ? '输入主题名称' : '输入项目名称'" 
+         <input v-model="newItemName" @keyup.enter="confirmCreate" ref="inputRef" type="text" :placeholder="createMode === 'theme' ? '输入技能名称' : '输入动词型行动，例如“审阅前端代码”'"
             class="w-full text-sm px-3 py-2 rounded border focus:border-green-500 outline-none transition-colors" 
             :class="store.isNightMode ? 'bg-gray-800 text-white border-gray-600' : 'bg-white text-gray-900 border-gray-300 shadow-inner'"/>
          <div class="flex gap-2">
@@ -219,12 +219,12 @@
           <button @click="startCreating('project')" 
                   class="flex-1 flex items-center justify-center gap-1 py-2 rounded transition-colors text-xs font-bold border border-dashed"
                   :class="store.isNightMode ? 'bg-gray-700 hover:bg-gray-600 text-gray-200 border-transparent' : 'bg-white/50 hover:bg-white text-gray-500 border-gray-300'">
-            + 项目
+            + 行动
           </button>
           <button @click="startCreating('theme')" 
                   class="flex-1 flex items-center justify-center gap-1 py-2 rounded transition-colors text-xs font-bold border border-dashed"
                   :class="store.isNightMode ? 'bg-[#333] hover:bg-[#444] text-blue-400 border-transparent' : 'bg-blue-50/50 hover:bg-blue-50 text-blue-600 border-blue-200'">
-            + 主题
+            + 技能
           </button>
       </div>
 
@@ -238,10 +238,10 @@
           <div>
             <div class="text-xs font-bold uppercase tracking-widest mb-1"
                  :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
-              Merge Project
+              Merge Action
             </div>
             <h3 class="text-xl font-bold" :class="store.isNightMode ? 'text-white' : 'text-gray-800'">
-              合并项目
+              合并行动
             </h3>
           </div>
           <button @click="closeMergeModal"
@@ -255,17 +255,17 @@
           <div class="rounded-xl border p-4"
                :class="store.isNightMode ? 'border-amber-900/40 bg-amber-900/10' : 'border-amber-200 bg-amber-50'">
             <p class="text-sm font-semibold mb-2" :class="store.isNightMode ? 'text-amber-200' : 'text-amber-800'">
-              将保留目标项目，并吸收源项目的数据
+              将保留目标行动，并吸收源行动的数据
             </p>
             <p class="text-sm" :class="store.isNightMode ? 'text-amber-100/80' : 'text-amber-700'">
-              源项目：{{ mergeSourceProject.name }}
+              源行动：{{ mergeSourceProject.name }}
             </p>
           </div>
 
           <div class="space-y-2">
             <label class="text-xs font-bold uppercase tracking-wider"
                    :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
-              目标项目
+              目标行动
             </label>
             <select v-model="mergeTargetProjectId"
                     class="w-full rounded-xl px-4 py-3 border outline-none transition-colors"
@@ -291,7 +291,7 @@
 
           <div class="rounded-xl border p-4 text-sm"
                :class="store.isNightMode ? 'border-gray-800 bg-[#101010] text-gray-400' : 'border-gray-200 bg-gray-50 text-gray-600'">
-            合并后会迁移源项目的树木、时长、经验和关联日志，并生成一条系统日志。
+            合并后会迁移源行动的树木、时长、经验和关联会话记录，并生成一条系统记录。
           </div>
 
           <button @click="confirmMergeProject"
@@ -312,10 +312,10 @@
           <div>
             <div class="text-xs font-bold uppercase tracking-widest mb-1"
                  :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
-              Delete Project
+              Delete Action
             </div>
             <h3 class="text-xl font-bold" :class="store.isNightMode ? 'text-white' : 'text-gray-800'">
-              删除项目
+              删除行动
             </h3>
           </div>
           <button @click="closeDeleteModal"
@@ -329,16 +329,16 @@
           <div class="rounded-xl border p-4"
                :class="store.isNightMode ? 'border-red-900/40 bg-red-900/10' : 'border-red-200 bg-red-50'">
             <p class="text-sm font-semibold mb-2" :class="store.isNightMode ? 'text-red-200' : 'text-red-800'">
-              删除后项目本体无法恢复
+              删除后行动本体无法恢复
             </p>
             <p class="text-sm" :class="store.isNightMode ? 'text-red-100/80' : 'text-red-700'">
-              目标项目：{{ deleteTargetProject.name }}
+              目标行动：{{ deleteTargetProject.name }}
             </p>
           </div>
 
           <div class="rounded-xl border p-4 text-sm"
                :class="store.isNightMode ? 'border-gray-800 bg-[#101010] text-gray-400' : 'border-gray-200 bg-gray-50 text-gray-600'">
-            系统会自动生成一条删除日志，记录项目名称、树木、时长、经验和关联日志数量。
+            系统会自动生成一条删除记录，保留行动名称、树木、时长、经验和关联会话数量。
           </div>
 
           <div class="space-y-2">
@@ -390,7 +390,7 @@ const groupedProjects = computed(() => {
     if (unclassified.length > 0 || groups.length === 0) {
         groups.unshift({
             id: null,
-            name: '未分类',
+            name: '未归属技能',
             projects: unclassified
         })
     }
@@ -523,7 +523,7 @@ const mergeTargetOptions = computed(() => {
 const openMergeModal = (project) => {
     activeMenuId.value = null
     if (store.projects.length < 2) {
-        void alertDialog('至少需要两个项目才能执行合并', {
+        void alertDialog('至少需要两个行动才能执行合并', {
             title: '无法合并'
         })
         return
@@ -545,10 +545,10 @@ const confirmMergeProject = async () => {
     if (!target) return
 
     const confirmed = await confirmDialog(
-        `确认将项目 "${mergeSourceProject.value.name}" 合并到 "${target.name}" 吗？\n` +
-        '合并后源项目会被移除，并生成系统日志。',
+        `确认将行动 "${mergeSourceProject.value.name}" 合并到 "${target.name}" 吗？\n` +
+        '合并后源行动会被移除，并生成系统记录。',
         {
-            title: '确认项目合并',
+            title: '确认行动合并',
             confirmText: '开始合并'
         }
     )
@@ -597,9 +597,9 @@ const cancelRenameTheme = () => { editingThemeId.value = null; editThemeName.val
 
 const handleDeleteTheme = async (theme) => {
     const confirmed = await confirmDialog(
-        `确定要删除主题 "${theme.name}" 吗？\n其下的项目将会被移回“未分类”。`,
+        `确定要删除技能 "${theme.name}" 吗？\n其下的行动将会被移回“未归属技能”。`,
         {
-            title: '删除主题',
+            title: '删除技能',
             confirmText: '删除'
         }
     )

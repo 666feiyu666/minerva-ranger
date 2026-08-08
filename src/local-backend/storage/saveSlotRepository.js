@@ -1,30 +1,72 @@
-import { LEGACY_SAVE_KEY, SAVE_INDEX_KEY, getSlotStorageKey } from '@/config/storageKeys'
-import { readJson, removeItem, writeJson } from './localStorageClient'
+import {
+  DEFAULT_IDENTITY_BOOTSTRAP_KEY,
+  LEGACY_SAVE_KEY,
+  SAVE_INDEX_BACKUP_KEY,
+  SAVE_INDEX_KEY,
+  SAVE_SLOT_BACKUP_SUFFIX,
+  SAVE_SLOT_KEY_PREFIX,
+  getSlotBackupStorageKey,
+  getSlotStorageKey
+} from '@/config/storageKeys'
+import {
+  readJson,
+  readJsonWithBackup,
+  readText,
+  removeItem,
+  writeText,
+  writeJsonWithBackup
+} from './localStorageClient'
+
+export function hasBootstrappedDefaultIdentity() {
+  return readText(DEFAULT_IDENTITY_BOOTSTRAP_KEY) === '1'
+}
+
+export function markDefaultIdentityBootstrapped() {
+  writeText(DEFAULT_IDENTITY_BOOTSTRAP_KEY, '1')
+}
 
 export function createSlotId() {
   return `slot_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
 }
 
 export function readSaveIndex() {
-  return readJson(SAVE_INDEX_KEY)
+  return readJsonWithBackup(SAVE_INDEX_KEY, SAVE_INDEX_BACKUP_KEY)
 }
 
 export function writeSaveIndex(index) {
-  writeJson(SAVE_INDEX_KEY, index)
+  writeJsonWithBackup(SAVE_INDEX_KEY, SAVE_INDEX_BACKUP_KEY, index)
 }
 
 export function readSlotData(slotId) {
-  return readJson(getSlotStorageKey(slotId))
+  return readJsonWithBackup(getSlotStorageKey(slotId), getSlotBackupStorageKey(slotId))
 }
 
 export function writeSlotData(slotId, saveData) {
-  writeJson(getSlotStorageKey(slotId), saveData)
+  writeJsonWithBackup(getSlotStorageKey(slotId), getSlotBackupStorageKey(slotId), saveData)
 }
 
 export function removeSlotData(slotId) {
   removeItem(getSlotStorageKey(slotId))
+  removeItem(getSlotBackupStorageKey(slotId))
 }
 
 export function readLegacySaveData() {
   return readJson(LEGACY_SAVE_KEY)
+}
+
+export function listStoredSlotIds() {
+  const slotIds = []
+
+  for (let index = 0; index < localStorage.length; index += 1) {
+    const key = localStorage.key(index)
+    if (
+      !key?.startsWith(SAVE_SLOT_KEY_PREFIX) ||
+      key.endsWith(SAVE_SLOT_BACKUP_SUFFIX)
+    ) {
+      continue
+    }
+    slotIds.push(key.slice(SAVE_SLOT_KEY_PREFIX.length))
+  }
+
+  return slotIds
 }

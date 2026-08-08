@@ -1,4 +1,14 @@
-export function createEmptySaveData(slotId, slotName) {
+export function createEmptySaveData(slotId, slotName, options = {}) {
+  const createdAt = Date.now()
+  const defaultSkills = options.includeDefaultSkills
+    ? ['写代码', '做设计', '推广与宣传'].map((name, index) => ({
+        id: `${createdAt}-${index}`,
+        name,
+        x: 24 + index * 26,
+        y: index === 1 ? 62 : 36
+      }))
+    : []
+
   return {
     version: 2,
     slotId,
@@ -9,7 +19,7 @@ export function createEmptySaveData(slotId, slotName) {
     unlockedTreeIds: ['t1'],
     ownedBoostIds: [],
     unlockedBackgroundIds: ['background_default'],
-    themes: [],
+    themes: defaultSkills,
     projects: [],
     notebook: [],
     activeView: 'forest',

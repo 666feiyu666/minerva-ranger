@@ -14,7 +14,7 @@
                         <div>
                             <div class="text-xs uppercase tracking-[0.28em] font-bold"
                                  :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
-                                Forest Overview
+                                Skill Overview
                             </div>
                             <h2 class="text-3xl font-bold flex items-center gap-3 mt-2 transition-colors"
                                 :class="store.isNightMode ? 'text-emerald-300' : 'text-emerald-700'">
@@ -23,7 +23,7 @@
                             </h2>
                             <p class="text-sm mt-2 transition-colors"
                                :class="store.isNightMode ? 'text-gray-400' : 'text-gray-600'">
-                                从这里查看主题下的项目陈列，巡视你的知识森林。
+                                从这里查看技能下的行动与汇总成长，巡视你的知识森林。
                             </p>
                         </div>
 
@@ -34,7 +34,7 @@
                             </div>
                             <div class="mt-2 text-2xl font-black"
                                  :class="store.isNightMode ? 'text-white' : 'text-gray-800'">
-                                {{ displayProjects.length }} <span class="text-base font-bold">Projects</span>
+                                {{ displayProjects.length }} <span class="text-base font-bold">个行动</span>
                             </div>
                             <div class="text-sm mt-1"
                                  :class="store.isNightMode ? 'text-emerald-300' : 'text-emerald-700'">
@@ -55,15 +55,15 @@
                     <div class="max-w-3xl">
                         <div class="text-xs uppercase tracking-[0.24em] font-bold"
                              :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
-                            Project Arrangement
+                            Action Arrangement
                         </div>
                         <div class="text-lg font-bold mt-1"
                              :class="store.isNightMode ? 'text-white' : 'text-gray-800'">
-                            {{ currentThemeName === '全局' ? '以列表方式巡视所有项目' : '以列表方式巡视 ' + currentThemeName + ' 的项目' }}
+                            {{ currentThemeName === '全局' ? '以列表方式巡视所有行动' : '以列表方式巡视 ' + currentThemeName + ' 的行动' }}
                         </div>
                         <p class="text-sm mt-3 leading-7"
                            :class="store.isNightMode ? 'text-stone-300/80' : 'text-[#6a5643]'">
-                            你可以直接按项目查看等级、树木、累计时长和树种分布，再进入单个项目的巡视详情。
+                            技能数据由下属行动汇总；你也可以进入单个行动查看等级、树木、累计时长和树种分布。
                         </p>
                     </div>
 
@@ -74,7 +74,7 @@
                         </span>
                         <span class="px-3 py-1.5 rounded-full text-xs font-bold border"
                               :class="store.isNightMode ? 'border-white/10 bg-black/25 text-gray-200' : 'border-white/60 bg-white/75 text-[#5d4633]'">
-                            Inspect By Project
+                            Inspect By Action
                         </span>
                     </div>
                 </div>
@@ -83,8 +83,8 @@
                      class="px-7 py-14 text-center"
                      :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'">
                     <div class="text-4xl mb-3">🪑</div>
-                    <p class="font-semibold">这个主题下还没有项目陈列。</p>
-                    <p class="text-sm mt-2">可以先在左侧新建项目，或把现有项目拖进这个主题。</p>
+                    <p class="font-semibold">这个技能下还没有行动。</p>
+                    <p class="text-sm mt-2">可以先在左侧新建行动，或把现有行动拖进这个技能。</p>
                 </div>
 
                 <div v-else class="divide-y" :class="store.isNightMode ? 'divide-gray-800' : 'divide-black/5'">
@@ -176,7 +176,7 @@
                 <button v-if="store.activeProjectId !== viewingProject.id" 
                         @click="setActiveAndStay"
                         class="mt-2 w-full py-1.5 text-white text-[10px] font-bold uppercase rounded shadow bg-emerald-500 hover:bg-emerald-400">
-                    Set Active
+                    选择此行动
                 </button>
             </div>
         </div>

@@ -9,7 +9,7 @@ export function normalizeProject(project = {}) {
   return {
     ...project,
     id: project.id,
-    name: project.name || '未命名项目',
+    name: project.name || '未命名行动',
     icon: project.icon || '📁',
     totalXP,
     totalTrees: project.totalTrees || 0,

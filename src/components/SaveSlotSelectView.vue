@@ -8,10 +8,10 @@
           Minerva Ranger
         </div>
         <h1 class="text-5xl font-black leading-tight text-white mb-6">
-          选择你的巡林档案
+          选择你的身份档案
         </h1>
         <p class="text-lg leading-8 text-slate-300 max-w-md">
-          每一份存档都是一片独立的知识森林。你可以保留现有世界，也可以开启一片全新的主题与项目地形。
+          每份身份档案代表一个长期身份。进入后，通过技能组织你反复实践的行动。
         </p>
       </div>
 
@@ -19,10 +19,10 @@
         <div class="rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-5">
           <div class="text-sm font-bold text-emerald-200 mb-2">推荐用法</div>
           <p class="text-sm leading-7 text-emerald-50/90">
-            主档案用于日常使用，实验性主题、新论文结构或新工作流建议单独开一个新存档。
+            为不同的长期身份建立独立档案，例如“开发设计师”或“D&D”。
           </p>
         </div>
-        <div class="text-xs text-slate-500">本地多存档已启用，后续可继续扩展云端槽位。</div>
+        <div class="text-xs text-slate-500">身份档案仍保存在本地，不依赖账号或网络。</div>
       </div>
     </aside>
 
@@ -32,11 +32,11 @@
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
           <div>
             <div class="text-sm uppercase tracking-[0.3em] text-emerald-300/80 mb-2">
-              Save Slots
+              Identity Profiles
             </div>
-            <h2 class="text-4xl font-black text-white mb-2">选择要进入的存档</h2>
+            <h2 class="text-4xl font-black text-white mb-2">选择要进入的身份档案</h2>
             <p class="text-slate-300">
-              当前共有 {{ store.saveSlots.length }} 个本地存档位。
+              当前共有 {{ store.saveSlots.length }} 个身份档案。
             </p>
           </div>
 
@@ -45,18 +45,21 @@
               @click="createSlot"
               class="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition-colors"
             >
-              + 新建存档
+              + 新建身份档案
             </button>
             <button
               @click="startImportAsNew"
               class="px-5 py-3 rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 text-white font-semibold transition-colors"
             >
-              导入为新存档
+              导入为新身份档案
             </button>
           </div>
         </div>
 
-        <section class="mb-8 rounded-3xl border border-white/10 bg-black/20 p-5 backdrop-blur-md">
+        <section
+          v-if="store.isCloudSyncEnabled"
+          class="mb-8 rounded-3xl border border-white/10 bg-black/20 p-5 backdrop-blur-md"
+        >
           <div v-if="store.user" class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
             <div class="min-w-0">
               <div class="text-xs uppercase tracking-[0.24em] text-emerald-300/80">
@@ -120,24 +123,34 @@
           </div>
         </section>
 
+        <section
+          v-else
+          class="mb-8 rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-5 text-sm text-emerald-50/90 backdrop-blur-md"
+        >
+          <div class="font-bold text-emerald-200">本地身份档案</div>
+          <p class="mt-2 leading-6">
+            所有档案保存在当前设备的 localStorage 中。请定期使用导出功能保留独立 JSON 备份。
+          </p>
+        </section>
+
         <component :is="DevToolsPanel" v-if="DevToolsPanel" class="mb-8" />
 
         <div v-if="store.saveSlots.length === 0" class="rounded-[2rem] border border-dashed border-white/15 bg-black/20 p-10 text-center">
           <div class="text-5xl mb-4">🌲</div>
-          <h3 class="text-2xl font-bold mb-3">还没有可用存档</h3>
-          <p class="text-slate-300 mb-6">可以先创建一份全新存档，或把已有 JSON 存档导入成新的档案槽位。</p>
+          <h3 class="text-2xl font-bold mb-3">还没有身份档案</h3>
+          <p class="text-slate-300 mb-6">可以先创建“开发设计师”身份档案，或导入已有 JSON 档案。</p>
           <div class="flex justify-center gap-3">
             <button
               @click="createSlot"
               class="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition-colors"
             >
-              创建第一份存档
+              创建第一个身份档案
             </button>
             <button
               @click="startImportAsNew"
               class="px-5 py-3 rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 text-white font-semibold transition-colors"
             >
-              导入现有存档
+              导入现有身份档案
             </button>
           </div>
         </div>
@@ -157,7 +170,7 @@
               <div class="min-w-0 flex-1">
                 <div class="flex flex-wrap items-center gap-2 mb-3">
                   <span class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-white/10 text-slate-200 border border-white/10">
-                    本地存档
+                    身份档案
                   </span>
                   <span
                     v-if="store.saveIndex.lastSelectedSlotId === slot.id"
@@ -181,15 +194,15 @@
                     <div class="text-lg font-bold text-white">Lv. {{ slot.summary.globalLevel }}</div>
                   </div>
                   <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
-                    <div class="text-xs uppercase tracking-wide text-slate-400 mb-1">主题</div>
+                    <div class="text-xs uppercase tracking-wide text-slate-400 mb-1">技能</div>
                     <div class="text-lg font-bold text-white">{{ slot.summary.themeCount }}</div>
                   </div>
                   <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
-                    <div class="text-xs uppercase tracking-wide text-slate-400 mb-1">项目</div>
+                    <div class="text-xs uppercase tracking-wide text-slate-400 mb-1">行动</div>
                     <div class="text-lg font-bold text-white">{{ slot.summary.projectCount }}</div>
                   </div>
                   <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
-                    <div class="text-xs uppercase tracking-wide text-slate-400 mb-1">日志</div>
+                    <div class="text-xs uppercase tracking-wide text-slate-400 mb-1">会话记录</div>
                     <div class="text-lg font-bold text-white">{{ slot.summary.noteCount }}</div>
                   </div>
                 </div>
@@ -204,9 +217,23 @@
                   @click="store.enterSlot(slot.id)"
                   class="w-full px-4 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition-colors"
                 >
-                  进入存档
+                  进入身份档案
                 </button>
                 <div class="grid grid-cols-2 gap-3">
+                  <button
+                    @click="store.moveSaveSlot(slot.id, -1)"
+                    :disabled="store.saveSlots[0]?.id === slot.id"
+                    class="px-4 py-3 rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold transition-colors disabled:opacity-30"
+                  >
+                    ↑ 上移
+                  </button>
+                  <button
+                    @click="store.moveSaveSlot(slot.id, 1)"
+                    :disabled="store.saveSlots[store.saveSlots.length - 1]?.id === slot.id"
+                    class="px-4 py-3 rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold transition-colors disabled:opacity-30"
+                  >
+                    ↓ 下移
+                  </button>
                   <button
                     @click="renameSlot(slot)"
                     class="px-4 py-3 rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold transition-colors"
@@ -270,9 +297,9 @@ const formatDate = value => {
 }
 
 const createSlot = async () => {
-  const name = await promptDialog('请输入新存档名称', {
-    title: '新建存档',
-    defaultValue: `新存档 #${store.saveSlots.length + 1}`,
+  const name = await promptDialog('请输入身份档案名称', {
+    title: '新建身份档案',
+    defaultValue: store.saveSlots.length === 0 ? '开发设计师' : `新身份档案 #${store.saveSlots.length + 1}`,
     confirmText: '创建'
   })
   if (name === null) return
@@ -301,8 +328,8 @@ const handleCloudPush = () => {
 }
 
 const renameSlot = async slot => {
-  const name = await promptDialog('请输入新的存档名称', {
-    title: '重命名存档',
+  const name = await promptDialog('请输入新的身份档案名称', {
+    title: '重命名身份档案',
     defaultValue: slot.name,
     confirmText: '保存'
   })
@@ -311,8 +338,8 @@ const renameSlot = async slot => {
 }
 
 const deleteSlot = async slot => {
-  const confirmed = await confirmDialog(`确认删除存档 "${slot.name}" 吗？该操作不可恢复。`, {
-    title: '删除存档',
+  const confirmed = await confirmDialog(`确认删除身份档案 "${slot.name}" 吗？该操作不可恢复。`, {
+    title: '删除身份档案',
     confirmText: '删除'
   })
   if (!confirmed) return

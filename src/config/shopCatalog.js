@@ -15,7 +15,7 @@ export const SHOP_CATEGORIES = [
     id: 'backgrounds',
     name: '造景',
     eyebrow: 'Scenes',
-    desc: '用于项目空间的外观装饰。'
+    desc: '用于行动空间的外观装饰。'
   }
 ]
 
@@ -60,14 +60,14 @@ export const PREVIEW_BACKGROUND_ITEMS = [
     type: 'background',
     categoryId: 'backgrounds',
     name: '档案室温室',
-    desc: '适用于单个项目的温室造景。',
+    desc: '适用于单个行动的温室造景。',
     price: 1800,
     levelReq: 10,
     availability: 'preview',
     iconEmoji: '🪟',
     badge: '暂未开放',
     meta: [
-      { label: '作用域', value: '单个项目' },
+      { label: '作用域', value: '单个行动' },
       { label: '气质', value: '记录室 / 温室' }
     ]
   },
@@ -76,14 +76,14 @@ export const PREVIEW_BACKGROUND_ITEMS = [
     type: 'background',
     categoryId: 'backgrounds',
     name: '巡林瞭望台',
-    desc: '适用于单个项目的瞭望台造景。',
+    desc: '适用于单个行动的瞭望台造景。',
     price: 4200,
     levelReq: 20,
     availability: 'preview',
     iconEmoji: '🗼',
     badge: '暂未开放',
     meta: [
-      { label: '作用域', value: '单个项目' },
+      { label: '作用域', value: '单个行动' },
       { label: '气质', value: '瞭望台 / 野外值守' }
     ]
   }

@@ -28,11 +28,11 @@ export function deleteProjectFromList(projects, notebook, projectId, options = {
     nextProjects: projects.filter(project => !isSameProjectId(project.id, projectId)),
     deletedProject: targetProject,
     systemNote: {
-      title: '[系统日志] 项目已删除',
+      title: '[系统记录] 行动已删除',
       eventType: 'project_delete',
       content: [
-        '系统记录：项目删除完成。',
-        `删除项目：${targetProject.name}`,
+        '系统记录：行动删除完成。',
+        `删除行动：${targetProject.name}`,
         `删除前树木：${targetProject.totalTrees || 0} 棵`,
         `删除前时长：${Math.floor(targetProject.totalTimeSpent || 0)} 秒`,
         `删除前经验：${deriveTotalXPFromLegacyProject(targetProject)} XP`,
@@ -62,7 +62,7 @@ export function mergeProjectData(projects, notebook, sourceProjectId, targetProj
     totalXP:
       deriveTotalXPFromLegacyProject(targetProject) +
       deriveTotalXPFromLegacyProject(sourceProject),
-    forest: { ...(targetProject.forest || {}) }
+    forest: { ...targetProject.forest }
   }
 
   Object.entries(sourceProject.forest || {}).forEach(([treeId, count]) => {
@@ -96,13 +96,13 @@ export function mergeProjectData(projects, notebook, sourceProjectId, targetProj
     sourceProject,
     targetProject: mergedTargetProject,
     systemNote: {
-      title: '[系统日志] 项目已合并',
+      title: '[系统记录] 行动已合并',
       projectIds: [targetProjectId],
       eventType: 'project_merge',
       content: [
-        '系统记录：项目合并完成。',
-        `源项目：${sourceProject.name}`,
-        `目标项目：${targetProject.name}`,
+        '系统记录：行动合并完成。',
+        `源行动：${sourceProject.name}`,
+        `目标行动：${targetProject.name}`,
         `迁移树木：${sourceProject.totalTrees || 0} 棵`,
         `迁移时长：${Math.floor(sourceProject.totalTimeSpent || 0)} 秒`,
         `迁移经验：${deriveTotalXPFromLegacyProject(sourceProject)} XP`,

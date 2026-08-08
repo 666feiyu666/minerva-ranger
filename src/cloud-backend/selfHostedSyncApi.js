@@ -31,7 +31,7 @@ async function request(path, options = {}) {
     headers: {
       'Content-Type': 'application/json',
       ...(session?.token ? { Authorization: `Bearer ${session.token}` } : {}),
-      ...(options.headers || {})
+      ...options.headers
     }
   })
 

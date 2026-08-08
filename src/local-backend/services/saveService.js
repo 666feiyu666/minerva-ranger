@@ -2,6 +2,9 @@ import { createEmptySaveData } from '@/config/defaultSaveData'
 import { buildSaveSummary } from '@/local-backend/domain/saveSchema'
 import {
   createSlotId,
+  hasBootstrappedDefaultIdentity,
+  listStoredSlotIds,
+  markDefaultIdentityBootstrapped,
   readLegacySaveData,
   readSaveIndex,
   readSlotData,
@@ -10,11 +13,13 @@ import {
   writeSlotData
 } from '@/local-backend/storage/saveSlotRepository'
 
+export { hasBootstrappedDefaultIdentity, markDefaultIdentityBootstrapped }
+
 export function buildSaveData(snapshot) {
   return {
     version: 2,
     slotId: snapshot.activeSlotId,
-    slotName: snapshot.activeSlotName || '未命名存档',
+    slotName: snapshot.activeSlotName || '未命名身份档案',
     timestamp: Date.now(),
     coins: snapshot.coins,
     globalXP: snapshot.globalXP,
@@ -50,12 +55,12 @@ export function shouldPersistActiveSlot({
   return Boolean(activeSlotId && bootStage === 'in-game' && !offlineEarnings && !isHydrating)
 }
 
-export function createSaveSlotData(name, slotCount, initialData = null) {
+export function createSaveSlotData(name, slotCount, initialData = null, options = {}) {
   const slotId = createSlotId()
-  const slotName = name?.trim() || `新存档 #${slotCount + 1}`
+  const slotName = name?.trim() || (slotCount === 0 ? '开发设计师' : `新身份档案 #${slotCount + 1}`)
   const slotData = initialData
     ? { ...initialData, version: 2, slotId, slotName, timestamp: Date.now() }
-    : createEmptySaveData(slotId, slotName)
+    : createEmptySaveData(slotId, slotName, options)
 
   return { slotId, slotName, slotData }
 }
@@ -68,18 +73,25 @@ export function persistSlotDataToRepository({
   options = {}
 }) {
   const now = new Date().toISOString()
+  const nextIndex = {
+    ...saveIndex,
+    slots: (saveIndex.slots || []).map(slot => ({
+      ...slot,
+      summary: { ...slot.summary }
+    }))
+  }
   const nextData = {
     ...saveData,
     version: 2,
     slotId,
-    slotName: options.slotName || saveData.slotName || activeSlotName || '未命名存档',
+    slotName: options.slotName || saveData.slotName || activeSlotName || '未命名身份档案',
     timestamp: Date.now()
   }
 
   writeSlotData(slotId, nextData)
 
   const summary = buildSaveSummary(nextData)
-  const existing = saveIndex.slots.find(slot => slot.id === slotId)
+  const existing = nextIndex.slots.find(slot => slot.id === slotId)
   if (existing) {
     existing.name = options.slotName || existing.name
     existing.updatedAt = now
@@ -87,9 +99,9 @@ export function persistSlotDataToRepository({
     existing.summary = summary
     existing.source = existing.source || 'local'
   } else {
-    saveIndex.slots.push({
+    nextIndex.slots.push({
       id: slotId,
-      name: options.slotName || nextData.slotName || '未命名存档',
+      name: options.slotName || nextData.slotName || '未命名身份档案',
       createdAt: now,
       updatedAt: now,
       lastPlayedAt: now,
@@ -99,11 +111,44 @@ export function persistSlotDataToRepository({
   }
 
   if (options.updateSelection !== false) {
-    saveIndex.lastSelectedSlotId = slotId
+    nextIndex.lastSelectedSlotId = slotId
   }
 
-  writeSaveIndex(saveIndex)
+  writeSaveIndex(nextIndex)
+  Object.assign(saveIndex, nextIndex)
   return nextData
+}
+
+export function rebuildSaveIndexFromStoredSlots() {
+  const slots = []
+
+  for (const slotId of listStoredSlotIds()) {
+    try {
+      const saveData = readSlotData(slotId)
+      if (!saveData || typeof saveData !== 'object') continue
+
+      const timestamp = Number(saveData.timestamp) || Date.now()
+      const updatedAt = new Date(timestamp).toISOString()
+      slots.push({
+        id: slotId,
+        name: saveData.slotName || '未命名身份档案',
+        createdAt: updatedAt,
+        updatedAt,
+        lastPlayedAt: updatedAt,
+        source: 'local',
+        summary: buildSaveSummary(saveData)
+      })
+    } catch (error) {
+      console.error(`Failed to recover local save slot ${slotId}.`, error)
+    }
+  }
+
+  slots.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
+  return {
+    version: 1,
+    lastSelectedSlotId: slots[0]?.id || null,
+    slots
+  }
 }
 
 export {
