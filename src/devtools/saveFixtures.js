@@ -31,7 +31,6 @@ const note = ({
 }
 
 const baseSave = (overrides) => ({
-  version: SAVE_DATA_VERSION,
   slotId: null,
   slotName: overrides.slotName,
   timestamp: now,
@@ -208,4 +207,3 @@ export const devSaveFixtures = [
       }),
   },
 ]
-import { SAVE_DATA_VERSION } from '@/config/defaultSaveData'

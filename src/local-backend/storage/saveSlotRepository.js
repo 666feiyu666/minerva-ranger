@@ -1,6 +1,5 @@
 import {
   DEFAULT_IDENTITY_BOOTSTRAP_KEY,
-  LEGACY_SAVE_KEY,
   SAVE_INDEX_BACKUP_KEY,
   SAVE_INDEX_KEY,
   SAVE_SLOT_BACKUP_SUFFIX,
@@ -9,7 +8,6 @@ import {
   getSlotStorageKey
 } from '@/config/storageKeys'
 import {
-  readJson,
   readJsonWithBackup,
   readText,
   removeItem,
@@ -48,10 +46,6 @@ export function writeSlotData(slotId, saveData) {
 export function removeSlotData(slotId) {
   removeItem(getSlotStorageKey(slotId))
   removeItem(getSlotBackupStorageKey(slotId))
-}
-
-export function readLegacySaveData() {
-  return readJson(LEGACY_SAVE_KEY)
 }
 
 export function listStoredSlotIds() {

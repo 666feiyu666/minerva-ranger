@@ -102,32 +102,7 @@
               >
                 🗂️ 返回身份档案
               </button>
-              <template v-if="store.isCloudSyncEnabled">
-                <button
-                  @click="handleCloudUpload"
-                  class="w-full px-4 py-3 rounded-2xl text-left font-semibold transition-colors"
-                  :class="
-                    store.isNightMode
-                      ? 'bg-emerald-900/30 hover:bg-emerald-800/40 text-emerald-200'
-                      : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-800'
-                  "
-                >
-                  ☁️ 云保存
-                </button>
-                <button
-                  @click="handleCloudLoad"
-                  class="w-full px-4 py-3 rounded-2xl text-left font-semibold transition-colors"
-                  :class="
-                    store.isNightMode
-                      ? 'bg-sky-900/30 hover:bg-sky-800/40 text-sky-200'
-                      : 'bg-sky-50 hover:bg-sky-100 text-sky-800'
-                  "
-                >
-                  ⬇️ 云读取
-                </button>
-              </template>
               <div
-                v-else
                 class="w-full px-4 py-3 rounded-2xl text-left font-semibold border"
                 :class="
                   store.isNightMode
@@ -135,114 +110,8 @@
                     : 'border-gray-200 bg-gray-50 text-gray-400'
                 "
               >
-                💾 当前阶段：身份档案仅存本地
+                💾 身份档案保存在此设备
               </div>
-            </div>
-
-            <div
-              v-if="store.isCloudSyncEnabled"
-              class="mt-4 pt-4 border-t"
-              :class="store.isNightMode ? 'border-white/10' : 'border-gray-200'"
-            >
-              <template v-if="store.user">
-                <div class="flex items-center justify-between gap-3 mb-3">
-                  <div class="min-w-0">
-                    <div
-                      class="text-xs uppercase tracking-[0.24em]"
-                      :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
-                    >
-                      Cloud Account
-                    </div>
-                    <div class="text-sm truncate mt-1">{{ store.user.email }}</div>
-                  </div>
-                  <div class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></div>
-                </div>
-                <button
-                  @click="handleLogout"
-                  class="w-full px-4 py-3 rounded-2xl text-left font-semibold transition-colors"
-                  :class="
-                    store.isNightMode
-                      ? 'bg-red-900/20 hover:bg-red-900/30 text-red-200'
-                      : 'bg-red-50 hover:bg-red-100 text-red-700'
-                  "
-                >
-                  Sign Out
-                </button>
-              </template>
-
-              <template v-else>
-                <div v-if="!showLoginForm" class="space-y-2">
-                  <div
-                    class="text-xs uppercase tracking-[0.24em]"
-                    :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
-                  >
-                    Cloud Account
-                  </div>
-                  <button
-                    @click="showLoginForm = true"
-                    class="w-full px-4 py-3 rounded-2xl text-left font-semibold transition-colors"
-                    :class="
-                      store.isNightMode
-                        ? 'bg-indigo-900/30 hover:bg-indigo-800/40 text-indigo-200'
-                        : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700'
-                    "
-                  >
-                    📧 Email Login / Sign Up
-                  </button>
-                </div>
-
-                <div v-else class="space-y-3">
-                  <div
-                    class="text-xs uppercase tracking-[0.24em]"
-                    :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
-                  >
-                    Sign In
-                  </div>
-                  <input
-                    v-model="email"
-                    type="email"
-                    placeholder="Email"
-                    class="w-full px-3 py-2.5 rounded-2xl border outline-none transition-colors"
-                    :class="
-                      store.isNightMode
-                        ? 'bg-[#0d0d0d] border-white/10 text-white placeholder-gray-500'
-                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
-                    "
-                  />
-                  <input
-                    v-model="password"
-                    type="password"
-                    placeholder="Password"
-                    class="w-full px-3 py-2.5 rounded-2xl border outline-none transition-colors"
-                    :class="
-                      store.isNightMode
-                        ? 'bg-[#0d0d0d] border-white/10 text-white placeholder-gray-500'
-                        : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400'
-                    "
-                  />
-                  <div class="grid grid-cols-2 gap-2">
-                    <button
-                      @click="handleEmailLogin"
-                      class="px-3 py-2.5 rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-colors"
-                    >
-                      Login
-                    </button>
-                    <button
-                      @click="handleEmailRegister"
-                      class="px-3 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 text-white font-semibold transition-colors"
-                    >
-                      Sign Up
-                    </button>
-                  </div>
-                  <button
-                    @click="showLoginForm = false"
-                    class="w-full text-xs py-1 text-center"
-                    :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
-                  >
-                    取消
-                  </button>
-                </div>
-              </template>
             </div>
           </div>
         </div>
@@ -403,7 +272,6 @@ import { useAppStore } from '@/stores/appStore'
 import { usePlantingStore } from '@/stores/plantingStore'
 import { useActionStore } from '@/stores/actionStore'
 import { useSaveStore } from '@/stores/saveStore'
-import { useSyncStore } from '@/stores/syncStore'
 import bgDay from '@/assets/bg-day.png'
 import bgNight from '@/assets/bg-night.png'
 
@@ -411,45 +279,28 @@ const appStore = useAppStore()
 const plantingStore = usePlantingStore()
 const actionStore = useActionStore()
 const saveStore = useSaveStore()
-const syncStore = useSyncStore()
 const actionWorkflow = useActionWorkflow()
 const store = reactive({
   ...storeToRefs(appStore),
   ...storeToRefs(plantingStore),
   ...storeToRefs(actionStore),
   ...storeToRefs(saveStore),
-  ...storeToRefs(syncStore),
-  isCloudSyncEnabled: syncStore.isCloudSyncEnabled,
   PLANTING_MODES: plantingStore.PLANTING_MODES,
   claimOfflineEarnings: plantingStore.claimOfflineEarnings,
-  downloadSaveFromCloud: syncStore.downloadSaveFromCloud,
   exitToSaveSelection: saveStore.exitToSaveSelection,
-  initAuth: syncStore.initAuth,
   initSaveSystem: saveStore.initSaveSystem,
-  loginWithEmail: syncStore.loginWithEmail,
-  logout: syncStore.logout,
   openForest: actionWorkflow.openForest,
   openNotebook: appStore.openNotebook,
   openShop: appStore.openShop,
-  registerWithEmail: syncStore.registerWithEmail,
   toggleNightMode: appStore.toggleNightMode,
-  uploadSaveToCloud: syncStore.uploadSaveToCloud,
 })
 const showMobileMenu = ref(false)
 const showUtilityMenu = ref(false)
-const showLoginForm = ref(false)
-const email = ref('')
-const password = ref('')
 const SYSTEM_VIEWS = new Set(['shop', 'map', 'notebook'])
 
-// 初始化认证
-onMounted(async () => {
+onMounted(() => {
   plantingStore.attachRuntime()
-  if (store.isCloudSyncEnabled) await store.initAuth()
   store.initSaveSystem()
-  if (store.isCloudSyncEnabled && store.user && import.meta.env.VITE_SYNC_API_URL) {
-    void store.downloadSaveFromCloud({ silent: true })
-  }
   document.addEventListener('click', handleDocumentClick)
 })
 
@@ -532,39 +383,6 @@ const handleDocumentClick = (event) => {
 const handleExitToSlots = () => {
   showUtilityMenu.value = false
   store.exitToSaveSelection()
-}
-
-const handleCloudUpload = () => {
-  if (!store.user) {
-    showLoginForm.value = true
-    return
-  }
-  store.uploadSaveToCloud()
-}
-
-const handleCloudLoad = () => {
-  if (!store.user) {
-    showLoginForm.value = true
-    return
-  }
-  store.downloadSaveFromCloud()
-}
-
-const handleEmailLogin = async () => {
-  if (await store.loginWithEmail(email.value, password.value)) {
-    showLoginForm.value = false
-  }
-}
-
-const handleEmailRegister = async () => {
-  if (await store.registerWithEmail(email.value, password.value)) {
-    showLoginForm.value = false
-  }
-}
-
-const handleLogout = async () => {
-  await store.logout()
-  showUtilityMenu.value = false
 }
 
 // [新增] 格式化时间辅助函数 (用于弹窗)

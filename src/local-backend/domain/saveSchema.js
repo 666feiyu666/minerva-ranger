@@ -1,4 +1,3 @@
-import { SAVE_DATA_VERSION } from '@/config/defaultSaveData'
 import { getGlobalLevelFromXP } from './leveling'
 
 const SAVE_ARRAY_FIELDS = [
@@ -15,13 +14,6 @@ export function validateSaveDataShape(saveData) {
     return { ok: false, error: '存档根节点必须是一个对象。' }
   }
 
-  if (saveData.version !== SAVE_DATA_VERSION) {
-    return {
-      ok: false,
-      error: `存档版本必须是 ${SAVE_DATA_VERSION}。`
-    }
-  }
-
   for (const field of SAVE_ARRAY_FIELDS) {
     if (saveData[field] !== undefined && !Array.isArray(saveData[field])) {
       return { ok: false, error: `存档字段 ${field} 必须是数组。` }
@@ -33,7 +25,6 @@ export function validateSaveDataShape(saveData) {
 
 export function normalizeSaveIndex(index = {}) {
   return {
-    version: 1,
     lastSelectedSlotId: index.lastSelectedSlotId || null,
     slots: Array.isArray(index.slots)
       ? index.slots.map((slot) => ({
@@ -43,7 +34,6 @@ export function normalizeSaveIndex(index = {}) {
           updatedAt: slot.updatedAt || slot.createdAt || new Date().toISOString(),
           lastPlayedAt:
             slot.lastPlayedAt || slot.updatedAt || slot.createdAt || new Date().toISOString(),
-          source: slot.source || 'local',
           summary: {
             globalLevel: slot.summary?.globalLevel || 1,
             globalXP: slot.summary?.globalXP || 0,

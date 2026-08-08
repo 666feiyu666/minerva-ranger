@@ -89,8 +89,6 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
     outfile: bundledStorePath,
     loader: { '.png': 'dataurl' },
     define: {
-      'import.meta.env.VITE_ENABLE_CLOUD_SYNC': '"false"',
-      'import.meta.env.VITE_SYNC_API_URL': '""',
       'import.meta.env.DEV': 'false'
     },
     alias: { '@': path.join(repoRoot, 'src') }
@@ -182,7 +180,7 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
       first.action.renameAction(first.action.actions[0].id, '主存档中的行动')
       first.save.saveActiveSlot(false)
 
-      const slotKey = `minerva_save_slot_${slotId}`
+      const slotKey = `minerva_slot_${slotId}`
       storage.setItem(slotKey, '{ invalid json')
 
       const restored = createTestArchitecture()
@@ -199,14 +197,14 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
       const slotId = first.save.createSaveSlot('索引恢复测试')
       assert.ok(slotId)
 
-      storage.setItem('minerva_save_index_v1', '{ invalid index')
-      storage.setItem('minerva_save_index_v1_backup', '{ invalid backup')
+      storage.setItem('minerva_save_index', '{ invalid index')
+      storage.setItem('minerva_save_index_backup', '{ invalid backup')
 
       const restored = createTestArchitecture()
       restored.save.initSaveSystem()
       assert.equal(restored.save.saveSlots.length, 2)
       assert.ok(restored.save.saveSlots.some(slot => slot.id === slotId))
-      assert.doesNotThrow(() => JSON.parse(storage.getItem('minerva_save_index_v1')))
+      assert.doesNotThrow(() => JSON.parse(storage.getItem('minerva_save_index')))
     })
 
     await t.test('写入失败时保留原存档并暴露错误状态', async () => {
@@ -219,7 +217,7 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
         architecture.actionWorkflow.createAction('写入前')
         architecture.save.saveActiveSlot(false)
 
-        const slotKey = `minerva_save_slot_${slotId}`
+        const slotKey = `minerva_slot_${slotId}`
         const persistedBeforeFailure = storage.getItem(slotKey)
         storage.failWrites = true
         architecture.action.renameAction(architecture.action.actions[0].id, '未成功写入')
@@ -236,7 +234,6 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
       architecture.save.initSaveSystem()
       const importedSlotId = architecture.save.importSaveAsNewSlot(
         JSON.stringify({
-          version: 3,
           slotName: '导入源',
           coins: 42,
           globalXP: 100,
@@ -264,8 +261,8 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
       afterDelete.save.initSaveSystem()
       assert.equal(afterDelete.save.saveSlots.length, 1)
       assert.equal(afterDelete.save.saveSlots[0].name, '开发设计师')
-      assert.equal(storage.getItem(`minerva_save_slot_${importedSlotId}`), null)
-      assert.equal(storage.getItem(`minerva_save_slot_${importedSlotId}_backup`), null)
+      assert.equal(storage.getItem(`minerva_slot_${importedSlotId}`), null)
+      assert.equal(storage.getItem(`minerva_slot_${importedSlotId}_backup`), null)
     })
 
     await t.test('拒绝结构无效的导入存档', async () => {
@@ -274,11 +271,7 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
         const { save } = createTestArchitecture()
         save.initSaveSystem()
 
-        assert.equal(save.importSaveAsNewSlot('{"version":3,"actions":{}}'), false)
-        assert.equal(
-          save.importSaveAsNewSlot('{"version":2,"skills":[],"actions":[]}'),
-          false
-        )
+        assert.equal(save.importSaveAsNewSlot('{"actions":{}}'), false)
         assert.equal(save.saveSlots.length, 1)
       })
     })

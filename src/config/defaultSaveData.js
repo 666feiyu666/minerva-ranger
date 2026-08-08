@@ -1,5 +1,3 @@
-export const SAVE_DATA_VERSION = 3
-
 export function createEmptySaveData(slotId, slotName, options = {}) {
   const createdAt = Date.now()
   const defaultSkills = options.includeDefaultSkills
@@ -12,7 +10,6 @@ export function createEmptySaveData(slotId, slotName, options = {}) {
     : []
 
   return {
-    version: SAVE_DATA_VERSION,
     slotId,
     slotName,
     timestamp: Date.now(),

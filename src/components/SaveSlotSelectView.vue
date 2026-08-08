@@ -17,7 +17,7 @@
         <div class="rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-5">
           <div class="text-sm font-bold text-emerald-200 mb-2">推荐用法</div>
           <p class="text-sm leading-7 text-emerald-50/90">
-            为不同的长期身份建立独立档案，例如“开发设计师”或“D&D”。
+            为不同的长期身份建立独立档案，例如“开发设计师”或“人类学家”。
           </p>
         </div>
         <div class="text-xs text-slate-500">身份档案仍保存在本地，不依赖账号或网络。</div>
@@ -55,77 +55,6 @@
         </div>
 
         <section
-          v-if="store.isCloudSyncEnabled"
-          class="mb-8 rounded-3xl border border-white/10 bg-black/20 p-5 backdrop-blur-md"
-        >
-          <div
-            v-if="store.user"
-            class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4"
-          >
-            <div class="min-w-0">
-              <div class="text-xs uppercase tracking-[0.24em] text-emerald-300/80">
-                Cloud Account
-              </div>
-              <div class="mt-1 text-sm text-slate-200 truncate">{{ store.user.email }}</div>
-            </div>
-            <div class="flex flex-wrap gap-3">
-              <button
-                @click="handleCloudPull"
-                class="px-4 py-2.5 rounded-2xl border border-sky-400/20 bg-sky-400/10 hover:bg-sky-400/20 text-sky-100 text-sm font-semibold transition-colors"
-              >
-                Pull Cloud Slots
-              </button>
-              <button
-                @click="handleCloudPush"
-                class="px-4 py-2.5 rounded-2xl border border-emerald-400/20 bg-emerald-400/10 hover:bg-emerald-400/20 text-emerald-100 text-sm font-semibold transition-colors"
-              >
-                Push Local Slots
-              </button>
-              <button
-                @click="store.logout()"
-                class="px-4 py-2.5 rounded-2xl border border-red-400/20 bg-red-400/10 hover:bg-red-400/20 text-red-100 text-sm font-semibold transition-colors"
-              >
-                Sign Out
-              </button>
-            </div>
-          </div>
-
-          <div v-else class="grid gap-3 lg:grid-cols-[1fr_1fr_auto_auto] lg:items-end">
-            <label class="block">
-              <span class="text-xs uppercase tracking-[0.2em] text-slate-400">Email</span>
-              <input
-                v-model="email"
-                type="email"
-                class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white outline-none placeholder:text-slate-500"
-                placeholder="you@example.com"
-              />
-            </label>
-            <label class="block">
-              <span class="text-xs uppercase tracking-[0.2em] text-slate-400">Password</span>
-              <input
-                v-model="password"
-                type="password"
-                class="mt-2 w-full rounded-2xl border border-white/10 bg-white/10 px-4 py-3 text-white outline-none placeholder:text-slate-500"
-                placeholder="At least 8 characters"
-              />
-            </label>
-            <button
-              @click="handleEmailLogin"
-              class="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition-colors"
-            >
-              Login
-            </button>
-            <button
-              @click="handleEmailRegister"
-              class="px-5 py-3 rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 text-white font-semibold transition-colors"
-            >
-              Sign Up
-            </button>
-          </div>
-        </section>
-
-        <section
-          v-else
           class="mb-8 rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-5 text-sm text-emerald-50/90 backdrop-blur-md"
         >
           <div class="font-bold text-emerald-200">本地身份档案</div>
@@ -283,14 +212,10 @@ import { storeToRefs } from 'pinia'
 import { defineAsyncComponent, reactive, ref } from 'vue'
 import { confirmDialog, promptDialog } from '@/composables/dialogService'
 import { useSaveStore } from '@/stores/saveStore'
-import { useSyncStore } from '@/stores/syncStore'
 
 const saveStore = useSaveStore()
-const syncStore = useSyncStore()
 const store = reactive({
   ...storeToRefs(saveStore),
-  ...storeToRefs(syncStore),
-  isCloudSyncEnabled: syncStore.isCloudSyncEnabled,
   createSaveSlot: saveStore.createSaveSlot,
   deleteSaveSlot: saveStore.deleteSaveSlot,
   downloadSaveFile: saveStore.downloadSaveFile,
@@ -299,16 +224,9 @@ const store = reactive({
   importSaveData: saveStore.importSaveData,
   moveSaveSlot: saveStore.moveSaveSlot,
   renameSaveSlot: saveStore.renameSaveSlot,
-  downloadSaveFromCloud: syncStore.downloadSaveFromCloud,
-  loginWithEmail: syncStore.loginWithEmail,
-  logout: syncStore.logout,
-  registerWithEmail: syncStore.registerWithEmail,
-  uploadSaveToCloud: syncStore.uploadSaveToCloud,
 })
 const fileInput = ref(null)
 const importMode = ref({ type: 'new', slotId: null })
-const email = ref('')
-const password = ref('')
 const isDevToolsMode = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEV_TOOLS === 'true'
 const DevToolsPanel = isDevToolsMode
   ? defineAsyncComponent(() => import('@/components/DevToolsPanel.vue'))
@@ -329,26 +247,6 @@ const createSlot = async () => {
   if (name === null) return
   const slotId = store.createSaveSlot(name)
   if (slotId) store.enterSlot(slotId)
-}
-
-const handleEmailLogin = async () => {
-  if (await store.loginWithEmail(email.value, password.value)) {
-    password.value = ''
-  }
-}
-
-const handleEmailRegister = async () => {
-  if (await store.registerWithEmail(email.value, password.value)) {
-    password.value = ''
-  }
-}
-
-const handleCloudPull = () => {
-  store.downloadSaveFromCloud()
-}
-
-const handleCloudPush = () => {
-  store.uploadSaveToCloud()
 }
 
 const renameSlot = async (slot) => {

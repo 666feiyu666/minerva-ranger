@@ -32,7 +32,7 @@ class MemoryStorage {
   }
 }
 
-test('领域 Store 重构保持跨模块业务与 version 3 存档契约', async () => {
+test('领域 Store 重构保持跨模块业务与当前存档契约', async () => {
   const repoRoot = path.resolve(import.meta.dirname, '..')
   const bundledStorePath = path.join(tmpdir(), `mr-architecture-${Date.now()}.mjs`)
   globalThis.localStorage = new MemoryStorage()
@@ -70,8 +70,6 @@ test('领域 Store 重构保持跨模块业务与 version 3 存档契约', async
     outfile: bundledStorePath,
     loader: { '.png': 'dataurl' },
     define: {
-      'import.meta.env.VITE_ENABLE_CLOUD_SYNC': '"false"',
-      'import.meta.env.VITE_SYNC_API_URL': '""',
       'import.meta.env.DEV': 'false'
     },
     alias: { '@': path.join(repoRoot, 'src') }
@@ -126,7 +124,6 @@ test('领域 Store 重构保持跨模块业务与 version 3 存档契约', async
     assert.deepEqual(notebook.notebook[0].actionIds, [actionBId])
 
     const snapshot = save.getSaveData()
-    assert.equal(snapshot.version, 3)
     assert.equal(snapshot.slotId, save.activeSlotId)
     assert.ok(Array.isArray(snapshot.actions))
     assert.ok(Array.isArray(snapshot.notebook))

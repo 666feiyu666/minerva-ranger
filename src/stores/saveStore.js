@@ -8,7 +8,6 @@ import {
   hasBootstrappedDefaultIdentity,
   markDefaultIdentityBootstrapped,
   persistSlotDataToRepository,
-  readLegacySaveData,
   readSaveIndex,
   readSlotData,
   rebuildSaveIndexFromStoredSlots,
@@ -31,23 +30,16 @@ export const useSaveStore = defineStore('save', () => {
   const snapshot = useGameSnapshot()
 
   const bootStage = ref('slot-select')
-  const saveIndex = ref({ version: 1, lastSelectedSlotId: null, slots: [] })
+  const saveIndex = ref({ lastSelectedSlotId: null, slots: [] })
   const activeSlotId = ref(null)
   const isHydrating = ref(false)
   const persistenceError = ref(null)
-  const lastMutation = ref(null)
-  let mutationRevision = 0
   let notifiedPersistenceError = null
 
   const saveSlots = computed(() => saveIndex.value.slots || [])
   const activeSlotMeta = computed(
     () => saveSlots.value.find((slot) => slot.id === activeSlotId.value) || null,
   )
-
-  function emitMutation(type, slotId, sync = 'none') {
-    mutationRevision += 1
-    lastMutation.value = { type, slotId, sync, revision: mutationRevision }
-  }
 
   function clearPersistenceError() {
     persistenceError.value = null
@@ -165,8 +157,7 @@ export const useSaveStore = defineStore('save', () => {
     ) {
       return false
     }
-    if (saveActiveSlot(false)) emitMutation('persist', activeSlotId.value, 'debounced')
-    return !persistenceError.value
+    return saveActiveSlot(false)
   }
 
   function flushRuntimeState() {
@@ -195,7 +186,6 @@ export const useSaveStore = defineStore('save', () => {
     )
     const persisted = persistSlotData(slotId, slotData, { markPlayed: false, slotName })
     if (!persisted) return null
-    emitMutation('persist', slotId, 'immediate')
     return slotId
   }
 
@@ -214,7 +204,6 @@ export const useSaveStore = defineStore('save', () => {
     } catch (error) {
       return reportPersistenceError('重命名身份档案', error)
     }
-    emitMutation('persist', slotId, 'immediate')
     return true
   }
 
@@ -257,7 +246,6 @@ export const useSaveStore = defineStore('save', () => {
       resetGameState()
       bootStage.value = 'slot-select'
     }
-    emitMutation('delete', slotId, 'immediate')
     return true
   }
 
@@ -333,25 +321,7 @@ export const useSaveStore = defineStore('save', () => {
     return importSaveData(jsonString, { createNewSlot: true, slotName })
   }
 
-  function migrateLegacySingleSaveIfNeeded() {
-    loadSaveIndex()
-    if (saveSlots.value.length > 0) return
-    try {
-      const legacyData = readLegacySaveData()
-      if (!legacyData) return
-      const validation = validateSaveDataShape(legacyData)
-      if (!validation.ok) throw new Error(validation.error)
-      createSaveSlot('主档案', {
-        ...legacyData,
-        activeView: legacyData.activeView || (legacyData.activeActionId ? 'dashboard' : 'forest'),
-      })
-    } catch (error) {
-      console.error(error)
-    }
-  }
-
   function initSaveSystem() {
-    migrateLegacySingleSaveIfNeeded()
     loadSaveIndex()
     if (!hasBootstrappedDefaultIdentity()) {
       const defaultSlotReady =
@@ -361,16 +331,6 @@ export const useSaveStore = defineStore('save', () => {
     }
     if (!activeSlotId.value) resetGameState()
     bootStage.value = 'slot-select'
-  }
-
-  function readLocalSlot(slotId) {
-    if (!slotId) return null
-    if (slotId === activeSlotId.value && bootStage.value === 'in-game') return getSaveData()
-    return readSlotData(slotId)
-  }
-
-  function persistCloudSlot(slotId, saveData, options = {}) {
-    return persistSlotData(slotId, saveData, { ...options, updateSelection: false })
   }
 
   function downloadSaveFile(slotId = activeSlotId.value) {
@@ -425,7 +385,6 @@ export const useSaveStore = defineStore('save', () => {
     activeSlotId,
     activeSlotMeta,
     persistenceError,
-    lastMutation,
     isHydrating,
     initSaveSystem,
     createSaveSlot,
@@ -440,9 +399,6 @@ export const useSaveStore = defineStore('save', () => {
     importSaveAsNewSlot,
     downloadSaveFile,
     getSaveData,
-    readLocalSlot,
-    persistCloudSlot,
-    updateSlotMeta,
     saveSaveIndex,
     clearPersistenceError,
   }

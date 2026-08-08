@@ -1,11 +1,10 @@
-import { createEmptySaveData, SAVE_DATA_VERSION } from '@/config/defaultSaveData'
+import { createEmptySaveData } from '@/config/defaultSaveData'
 import { buildSaveSummary } from '@/local-backend/domain/saveSchema'
 import {
   createSlotId,
   hasBootstrappedDefaultIdentity,
   listStoredSlotIds,
   markDefaultIdentityBootstrapped,
-  readLegacySaveData,
   readSaveIndex,
   readSlotData,
   removeSlotData,
@@ -17,7 +16,6 @@ export { hasBootstrappedDefaultIdentity, markDefaultIdentityBootstrapped }
 
 export function buildSaveData(snapshot) {
   return {
-    version: SAVE_DATA_VERSION,
     slotId: snapshot.activeSlotId,
     slotName: snapshot.activeSlotName || '未命名身份档案',
     timestamp: Date.now(),
@@ -54,7 +52,7 @@ export function createSaveSlotData(name, slotCount, initialData = null, options 
   const slotId = createSlotId()
   const slotName = name?.trim() || (slotCount === 0 ? '开发设计师' : `新身份档案 #${slotCount + 1}`)
   const slotData = initialData
-    ? { ...initialData, version: SAVE_DATA_VERSION, slotId, slotName, timestamp: Date.now() }
+    ? { ...initialData, slotId, slotName, timestamp: Date.now() }
     : createEmptySaveData(slotId, slotName, options)
 
   return { slotId, slotName, slotData }
@@ -77,7 +75,6 @@ export function persistSlotDataToRepository({
   }
   const nextData = {
     ...saveData,
-    version: SAVE_DATA_VERSION,
     slotId,
     slotName: options.slotName || saveData.slotName || activeSlotName || '未命名身份档案',
     timestamp: Date.now(),
@@ -92,7 +89,6 @@ export function persistSlotDataToRepository({
     existing.updatedAt = now
     existing.lastPlayedAt = options.markPlayed ? now : existing.lastPlayedAt || now
     existing.summary = summary
-    existing.source = existing.source || 'local'
   } else {
     nextIndex.slots.push({
       id: slotId,
@@ -100,7 +96,6 @@ export function persistSlotDataToRepository({
       createdAt: now,
       updatedAt: now,
       lastPlayedAt: now,
-      source: 'local',
       summary,
     })
   }
@@ -130,7 +125,6 @@ export function rebuildSaveIndexFromStoredSlots() {
         createdAt: updatedAt,
         updatedAt,
         lastPlayedAt: updatedAt,
-        source: 'local',
         summary: buildSaveSummary(saveData),
       })
     } catch (error) {
@@ -140,10 +134,9 @@ export function rebuildSaveIndexFromStoredSlots() {
 
   slots.sort((left, right) => right.updatedAt.localeCompare(left.updatedAt))
   return {
-    version: 1,
     lastSelectedSlotId: slots[0]?.id || null,
     slots,
   }
 }
 
-export { readLegacySaveData, readSaveIndex, readSlotData, removeSlotData, writeSaveIndex }
+export { readSaveIndex, readSlotData, removeSlotData, writeSaveIndex }
