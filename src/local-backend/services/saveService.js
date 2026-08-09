@@ -38,6 +38,8 @@ export function buildSaveData(snapshot) {
     taskTrees: snapshot.taskTrees,
     taskXP: snapshot.taskXP,
     taskStartLevel: snapshot.taskStartLevel,
+    taskSessionId: snapshot.taskSessionId,
+    taskStartedAt: snapshot.taskStartedAt,
     timerMode: snapshot.timerMode,
     targetDuration: snapshot.targetDuration,
     isNightMode: snapshot.isNightMode,

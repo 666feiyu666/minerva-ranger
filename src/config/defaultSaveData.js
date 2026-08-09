@@ -32,6 +32,8 @@ export function createEmptySaveData(slotId, slotName, options = {}) {
     taskTrees: 0,
     taskXP: 0,
     taskStartLevel: null,
+    taskSessionId: null,
+    taskStartedAt: null,
     timerMode: 'countup',
     targetDuration: 3 * 60 * 60,
     isNightMode: false,

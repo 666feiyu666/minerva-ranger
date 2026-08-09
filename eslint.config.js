@@ -46,5 +46,12 @@ export default defineConfig([
 
   ...pluginOxlint.configs['flat/recommended'],
 
+  {
+    name: 'app/prevent-variable-shadowing',
+    rules: {
+      'no-shadow': 'error',
+    },
+  },
+
   skipFormatting,
 ])

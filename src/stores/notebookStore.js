@@ -1,39 +1,91 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { alertDialog } from '@/composables/dialogService'
-import { normalizeNote } from '@/local-backend/domain/noteModel'
+import { normalizeNote, toActionIds } from '@/local-backend/domain/noteModel'
 import {
   createNoteRecord,
   deleteUserNote,
+  migrateNotesForDeletedAction,
+  migrateNotesForDeletedSkill,
   renameUserNote,
+  syncNotesForActionOwnership,
   updateUserNote,
   updateUserNoteTags,
 } from '@/local-backend/services/notebookService'
+import { useActionStore } from './actionStore'
 import { usePlayerStore } from './playerStore'
 
 export const useNotebookStore = defineStore('notebook', () => {
   const playerStore = usePlayerStore()
+  const actionStore = useActionStore()
   const notebook = ref([])
+
+  function createNoteId() {
+    return `note_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`
+  }
+
+  function resolveOwnership({
+    actionIds = [],
+    skillId = null,
+    actionNameSnapshot = null,
+    skillNameSnapshot = null,
+  }) {
+    const normalizedActionIds = toActionIds(actionIds)
+    const primaryAction = actionStore.actions.find(
+      (action) => String(action.id) === String(normalizedActionIds[0]),
+    )
+    const resolvedSkillId = primaryAction ? primaryAction.skillId || null : skillId || null
+    const resolvedSkill = actionStore.skills.find(
+      (skill) => String(skill.id) === String(resolvedSkillId),
+    )
+
+    return {
+      actionIds: normalizedActionIds,
+      skillId: resolvedSkillId,
+      actionNameSnapshot: primaryAction?.name || actionNameSnapshot,
+      skillNameSnapshot: resolvedSkill?.name || skillNameSnapshot,
+    }
+  }
 
   function createNote({
     title,
     content,
     actionIds = [],
+    skillId = null,
     type = 'planting',
     source = 'user',
     eventType = null,
     awardCoins = source === 'user',
-    id = Date.now(),
+    allowEmptyContent = false,
+    id = null,
+    sessionId = null,
+    actionNameSnapshot = null,
+    skillNameSnapshot = null,
+    ...metadata
   }) {
+    if (sessionId) {
+      const existing = notebook.value.find((note) => note.sessionId === sessionId)
+      if (existing) return existing
+    }
+
+    const ownership = resolveOwnership({
+      actionIds,
+      skillId,
+      actionNameSnapshot,
+      skillNameSnapshot,
+    })
     const result = createNoteRecord({
       title,
       content,
-      actionIds,
+      ...ownership,
       type,
       source,
       eventType,
       awardCoins,
-      id,
+      allowEmptyContent,
+      id: id || (sessionId ? `planting_${sessionId}` : createNoteId()),
+      sessionId,
+      ...metadata,
     })
 
     if (result.error) {
@@ -50,14 +102,16 @@ export const useNotebookStore = defineStore('notebook', () => {
     return createNote({ title, content, actionIds, type: 'planting', source: 'user' })
   }
 
-  function createEssayNote(title, content, actionIds = []) {
+  function createEssayNote(title, content, actionIds = [], options = {}) {
     return createNote({
       title,
       content,
       actionIds,
+      ...options,
       type: 'essay',
       source: 'user',
       awardCoins: false,
+      contentFormat: 'markdown',
     })
   }
 
@@ -81,17 +135,26 @@ export const useNotebookStore = defineStore('notebook', () => {
   }
 
   function updateNote(noteId, payload = {}) {
-    const result = updateUserNote(
-      notebook.value.find((note) => note.id === noteId),
-      payload,
-    )
+    const note = notebook.value.find((item) => item.id === noteId)
+    const nextPayload = { ...payload }
+    if (note && (payload.actionIds !== undefined || payload.skillId !== undefined)) {
+      Object.assign(
+        nextPayload,
+        resolveOwnership({
+          actionIds: payload.actionIds !== undefined ? payload.actionIds : note.actionIds,
+          skillId: payload.skillId !== undefined ? payload.skillId : note.skillId,
+          actionNameSnapshot: note.actionNameSnapshot,
+          skillNameSnapshot: note.skillNameSnapshot,
+        }),
+      )
+    }
+    const result = updateUserNote(note, nextPayload)
     if (result.error) void alertDialog(result.error.message, { title: result.error.title })
     return result.ok
   }
 
   function deleteNote(noteId) {
     const result = deleteUserNote(notebook.value, noteId)
-    if (result.coinRefund > 0) playerStore.removeCoins(result.coinRefund)
     return result.deleted
   }
 
@@ -101,7 +164,23 @@ export const useNotebookStore = defineStore('notebook', () => {
   }
 
   function replaceNotebook(nextNotebook) {
-    notebook.value = nextNotebook
+    notebook.value = nextNotebook.map(normalizeNote)
+  }
+
+  function migrateDeletedAction(action, options = {}) {
+    notebook.value = migrateNotesForDeletedAction(notebook.value, action, options)
+  }
+
+  function syncActionOwnership(actionId) {
+    const action = actionStore.actions.find((item) => String(item.id) === String(actionId))
+    if (!action) return false
+    const skillName = actionStore.skills.find((skill) => skill.id === action.skillId)?.name || null
+    notebook.value = syncNotesForActionOwnership(notebook.value, action, { skillName })
+    return true
+  }
+
+  function migrateDeletedSkill(skill) {
+    notebook.value = migrateNotesForDeletedSkill(notebook.value, skill)
   }
 
   function hydrateNotebookState(data = {}) {
@@ -127,6 +206,9 @@ export const useNotebookStore = defineStore('notebook', () => {
     deleteNote,
     updateNoteTags,
     replaceNotebook,
+    migrateDeletedAction,
+    syncActionOwnership,
+    migrateDeletedSkill,
     hydrateNotebookState,
     resetNotebookState,
     toNotebookSnapshot,

@@ -45,6 +45,16 @@
               {{ activeDialog.cancelText }}
             </button>
             <button
+              v-for="choice in activeDialog.type === 'choice' ? activeDialog.choices : []"
+              :key="choice.value"
+              class="rounded-2xl px-4 py-3 text-sm font-bold transition-colors"
+              :class="choice.className || 'border border-white/15 bg-white/5 text-white hover:bg-white/10'"
+              @click="resolveDialog(choice.value)"
+            >
+              {{ choice.label }}
+            </button>
+            <button
+              v-if="activeDialog.type !== 'choice'"
               class="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-bold text-slate-950 transition-colors hover:bg-emerald-400"
               @click="handleConfirm"
             >

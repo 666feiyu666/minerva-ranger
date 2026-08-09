@@ -685,6 +685,7 @@ import { storeToRefs } from 'pinia'
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { alertDialog, confirmDialog } from '@/composables/dialogService'
 import { useActionWorkflow } from '@/application/workflows/actionWorkflow'
+import { useSkillWorkflow } from '@/application/workflows/skillWorkflow'
 import { useAppStore } from '@/stores/appStore'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useActionStore } from '@/stores/actionStore'
@@ -695,6 +696,7 @@ const appStore = useAppStore()
 const playerStore = usePlayerStore()
 const actionStore = useActionStore()
 const actionWorkflow = useActionWorkflow()
+const skillWorkflow = useSkillWorkflow()
 const store = reactive({
   ...storeToRefs(appStore),
   ...storeToRefs(playerStore),
@@ -704,8 +706,8 @@ const store = reactive({
   mergeActions: actionWorkflow.mergeActions,
   selectAction: actionWorkflow.selectAction,
   createSkill: actionStore.createSkill,
-  deleteSkill: actionStore.deleteSkill,
-  moveActionToSkill: actionStore.moveActionToSkill,
+  deleteSkill: skillWorkflow.deleteSkill,
+  moveActionToSkill: skillWorkflow.moveActionToSkill,
   renameAction: actionStore.renameAction,
   renameSkill: actionStore.renameSkill,
   reorderActions: actionStore.reorderActions,

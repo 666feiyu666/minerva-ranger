@@ -45,7 +45,9 @@ test('领域 Store 重构保持跨模块业务与当前存档契约', async () =
         import { usePlantingStore } from '@/stores/plantingStore'
         import { usePlayerStore } from '@/stores/playerStore'
         import { useActionWorkflow } from '@/application/workflows/actionWorkflow'
+        import { useSkillWorkflow } from '@/application/workflows/skillWorkflow'
         import { useActionStore } from '@/stores/actionStore'
+        import { useAppStore } from '@/stores/appStore'
         import { useSaveStore } from '@/stores/saveStore'
 
         export function createTestArchitecture() {
@@ -56,7 +58,9 @@ test('领域 Store 重构保持跨模块业务与当前存档契约', async () =
             planting: usePlantingStore(),
             player: usePlayerStore(),
             action: useActionStore(),
+            app: useAppStore(),
             actionWorkflow: useActionWorkflow(),
+            skillWorkflow: useSkillWorkflow(),
             save
           }
         }
@@ -77,11 +81,17 @@ test('领域 Store 重构保持跨模块业务与当前存档契约', async () =
 
   try {
     const { createTestArchitecture } = await import(pathToFileURL(bundledStorePath).href)
-    const { notebook, planting, player, action, actionWorkflow, save } =
+    const { notebook, planting, player, action, app, actionWorkflow, skillWorkflow, save } =
       createTestArchitecture()
 
     save.initSaveSystem()
     assert.equal(save.enterSlot(save.saveSlots[0].id), true)
+
+    const viewBeforeGuard = app.activeView
+    const unregisterGuard = app.registerViewChangeGuard(async () => false)
+    assert.equal(await app.openShop(), false)
+    assert.equal(app.activeView, viewBeforeGuard)
+    unregisterGuard()
 
     action.createSkill('架构测试技能')
     const skillId = action.skills.at(-1).id
@@ -91,11 +101,55 @@ test('领域 Store 重构保持跨模块业务与当前存档契约', async () =
     actionWorkflow.createAction('行动 B', skillId)
     const actionBId = action.activeActionId
 
+    const actionA = action.actions.find(item => item.id === actionAId)
+    const actionB = action.actions.find(item => item.id === actionBId)
+    actionA.totalXP = 10
+    actionA.totalTrees = 1
+    actionA.totalTimeSpent = 60
+    actionB.totalXP = 20
+    actionB.totalTrees = 2
+    actionB.totalTimeSpent = 120
+    const skillSummary = action.skillSummaries.find(skill => skill.id === skillId)
+    assert.deepEqual(
+      {
+        actionCount: skillSummary.actionCount,
+        totalXP: skillSummary.totalXP,
+        totalTrees: skillSummary.totalTrees,
+        totalTimeSpent: skillSummary.totalTimeSpent
+      },
+      {
+        actionCount: 2,
+        totalXP: 30,
+        totalTrees: 3,
+        totalTimeSpent: 180
+      }
+    )
+
     notebook.uploadNote('测试日志', '有效内容', [actionAId])
     assert.equal(player.coins, 10)
     const plantingNoteId = notebook.notebook[0].id
     assert.equal(notebook.deleteNote(plantingNoteId), true)
-    assert.equal(player.coins, 0)
+    assert.equal(player.coins, 10)
+
+    const firstSession = notebook.createNote({
+      title: '[植树日志] 测试幂等',
+      content: '只奖励一次',
+      actionIds: [actionAId],
+      type: 'planting',
+      sessionId: 'session_test_once',
+      allowEmptyContent: true
+    })
+    const repeatedSession = notebook.createNote({
+      title: '[植树日志] 测试幂等',
+      content: '重复提交',
+      actionIds: [actionAId],
+      type: 'planting',
+      sessionId: 'session_test_once',
+      allowEmptyContent: true
+    })
+    assert.equal(firstSession.id, repeatedSession.id)
+    assert.equal(notebook.notebook.filter(note => note.sessionId === 'session_test_once').length, 1)
+    assert.equal(player.coins, 20)
 
     player.cheatAddCoins()
     player.cheatAddCoins()
@@ -108,12 +162,15 @@ test('领域 Store 重构保持跨模块业务与当前存档契约', async () =
     assert.equal(actionWorkflow.deleteAction(actionAId), true)
     assert.equal(planting.runningActionId, null)
     assert.equal(planting.activeTreeId, null)
+    const deletedActionNote = notebook.notebook.find(note => note.sessionId === 'session_test_once')
+    assert.deepEqual(deletedActionNote.actionIds, [])
+    assert.equal(deletedActionNote.skillId, skillId)
+    assert.equal(deletedActionNote.actionNameSnapshot, '行动 A')
 
     await new Promise(resolve => setTimeout(resolve, 2))
     actionWorkflow.createAction('行动 C', skillId)
     const actionCId = action.activeActionId
     const actionC = action.actions.find(item => item.id === actionCId)
-    const actionB = action.actions.find(item => item.id === actionBId)
     actionC.totalTrees = 3
     actionC.forest = { t1: 3 }
     actionB.totalTrees = 2
@@ -122,6 +179,19 @@ test('领域 Store 重构保持跨模块业务与当前存档契约', async () =
     assert.equal(actionWorkflow.mergeActions(actionCId, actionBId), true)
     assert.equal(action.actions.find(item => item.id === actionBId).totalTrees, 5)
     assert.deepEqual(notebook.notebook[0].actionIds, [actionBId])
+
+    action.createSkill('待删除技能')
+    const deletedSkillId = action.skills.at(-1).id
+    actionWorkflow.createAction('归属测试行动', deletedSkillId)
+    const ownershipActionId = action.activeActionId
+    const ownershipNote = notebook.createEssayNote('归属测试', '保留历史', [ownershipActionId])
+    assert.equal(ownershipNote.skillId, deletedSkillId)
+    assert.equal(actionWorkflow.deleteAction(ownershipActionId), true)
+    assert.equal(notebook.notebook.find(note => note.id === ownershipNote.id).skillId, deletedSkillId)
+    assert.equal(skillWorkflow.deleteSkill(deletedSkillId), true)
+    const unclassifiedNote = notebook.notebook.find(note => note.id === ownershipNote.id)
+    assert.equal(unclassifiedNote.skillId, null)
+    assert.equal(unclassifiedNote.skillNameSnapshot, '待删除技能')
 
     const snapshot = save.getSaveData()
     assert.equal(snapshot.slotId, save.activeSlotId)

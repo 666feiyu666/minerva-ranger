@@ -1,6 +1,7 @@
 import { deriveTotalXPFromLegacyAction, getActionLevelState } from '@/local-backend/domain/leveling'
 import { normalizeNote } from '@/local-backend/domain/noteModel'
 import { isSameActionId, normalizeAction } from '@/local-backend/domain/actionModel'
+import { migrateNotesForDeletedAction } from '@/local-backend/services/notebookService'
 
 export function createActionRecord(name, skillId = null, id = Date.now()) {
   return normalizeAction({
@@ -20,12 +21,14 @@ export function deleteActionFromList(actions, notebook, actionId, options = {}) 
   if (!targetAction) return null
 
   const commitMessage = options.commitMessage?.trim()
+  const skillName = options.skillName || null
   const relatedLogCount = notebook.filter((note) =>
     normalizeNote(note).actionIds.some((noteActionId) => isSameActionId(noteActionId, actionId)),
   ).length
 
   return {
     nextActions: actions.filter((action) => !isSameActionId(action.id, actionId)),
+    nextNotebook: migrateNotesForDeletedAction(notebook, targetAction, { skillName }),
     deletedAction: targetAction,
     systemNote: {
       title: '[系统记录] 行动已删除',
@@ -86,6 +89,9 @@ export function mergeActionData(actions, notebook, sourceActionId, targetActionI
         ),
       ),
     ]
+    normalized.skillId = targetAction.skillId || null
+    normalized.actionNameSnapshot = targetAction.name
+    normalized.skillNameSnapshot = options.targetSkillName || normalized.skillNameSnapshot
     return normalized
   })
 

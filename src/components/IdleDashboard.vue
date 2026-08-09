@@ -690,7 +690,7 @@ const closeHarvestModal = () => {
 }
 
 const finishHarvest = (content) => {
-  const submitted = store.submitHarvest(content)
+  const submitted = store.submitHarvest(content, { endReason: harvestEndReason.value })
   if (!submitted) return
 
   showHarvestModal.value = false

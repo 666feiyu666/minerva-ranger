@@ -48,14 +48,48 @@ export function applyCompletedTreeCycles(action, tree, times = 1) {
   return { totalTrees, totalXP, yieldData }
 }
 
-export function buildPlantingNoteInput(action, content) {
-  if (!action || !content || content.trim().length <= 0) return null
+export function buildPlantingNoteInput(actionOrOptions, legacyContent = '') {
+  const options = actionOrOptions?.action
+    ? actionOrOptions
+    : { action: actionOrOptions, content: legacyContent }
+  const {
+    action,
+    skill = null,
+    tree = null,
+    content = '',
+    sessionId = null,
+    startedAt = null,
+    endedAt = null,
+    durationSeconds = 0,
+    completedCycles = 0,
+    treesEarned = 0,
+    xpEarned = 0,
+    endReason = 'manual',
+  } = options
+
+  if (!action) return null
+  const hasContent = content.trim().length > 0
 
   return {
     title: `[植树日志] ${action.name}`,
     content,
     actionIds: [action.id],
+    skillId: action.skillId || null,
     type: 'planting',
     source: 'user',
+    allowEmptyContent: true,
+    awardCoins: hasContent,
+    sessionId,
+    actionNameSnapshot: action.name,
+    skillNameSnapshot: skill?.name || null,
+    treeId: tree?.id || null,
+    treeNameSnapshot: tree?.name || null,
+    startedAt,
+    endedAt,
+    durationSeconds,
+    completedCycles,
+    treesEarned,
+    xpEarned,
+    endReason,
   }
 }

@@ -117,6 +117,15 @@
         </div>
 
         <button
+          class="p-2 rounded-full bg-sky-600/80 hover:bg-sky-600 border border-white/20 backdrop-blur-sm transition-transform hover:scale-110 active:scale-95 shadow-lg"
+          title="快速写随笔"
+          aria-label="快速写随笔"
+          @click="appStore.openEssayComposer()"
+        >
+          <span class="text-xl">🪶</span>
+        </button>
+
+        <button
           @click="store.toggleNightMode"
           class="p-2 rounded-full bg-black/30 hover:bg-black/50 border border-white/10 backdrop-blur-sm transition-transform hover:scale-110 active:scale-95 shadow-lg group"
         >

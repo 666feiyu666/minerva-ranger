@@ -4,25 +4,50 @@ import { ref } from 'vue'
 export const useAppStore = defineStore('app', () => {
   const activeView = ref('dashboard')
   const isNightMode = ref(false)
+  const notebookComposeRequest = ref(null)
+  let viewChangeGuard = null
+
+  async function requestView(nextView) {
+    if (activeView.value === nextView) return true
+    if (viewChangeGuard && !(await viewChangeGuard(nextView))) return false
+    activeView.value = nextView
+    return true
+  }
+
+  function registerViewChangeGuard(guard) {
+    viewChangeGuard = guard
+    return () => {
+      if (viewChangeGuard === guard) viewChangeGuard = null
+    }
+  }
 
   function openMap() {
-    activeView.value = 'map'
+    return requestView('map')
   }
 
   function openShop() {
-    activeView.value = 'shop'
+    return requestView('shop')
   }
 
   function openNotebook() {
-    activeView.value = 'notebook'
+    return requestView('notebook')
+  }
+
+  async function openEssayComposer(actionId = null) {
+    if (!(await requestView('notebook'))) return false
+    notebookComposeRequest.value = {
+      token: `${Date.now()}_${Math.random().toString(36).slice(2)}`,
+      actionId,
+    }
+    return true
   }
 
   function openDashboard() {
-    activeView.value = 'dashboard'
+    return requestView('dashboard')
   }
 
   function openForest() {
-    activeView.value = 'forest'
+    return requestView('forest')
   }
 
   function toggleNightMode() {
@@ -37,6 +62,7 @@ export const useAppStore = defineStore('app', () => {
   function resetAppState() {
     activeView.value = 'forest'
     isNightMode.value = false
+    notebookComposeRequest.value = null
   }
 
   function toAppSnapshot() {
@@ -49,9 +75,12 @@ export const useAppStore = defineStore('app', () => {
   return {
     activeView,
     isNightMode,
+    notebookComposeRequest,
     openMap,
     openShop,
     openNotebook,
+    openEssayComposer,
+    registerViewChangeGuard,
     openDashboard,
     openForest,
     toggleNightMode,

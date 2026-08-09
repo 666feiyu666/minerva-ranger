@@ -50,6 +50,11 @@ export function dismissActiveDialog() {
     return
   }
 
+  if (activeDialog.type === 'choice') {
+    resolveDialog(null)
+    return
+  }
+
   resolveDialog(true)
 }
 
@@ -81,5 +86,15 @@ export function promptDialog(message, options = {}) {
     cancelText: options.cancelText || '取消',
     defaultValue: options.defaultValue || '',
     placeholder: options.placeholder || ''
+  })
+}
+
+export function choiceDialog(message, options = {}) {
+  return enqueueDialog({
+    type: 'choice',
+    title: options.title || '请选择',
+    message,
+    cancelText: options.cancelText || '取消',
+    choices: options.choices || [],
   })
 }

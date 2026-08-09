@@ -23,13 +23,16 @@ export const useActionStore = defineStore('action', () => {
   )
   const skillSummaries = computed(() =>
     skills.value.map((skill) => {
-      const actions = actions.value.filter((action) => action.skillId === skill.id)
+      const skillActions = actions.value.filter((action) => action.skillId === skill.id)
       return {
         ...skill,
-        actionCount: actions.length,
-        totalXP: actions.reduce((sum, action) => sum + (action.totalXP || 0), 0),
-        totalTrees: actions.reduce((sum, action) => sum + (action.totalTrees || 0), 0),
-        totalTimeSpent: actions.reduce((sum, action) => sum + (action.totalTimeSpent || 0), 0),
+        actionCount: skillActions.length,
+        totalXP: skillActions.reduce((sum, action) => sum + (action.totalXP || 0), 0),
+        totalTrees: skillActions.reduce((sum, action) => sum + (action.totalTrees || 0), 0),
+        totalTimeSpent: skillActions.reduce(
+          (sum, action) => sum + (action.totalTimeSpent || 0),
+          0,
+        ),
       }
     }),
   )
