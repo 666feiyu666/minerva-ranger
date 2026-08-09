@@ -23,11 +23,13 @@ export function useActionWorkflow() {
   }
 
   function deleteAction(actionId, options = {}) {
+    const targetAction = actionStore.actions.find((action) => isSameActionId(action.id, actionId))
+    const skillName = actionStore.skills.find((skill) => skill.id === targetAction?.skillId)?.name || null
     const result = deleteActionFromList(
       actionStore.actions,
       notebookStore.notebook,
       actionId,
-      options,
+      { ...options, skillName },
     )
     if (!result) return false
 
@@ -37,17 +39,23 @@ export function useActionWorkflow() {
       appStore.openForest()
     }
     actionStore.replaceActions(result.nextActions)
+    notebookStore.replaceNotebook(result.nextNotebook)
     notebookStore.createSystemNote(result.systemNote)
     return true
   }
 
   function mergeActions(sourceActionId, targetActionId, options = {}) {
+    const targetAction = actionStore.actions.find((action) =>
+      isSameActionId(action.id, targetActionId),
+    )
+    const targetSkillName =
+      actionStore.skills.find((skill) => skill.id === targetAction?.skillId)?.name || null
     const result = mergeActionData(
       actionStore.actions,
       notebookStore.notebook,
       sourceActionId,
       targetActionId,
-      options,
+      { ...options, targetSkillName },
     )
     if (!result) return false
 

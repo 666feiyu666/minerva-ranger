@@ -18,12 +18,14 @@ test('Store创建两种计时任务并按完整周期结算', async () => {
         import { usePlantingStore } from '@/stores/plantingStore'
         import { useActionWorkflow } from '@/application/workflows/actionWorkflow'
         import { useActionStore } from '@/stores/actionStore'
+        import { useNotebookStore } from '@/stores/notebookStore'
 
         export function createTestArchitecture() {
           setActivePinia(createPinia())
           return {
             planting: usePlantingStore(),
             action: useActionStore(),
+            notebook: useNotebookStore(),
             actionWorkflow: useActionWorkflow()
           }
         }
@@ -44,7 +46,7 @@ test('Store创建两种计时任务并按完整周期结算', async () => {
 
   try {
     const { createTestArchitecture } = await import(pathToFileURL(bundledStorePath).href)
-    const { planting, action, actionWorkflow } = createTestArchitecture()
+    const { planting, action, notebook, actionWorkflow } = createTestArchitecture()
     actionWorkflow.createAction('计时模式测试行动')
 
     const invalidCountdown = planting.startAction('t1', {
@@ -75,8 +77,21 @@ test('Store创建两种计时任务并按完整周期结算', async () => {
     planting.timer = 25 * 60
     planting.submitHarvest('')
 
+    const zeroCycleSession = planting.startAction('t1', {
+      mode: 'countup',
+      targetDuration: ''
+    })
+    assert.equal(zeroCycleSession.ok, true)
+    planting.stopTimer()
+    planting.submitHarvest('', { endReason: 'manual' })
+
     assert.equal(action.actions[0].totalTrees, 8)
     assert.equal(action.actions[0].totalTimeSpent, 8 * 25 * 60)
+    assert.equal(notebook.notebook.length, 3)
+    assert.equal(notebook.notebook[0].completedCycles, 0)
+    assert.equal(notebook.notebook[0].endReason, 'manual')
+    assert.equal(notebook.notebook[0].content, '')
+    assert.ok(notebook.notebook.every(note => note.sessionId))
   } finally {
     rmSync(bundledStorePath, { force: true })
   }

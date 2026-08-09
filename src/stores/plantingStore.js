@@ -39,6 +39,8 @@ export const usePlantingStore = defineStore('planting', () => {
   const taskTrees = ref(0)
   const taskXP = ref(0)
   const taskStartLevel = ref(null)
+  const taskSessionId = ref(null)
+  const taskStartedAt = ref(null)
   const timerMode = ref(PLANTING_MODES.COUNTUP)
   const targetDuration = ref(DEFAULT_COUNTUP_DURATION)
   const offlineEarnings = ref(null)
@@ -185,6 +187,8 @@ export const usePlantingStore = defineStore('planting', () => {
     taskTrees.value = 0
     taskXP.value = 0
     taskStartLevel.value = actionStore.activeAction?.level || 1
+    taskSessionId.value = `session_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`
+    taskStartedAt.value = new Date().toISOString()
     timerMode.value = validation.mode
     targetDuration.value = validation.targetDuration
     startTimer()
@@ -192,12 +196,27 @@ export const usePlantingStore = defineStore('planting', () => {
     return validation
   }
 
-  function submitHarvest(content) {
+  function submitHarvest(content, options = {}) {
     const targetAction = runningAction.value
     if (!targetAction || !activeTree.value) return false
 
     settleFinishedCycles()
-    const noteInput = buildPlantingNoteInput(targetAction, content)
+    const endedAt = new Date()
+    const targetSkill = actionStore.skills.find((skill) => skill.id === targetAction.skillId) || null
+    const noteInput = buildPlantingNoteInput({
+      action: targetAction,
+      skill: targetSkill,
+      tree: activeTree.value,
+      content,
+      sessionId: taskSessionId.value,
+      startedAt: taskStartedAt.value,
+      endedAt: endedAt.toISOString(),
+      durationSeconds: Math.floor(timer.value),
+      completedCycles: settledCycles.value,
+      treesEarned: taskTrees.value,
+      xpEarned: taskXP.value,
+      endReason: options.endReason || 'manual',
+    })
     if (noteInput) notebookStore.createNote(noteInput)
     clearPlantingTask()
     persistRuntime()
@@ -213,6 +232,8 @@ export const usePlantingStore = defineStore('planting', () => {
     taskTrees.value = 0
     taskXP.value = 0
     taskStartLevel.value = null
+    taskSessionId.value = null
+    taskStartedAt.value = null
     timerMode.value = PLANTING_MODES.COUNTUP
     targetDuration.value = DEFAULT_COUNTUP_DURATION
     offlineEarnings.value = null
@@ -267,6 +288,8 @@ export const usePlantingStore = defineStore('planting', () => {
     taskTrees.value = data.taskTrees || 0
     taskXP.value = data.taskXP || 0
     taskStartLevel.value = data.taskStartLevel || null
+    taskSessionId.value = data.taskSessionId || null
+    taskStartedAt.value = data.taskStartedAt || null
 
     const savedTree = TREE_TYPES.find((tree) => tree.id === activeTreeId.value)
     const savedModeValidation = validatePlantingMode({
@@ -287,6 +310,14 @@ export const usePlantingStore = defineStore('planting', () => {
     if (!savedRunningActionId) clearPlantingTask()
     if (savedRunningActionId && taskStartLevel.value === null) {
       taskStartLevel.value = runningAction.value?.level || 1
+    }
+    if (savedRunningActionId && !taskSessionId.value) {
+      taskSessionId.value = `legacy_${savedRunningActionId}_${data.timestamp || Date.now()}`
+    }
+    if (savedRunningActionId && !taskStartedAt.value) {
+      taskStartedAt.value = new Date(
+        Math.max(0, (data.timestamp || Date.now()) - timer.value * 1000),
+      ).toISOString()
     }
     settleFinishedCycles()
 
@@ -335,6 +366,8 @@ export const usePlantingStore = defineStore('planting', () => {
       taskTrees: taskTrees.value,
       taskXP: taskXP.value,
       taskStartLevel: taskStartLevel.value,
+      taskSessionId: taskSessionId.value,
+      taskStartedAt: taskStartedAt.value,
       timerMode: timerMode.value,
       targetDuration: targetDuration.value,
     }
@@ -390,6 +423,8 @@ export const usePlantingStore = defineStore('planting', () => {
     taskTrees,
     taskXP,
     taskStartLevel,
+    taskSessionId,
+    taskStartedAt,
     timerMode,
     targetDuration,
     offlineEarnings,

@@ -66,6 +66,7 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
         import { usePlayerStore } from '@/stores/playerStore'
         import { useActionWorkflow } from '@/application/workflows/actionWorkflow'
         import { useActionStore } from '@/stores/actionStore'
+        import { useNotebookStore } from '@/stores/notebookStore'
         import { useSaveStore } from '@/stores/saveStore'
 
         export function createTestArchitecture() {
@@ -75,6 +76,7 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
             planting: usePlantingStore(),
             player: usePlayerStore(),
             action: useActionStore(),
+            notebook: useNotebookStore(),
             actionWorkflow: useActionWorkflow(),
             save
           }
@@ -167,6 +169,24 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
       assert.equal(restored.planting.activeTreeId, 't1')
       assert.equal(restored.planting.timer, 300)
       assert.equal(restored.planting.isRunning, false)
+    })
+
+    await t.test('Markdown 随笔在保存和重启后保持源文及格式标记', () => {
+      storage.clear()
+      const first = createTestArchitecture()
+      first.save.initSaveSystem()
+      const slotId = first.save.createSaveSlot('Markdown 重启测试')
+      first.save.enterSlot(slotId)
+      const source = '# 标题\n\n- 列表\n\n> 引用\n\n```js\nconst value = 1\n```'
+      const note = first.notebook.createEssayNote('重启随笔', source)
+      assert.ok(note)
+      assert.equal(first.save.saveActiveSlot(false), true)
+
+      const restored = createTestArchitecture()
+      restored.save.initSaveSystem()
+      assert.equal(restored.save.enterSlot(slotId), true)
+      assert.equal(restored.notebook.notebook[0].content, source)
+      assert.equal(restored.notebook.notebook[0].contentFormat, 'markdown')
     })
 
     await t.test('主存档 JSON 损坏时回退到上一份备份', () => {
