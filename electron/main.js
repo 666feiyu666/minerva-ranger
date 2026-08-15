@@ -1,7 +1,24 @@
 // electron/main.js
 const fs = require('node:fs')
-const { app, BrowserWindow } = require('electron')
-const path = require('path')
+const path = require('node:path')
+const { pathToFileURL } = require('node:url')
+const { app, BrowserWindow, ipcMain, session } = require('electron')
+const { registerPersistenceIpc } = require('./persistence/ipc')
+const { PersistenceService } = require('./persistence/service')
+
+const isSmokeTest = process.env.MINERVA_SMOKE_TEST === '1'
+if (isSmokeTest) app.disableHardwareAcceleration()
+if (isSmokeTest && process.env.MINERVA_USER_DATA_DIR) {
+  app.setPath('userData', path.resolve(process.env.MINERVA_USER_DATA_DIR))
+}
+const rendererDirectory =
+  !app.isPackaged && process.env.MINERVA_RENDERER_DIR
+    ? path.resolve(process.env.MINERVA_RENDERER_DIR)
+    : path.join(__dirname, '../dist')
+const INDEX_PATH = path.join(rendererDirectory, 'index.html')
+let persistenceService = null
+let removePersistenceHandlers = null
+let isClosingPersistence = false
 
 function getWindowIconPath() {
   const distIconPath = path.join(app.getAppPath(), 'dist', 'favicon.ico')
@@ -19,6 +36,7 @@ function createWindow() {
     title: '密涅瓦的巡林官',
     icon: getWindowIconPath(),
     webPreferences: {
+      preload: path.join(__dirname, 'preload.js'),
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
@@ -27,16 +45,88 @@ function createWindow() {
   })
 
   win.setMenuBarVisibility(false)
-  win.loadFile(path.join(__dirname, '../dist/index.html'))
+  win.webContents.setWindowOpenHandler(() => ({ action: 'deny' }))
+  win.webContents.on('will-navigate', (event, navigationUrl) => {
+    const expected = pathToFileURL(INDEX_PATH)
+    try {
+      const candidate = new URL(navigationUrl)
+      if (candidate.protocol === 'file:' && candidate.pathname === expected.pathname) return
+    } catch {
+      // Invalid navigation targets are denied below.
+    }
+    event.preventDefault()
+  })
+  void win.loadFile(INDEX_PATH)
+  return win
+}
+
+function configureSessionSecurity() {
+  session.defaultSession.setPermissionCheckHandler(() => false)
+  session.defaultSession.setPermissionRequestHandler((_webContents, _permission, callback) => {
+    callback(false)
+  })
+}
+
+async function runSmokeTest(win) {
+  const deadline = Date.now() + 15000
+  while (Date.now() < deadline) {
+    const diagnostics = await persistenceService.getDiagnostics()
+    const renderer = await win.webContents.executeJavaScript(`({
+      bridge: Boolean(window.minervaDesktopPersistence),
+      hasDefaultIdentity: document.body.textContent.includes('开发设计师')
+    })`)
+    if (diagnostics.revision >= 1 && renderer.bridge && renderer.hasDefaultIdentity) {
+      console.log(
+        JSON.stringify({
+          ok: true,
+          run: process.env.MINERVA_SMOKE_RUN || 'single',
+          diagnostics,
+          renderer,
+        }),
+      )
+      app.quit()
+      return
+    }
+    await new Promise((resolve) => setTimeout(resolve, 100))
+  }
+
+  throw new Error('Electron 应用烟雾测试超时。')
 }
 
 app.whenReady().then(() => {
-  createWindow()
+  persistenceService = new PersistenceService(app.getPath('userData'))
+  removePersistenceHandlers = registerPersistenceIpc({
+    ipcMain,
+    service: persistenceService,
+    indexPath: INDEX_PATH,
+    appVersion: app.getVersion(),
+  })
+  configureSessionSecurity()
+  const mainWindow = createWindow()
+  if (isSmokeTest) {
+    mainWindow.webContents.once('did-finish-load', () => {
+      void runSmokeTest(mainWindow).catch((error) => {
+        console.error(error)
+        process.exitCode = 1
+        app.quit()
+      })
+    })
+  }
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) {
       createWindow()
     }
+  })
+})
+
+app.on('before-quit', (event) => {
+  if (!persistenceService || isClosingPersistence) return
+  event.preventDefault()
+  isClosingPersistence = true
+  void persistenceService.close().finally(() => {
+    removePersistenceHandlers?.()
+    app.quit()
   })
 })
 

@@ -1,9 +1,23 @@
+let storageOverride = null
+
+function getStorage() {
+  if (storageOverride) return storageOverride
+  if (typeof localStorage === 'undefined') {
+    throw new Error('当前环境不提供本地存储。')
+  }
+  return localStorage
+}
+
+export function configureStorageClient(storage = null) {
+  storageOverride = storage
+}
+
 export function readText(key) {
-  return localStorage.getItem(key)
+  return getStorage().getItem(key)
 }
 
 export function writeText(key, value) {
-  localStorage.setItem(key, value)
+  getStorage().setItem(key, value)
 }
 
 export function readJson(key) {
@@ -45,5 +59,12 @@ export function writeJsonWithBackup(key, backupKey, value) {
 }
 
 export function removeItem(key) {
-  localStorage.removeItem(key)
+  getStorage().removeItem(key)
+}
+
+export function listStorageKeys() {
+  const storage = getStorage()
+  return Array.from({ length: storage.length }, (_value, index) => storage.key(index)).filter(
+    Boolean,
+  )
 }

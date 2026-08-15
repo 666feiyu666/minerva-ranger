@@ -367,8 +367,10 @@ import { MAP_BACKGROUND, MAP_LOCATION_BY_ID, MAP_LOCATIONS } from '@/config/mapC
 import { TREE_TYPES } from '@/config/treeCatalog'
 import { MAP_SCALE_MAX, MAP_SCALE_MIN } from '@/local-backend/domain/mapModel'
 import { useMapStore } from '@/stores/mapStore'
+import { useSaveStore } from '@/stores/saveStore'
 
 const mapStore = useMapStore()
+const saveStore = useSaveStore()
 const {
   mapState,
   locationsWithState,
@@ -549,7 +551,11 @@ const confirmUnlock = async (location) => {
   if (!confirmed) return
 
   unlockingLocationId.value = location.id
-  const result = mapStore.unlockLocation(location.id)
+  let result = mapStore.unlockLocation(location.id)
+  if (result.ok) {
+    const persisted = await saveStore.flushPersistence({ reloadOnFailure: true })
+    if (!persisted) result = { ok: false, error: 'save_failed' }
+  }
   unlockingLocationId.value = null
   if (!result.ok) {
     const message =

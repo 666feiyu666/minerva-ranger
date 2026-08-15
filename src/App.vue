@@ -1,5 +1,50 @@
 <template>
-  <SaveSlotSelectView v-if="store.bootStage === 'slot-select'" />
+  <div
+    v-if="store.bootStage === 'initializing'"
+    class="flex min-h-screen items-center justify-center p-8"
+    style="background: var(--paper); color: var(--ink)"
+  >
+    <section class="paper-panel max-w-md px-10 py-12 text-center">
+      <div class="paper-label">V0.4 本地存档</div>
+      <h1 class="display-title mt-3 text-2xl">正在检查巡林官档案</h1>
+      <p class="mt-3 text-sm leading-7" style="color: var(--ink-soft)">
+        初始化 SQLite，并在需要时迁移旧版浏览器存档。此过程不会删除旧数据。
+      </p>
+    </section>
+  </div>
+
+  <div
+    v-else-if="store.bootStage === 'persistence-error'"
+    class="flex min-h-screen items-center justify-center p-8"
+    style="background: var(--paper); color: var(--ink)"
+  >
+    <section class="paper-panel max-w-lg px-10 py-12 text-center">
+      <div class="paper-label">本地存档不可用</div>
+      <h1 class="display-title mt-3 text-2xl">没有继续写入，以保护现有数据</h1>
+      <p class="mt-3 text-sm leading-7" style="color: var(--ink-soft)">
+        {{ store.persistenceError?.message || 'SQLite 初始化失败，请重试。' }}
+      </p>
+      <button class="primary-button mt-5" type="button" @click="retryPersistence">
+        重新检查
+      </button>
+      <button class="quiet-button ml-2 mt-5" type="button" @click="loadRecoveryBackups">
+        查找本地备份
+      </button>
+      <div v-if="store.persistenceBackups.length" class="mt-5 space-y-2 text-left">
+        <button
+          v-for="backup in store.persistenceBackups"
+          :key="backup.filename"
+          class="quiet-button w-full"
+          type="button"
+          @click="restoreRecoveryBackup(backup)"
+        >
+          恢复 {{ new Date(backup.createdAt).toLocaleString('zh-CN', { hour12: false }) }} 的备份
+        </button>
+      </div>
+    </section>
+  </div>
+
+  <SaveSlotSelectView v-else-if="store.bootStage === 'slot-select'" />
 
   <div v-else class="app-shell" :data-theme="store.isNightMode ? 'night' : 'day'">
     <Sidebar />
@@ -47,6 +92,14 @@
               </div>
               <button class="quiet-button mt-4 w-full" type="button" @click="handleExitToSlots">
                 切换身份
+              </button>
+              <button
+                v-if="store.persistenceMode === 'sqlite'"
+                class="quiet-button mt-2 w-full"
+                type="button"
+                @click="handleCreateBackup"
+              >
+                创建数据库备份
               </button>
             </div>
           </div>
@@ -153,7 +206,7 @@
             <button
               class="primary-button mt-5 w-full"
               type="button"
-              @click="store.claimOfflineEarnings()"
+              @click="handleClaimOfflineEarnings"
             >
               收下这段巡林进度
             </button>
@@ -170,6 +223,7 @@
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useActionWorkflow } from '@/application/workflows/actionWorkflow'
+import { alertDialog, confirmDialog } from '@/composables/dialogService'
 import AppDialogHost from './components/AppDialogHost.vue'
 import ForestView from './components/ForestView.vue'
 import IdleDashboard from './components/IdleDashboard.vue'
@@ -199,6 +253,10 @@ const store = reactive({
   claimOfflineEarnings: plantingStore.claimOfflineEarnings,
   exitToSaveSelection: saveStore.exitToSaveSelection,
   initSaveSystem: saveStore.initSaveSystem,
+  flushPersistence: saveStore.flushPersistence,
+  createPersistenceBackup: saveStore.createPersistenceBackup,
+  loadPersistenceBackups: saveStore.loadPersistenceBackups,
+  restorePersistenceBackup: saveStore.restorePersistenceBackup,
   openForest: actionWorkflow.openForest,
   openNotebook: appStore.openNotebook,
   openShop: appStore.openShop,
@@ -222,9 +280,9 @@ const currentViewTitle = computed(() => {
 })
 const isSystemView = computed(() => SYSTEM_VIEWS.has(store.activeView))
 
-onMounted(() => {
-  plantingStore.attachRuntime()
-  store.initSaveSystem()
+onMounted(async () => {
+  const ready = await store.initSaveSystem()
+  if (ready) plantingStore.attachRuntime()
   document.addEventListener('click', handleDocumentClick)
 })
 
@@ -263,9 +321,46 @@ const handleDocumentClick = (event) => {
   showUtilityMenu.value = false
 }
 
-const handleExitToSlots = () => {
+const retryPersistence = async () => {
+  const ready = await store.initSaveSystem()
+  if (ready) plantingStore.attachRuntime()
+}
+
+const loadRecoveryBackups = async () => {
+  const backups = await store.loadPersistenceBackups()
+  if (backups.length === 0) {
+    await alertDialog('没有找到可用的 SQLite 备份。', { title: '本地恢复' })
+  }
+}
+
+const restoreRecoveryBackup = async (backup) => {
+  const confirmed = await confirmDialog(
+    '恢复备份会先保留当前数据库文件，再切换到所选版本。是否继续？',
+    { title: '恢复 SQLite 备份', confirmText: '恢复' },
+  )
+  if (!confirmed) return
+  if (await store.restorePersistenceBackup(backup.filename)) {
+    plantingStore.attachRuntime()
+    await alertDialog('备份已恢复。', { title: '本地存档已恢复' })
+  }
+}
+
+const handleCreateBackup = async () => {
+  const backup = await store.createPersistenceBackup('manual')
+  if (backup) {
+    await alertDialog('数据库备份已创建。', { title: '本地备份' })
+  }
+}
+
+const handleExitToSlots = async () => {
   showUtilityMenu.value = false
   store.exitToSaveSelection()
+  await store.flushPersistence({ reloadOnFailure: true })
+}
+
+const handleClaimOfflineEarnings = async () => {
+  store.claimOfflineEarnings()
+  await store.flushPersistence({ reloadOnFailure: true })
 }
 
 const formatDuration = (seconds) => {

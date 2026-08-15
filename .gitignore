@@ -33,6 +33,9 @@ coverage
 *.sw?
 
 docs
+!docs/
+docs/*
+!docs/v0.4-electron-sqlite-spec.md
 *.tsbuildinfo
 
 .eslintcache

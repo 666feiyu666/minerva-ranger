@@ -2,7 +2,7 @@
 
 > 当 **Forest（专注森林）** 遇上 **Melvor Idle（梅尔沃放置）**，把技能、行动和日志沉淀成一片可生长的生活森林。
 
-![Version](https://img.shields.io/badge/version-0.4.0-green)
+![Version](https://img.shields.io/badge/version-0.4.0--rc.1-orange)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Vue](https://img.shields.io/badge/Vue-3.x-green)
 
@@ -12,21 +12,21 @@
 
 它不是简单记录“你专注了多久”，而是把专注行为映射到一个持续成长的行动系统里：你选择行动、种植树木、积累经验、沉淀日志，并通过技能、行动、手记和系统记录来生长自己的生活森林。
 
-当前仓库已经完成 **0.4.0**：巡林官成为唯一的全局成长主体，不同长期身份作为同一个人的侧面，共享地图、巡林等级、收藏、可移栽树木与累计森林。正式的 **1.0.0** 版本会在核心体验与长期使用流程完善后发布。
+当前仓库正在 `local-desktop` 分支正式开发 **0.4.0**。全局巡林官与身份侧面、Windows Electron + SQLite 权威存档、事务、旧档迁移、备份恢复和安装器自动化已经进入首个发布候选；通过全部 V0.4 验收前不视为稳定发布。
 
 ## 🧭 当前状态
 
-- 当前版本：`0.4.0`，全局巡林官进度、身份侧面、共享地图与共享森林已经实现。
-- 当前重点：让不同身份的专注共同建设一个长期世界，同时保留 Skill、Action 与笔记的具体来源。
-- 数据路线：先完成可靠的 localStorage 版本，再实施到 SQLite 的迁移。
+- 当前版本：`0.4.0-rc.1`；实现分支为 `local-desktop`，以 GitHub 预发布版提供 Windows x64 安装包。
+- 当前重点：Windows Electron + SQLite 本地持久化、旧 localStorage 迁移、备份恢复与发布候选验收。
+- 数据路线：Electron 桌面版以 SQLite 为权威数据源；浏览器开发环境保留 localStorage 兼容适配器。
 - 兼容边界：`0.1.0` 是首个存档基线；`0.2.0` 标准化旧版笔记；`0.3.0` 引入地图；`0.4.0` 会把已有身份中的巡林官成长与地图一次性合并为全局档案。
 - 运行边界：当前分支只实现本地单机链路，不包含账号、云同步或云服务器运行链路。
-- Electron 计划：现有基础入口和打包配置继续保留；`0.3.0` 已按 `1024×720` 至 `1200×800` 桌面窗口完成 Web 生产构建与界面验收，安装包和多平台验收仍需单独执行。
+- Electron 状态：已升级到 `43.4.0`，内置 Node `24.18.1` / SQLite `3.53.1`；开发态、打包态、可选安装目录、覆盖安装和双路径卸载自动化已通过。
 - 发布计划：`1.0.0` 会作为第一个正式发布版本。
 
 ### 版本记录
 
-- `v0.4.0`：一位全局巡林官、多个身份侧面，共享地图与累计森林，并移除地点的 Skill 关联。
+- [`v0.4.0-rc.1`](https://github.com/666feiyu666/minerva-ranger/releases/tag/v0.4.0-rc.1)（预发布）：全局巡林官与身份侧面、Electron SQLite、legacy 迁移、事务、备份恢复和 Windows 安装包。
 - [`v0.3.0`](https://github.com/666feiyu666/minerva-ranger/tree/v0.3.0)：地图四态、地点解锁、树木资源、场景画廊、Skill 关联与存档迁移。
 - [`v0.2.0`](https://github.com/666feiyu666/minerva-ranger/tree/v0.2.0)：新版巡林笔记、Markdown 随笔、行动足迹和笔记归属迁移。
 - [`v0.1.0`](https://github.com/666feiyu666/minerva-ranger/tree/v0.1.0)：本地单机核心流程与首个存档兼容基线。
@@ -76,12 +76,20 @@
 
 ### 8. 本地存档
 
-- 本地巡林官全局档案与身份存档是当前版本的唯一正式数据源。
+- Windows Electron 桌面版由主进程独占 SQLite，并把全局档案、身份索引和身份快照作为一个事务提交。
+- 浏览器开发环境继续使用 localStorage；桌面首次启动会一次性迁移现有数据且保留旧副本。
 - 删除身份不会删除该身份已经贡献的巡林官等级、累计森林和地图成果。
-- 每个存档保留上一份 localStorage 备份；主副本损坏时会尝试恢复。
-- 存档索引损坏时会根据实际存档槽重建。
+- JSON 导入前自动创建 SQLite 备份，应用内也提供手动备份和受保护恢复入口。
+- 数据库使用修订号拒绝陈旧写入，并对损坏、只读、过新模式和不可信 IPC 给出结构化错误。
 - Markdown 随笔会保存源文和格式信息，并在重新启动后恢复。
 - 支持导入和导出，作为用户可控的备份与迁移入口。
+
+### 9. Windows 安装与卸载
+
+- 安装包使用引导式安装，支持选择当前用户/所有用户范围和程序安装目录。
+- 默认卸载只删除应用并保留 `%APPDATA%/minerva-ranger` 中的 SQLite、内部备份和设置，重新安装后可以继续使用。
+- 卸载页提供两个互斥单选项：“仅删除应用（推荐）”默认保留数据；“删除应用及全部本地数据”会在不可撤销的二次确认后清理应用数据。用户导出到其他目录的 JSON 不会被删除。
+- 覆盖安装和后续更新路径不得触发数据删除。
 
 ## 🧱 技术栈
 
@@ -90,7 +98,7 @@
 - `Vite`
 - `Tailwind CSS`
 - `Marked` + `DOMPurify`
-- `Electron`（保留桌面入口与打包配置，安装包和多平台验收继续推进）
+- `Electron 43.4.0` + 内置 `node:sqlite`
 
 仓库中也已经包含 `Capacitor` 相关依赖，为后续移动端扩展留了空间。
 
@@ -112,7 +120,7 @@ npm install
 npm run dev
 ```
 
-长期身份及其进度保存在当前设备的 localStorage 中，不依赖账号、网络或外部服务。建议定期导出 JSON 备份。
+Web 开发环境的长期身份保存在当前浏览器 localStorage；Electron 桌面版保存在系统用户数据目录的 SQLite 中。两者都不依赖账号、网络或外部服务。
 
 ### 构建前端资源
 
@@ -120,9 +128,18 @@ npm run dev
 npm run build
 ```
 
-### Electron 状态
+### Electron 开发与验证
 
-Electron 入口和打包配置暂时保留。`0.3.0` 已验证 Web 生产资源构建及目标桌面视口，桌面启动、安装包构建和多平台验收仍需在发布前单独执行。
+```bash
+npm run desktop
+npm run test:electron-sqlite
+npm run test:electron-app
+npm run dist
+npm run test:packaged-app
+npm run test:installer
+```
+
+桌面数据库位于 `app.getPath('userData')/data/minerva-ranger.sqlite3`。安装器破坏性烟雾测试使用独立的 `MinervaRangerSmoke` 应用标识、临时安装目录和独立用户数据目录，不会读写真实玩家档案或正式安装记录。
 
 ## 🗂️ 当前主要界面
 
@@ -141,9 +158,10 @@ Electron 入口和打包配置暂时保留。`0.3.0` 已验证 Web 生产资源�
 - [x] 完成 `0.1.0` 本地单机核心流程验收
 - [x] 完成 `0.2.0` 巡林笔记重构、Markdown 随笔和归属迁移
 - [x] 完成 `0.3.0` 地图探索、场景解锁、画廊和旧档迁移
-- [x] 完成 `0.4.0` 全局巡林官、身份侧面、共享地图与共享森林迁移
+- [x] 完成 `0.4.0` 的全局巡林官与身份侧面前置切片
+- [x] 实现 Electron SQLite、事务修订、legacy 迁移、备份恢复和 NSIS 自动化验收
+- [ ] 用真实历史档案完成迁移与恢复人工验收，再决定 V0.4 是否进入待发布
 - [ ] 整理 `1.0.0` 正式版发布清单
-- [ ] 将成熟的 localStorage 存档迁移到 SQLite
 - [ ] 为其余地点补充更多正式场景插画
 - [ ] 成就系统
-- [ ] 继续 Electron 桌面运行、打包与多平台验收
+- [ ] 在 1.0 前补充代码签名策略和 macOS/Linux 正式验收

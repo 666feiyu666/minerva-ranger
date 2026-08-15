@@ -1,14 +1,19 @@
 {
   "name": "minerva-ranger",
-  "version": "0.4.0",
+  "version": "0.4.0-rc.1",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
     "test": "node --test",
+    "test:electron-sqlite": "node scripts/run-electron-sqlite-probe.cjs",
+    "test:electron-app": "node scripts/run-electron-app-smoke.cjs",
+    "test:packaged-app": "node scripts/run-packaged-app-smoke.cjs",
+    "test:installer": "npm run dist:installer-smoke && node scripts/run-installer-smoke.cjs",
     "desktop": "npm run build && electron .",
     "dist": "npm run build && electron-builder",
+    "dist:installer-smoke": "npm run build && electron-builder --config scripts/electron-builder-smoke.config.cjs",
     "check": "oxlint . && eslint . --cache",
     "lint": "oxlint . --fix && eslint . --fix --cache",
     "format": "prettier --write --experimental-cli src/"
@@ -28,7 +33,7 @@
     "@eslint/js": "^9.39.2",
     "@vitejs/plugin-vue": "^6.0.3",
     "autoprefixer": "^10.4.23",
-    "electron": "^40.1.0",
+    "electron": "43.4.0",
     "electron-builder": "^26.4.0",
     "eslint": "^9.39.2",
     "eslint-config-prettier": "^10.1.8",
@@ -49,6 +54,7 @@
   "build": {
     "appId": "com.minerva.ranger",
     "productName": "MinervaRanger",
+    "artifactName": "${productName}-Setup-${version}.${ext}",
     "directories": {
       "output": "release",
       "buildResources": "build"
@@ -60,6 +66,13 @@
     "win": {
       "target": "nsis",
       "icon": "public/favicon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "deleteAppDataOnUninstall": false,
+      "include": "installer/installer.nsh"
     },
     "mac": {
       "target": "dmg"

@@ -1,6 +1,16 @@
 import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { useGameSnapshot } from '@/application/persistence/gameSnapshot'
+import {
+  createDesktopBackup,
+  flushDesktopPersistence,
+  hasDesktopPersistence,
+  initializeDesktopPersistence,
+  listDesktopBackups,
+  reloadDesktopPersistence,
+  restoreDesktopBackup,
+  subscribeDesktopPersistence,
+} from '@/application/persistence/desktopPersistence'
 import { alertDialog } from '@/composables/dialogService'
 import { MAP_LOCATIONS } from '@/config/mapCatalog'
 import {
@@ -42,12 +52,16 @@ export const useSaveStore = defineStore('save', () => {
   const plantingStore = usePlantingStore()
   const snapshot = useGameSnapshot()
 
-  const bootStage = ref('slot-select')
+  const bootStage = ref(hasDesktopPersistence() ? 'initializing' : 'slot-select')
   const saveIndex = ref({ lastSelectedSlotId: null, slots: [] })
   const activeSlotId = ref(null)
   const rangerMetadata = ref({})
   const isHydrating = ref(false)
   const persistenceError = ref(null)
+  const persistenceMode = ref(hasDesktopPersistence() ? 'sqlite' : 'browser-localstorage')
+  const persistenceState = ref(hasDesktopPersistence() ? 'initializing' : 'ready')
+  const persistenceRevision = ref(0)
+  const persistenceBackups = ref([])
   let notifiedPersistenceError = null
 
   const saveSlots = computed(() => saveIndex.value.slots || [])
@@ -79,6 +93,13 @@ export const useSaveStore = defineStore('save', () => {
     }
     return false
   }
+
+  subscribeDesktopPersistence((status) => {
+    persistenceMode.value = status.mode
+    persistenceState.value = status.state
+    persistenceRevision.value = status.revision
+    if (status.error) reportPersistenceError('SQLite 持久化', status.error)
+  })
 
   function saveSaveIndex() {
     try {
@@ -285,6 +306,77 @@ export const useSaveStore = defineStore('save', () => {
     return saveActiveSlot(false)
   }
 
+  async function reloadCommittedDesktopState() {
+    const previousSlotId = activeSlotId.value
+    const previousStage = bootStage.value
+    await reloadDesktopPersistence()
+    loadSaveIndex()
+    loadRangerData()
+    if (previousSlotId && saveSlots.value.some((slot) => slot.id === previousSlotId)) {
+      loadSlot(previousSlotId)
+      bootStage.value = previousStage
+    } else {
+      activeSlotId.value = null
+      resetGameState()
+      bootStage.value = 'slot-select'
+    }
+  }
+
+  async function flushPersistence(options = {}) {
+    if (!hasDesktopPersistence()) return true
+    try {
+      await flushDesktopPersistence()
+      clearPersistenceError()
+      return true
+    } catch (error) {
+      reportPersistenceError('写入 SQLite 存档', error)
+      if (options.reloadOnFailure) {
+        try {
+          await reloadCommittedDesktopState()
+        } catch (reloadError) {
+          reportPersistenceError('重新载入 SQLite 存档', reloadError)
+        }
+      }
+      return false
+    }
+  }
+
+  async function createPersistenceBackup(reason = 'manual') {
+    if (!hasDesktopPersistence()) return null
+    try {
+      const result = await createDesktopBackup(reason)
+      clearPersistenceError()
+      return result
+    } catch (error) {
+      reportPersistenceError('创建 SQLite 备份', error)
+      return null
+    }
+  }
+
+  async function loadPersistenceBackups() {
+    if (!hasDesktopPersistence()) return []
+    try {
+      persistenceBackups.value = await listDesktopBackups()
+      return persistenceBackups.value
+    } catch (error) {
+      reportPersistenceError('读取 SQLite 备份列表', error)
+      return []
+    }
+  }
+
+  async function restorePersistenceBackup(filename) {
+    if (!hasDesktopPersistence()) return false
+    try {
+      const result = await restoreDesktopBackup(filename)
+      if (!result) return false
+      initializeSaveState()
+      clearPersistenceError()
+      return true
+    } catch (error) {
+      return reportPersistenceError('恢复 SQLite 备份', error)
+    }
+  }
+
   plantingStore.configurePersistenceAdapter({
     persist: saveToLocalStorage,
     flush: flushRuntimeState,
@@ -485,7 +577,7 @@ export const useSaveStore = defineStore('save', () => {
     return importSaveData(jsonString, { ...options, createNewSlot: true, slotName })
   }
 
-  function initSaveSystem() {
+  function initializeSaveState() {
     loadSaveIndex()
     if (!hasBootstrappedDefaultIdentity()) {
       const defaultSlotReady =
@@ -496,6 +588,23 @@ export const useSaveStore = defineStore('save', () => {
     loadRangerData()
     if (!activeSlotId.value) resetGameState()
     bootStage.value = 'slot-select'
+    return true
+  }
+
+  function initSaveSystem() {
+    if (!hasDesktopPersistence()) return initializeSaveState()
+
+    bootStage.value = 'initializing'
+    return initializeDesktopPersistence()
+      .then(() => {
+        initializeSaveState()
+        return flushPersistence({ reloadOnFailure: true })
+      })
+      .catch((error) => {
+        bootStage.value = 'persistence-error'
+        persistenceState.value = error.recoverable === false ? 'fatal' : 'degraded'
+        return reportPersistenceError('初始化 SQLite 存档', error)
+      })
   }
 
   function downloadSaveFile(slotId = activeSlotId.value) {
@@ -567,6 +676,10 @@ export const useSaveStore = defineStore('save', () => {
     activeSlotId,
     activeSlotMeta,
     persistenceError,
+    persistenceMode,
+    persistenceState,
+    persistenceRevision,
+    persistenceBackups,
     isHydrating,
     initSaveSystem,
     createSaveSlot,
@@ -577,6 +690,10 @@ export const useSaveStore = defineStore('save', () => {
     exitToSaveSelection,
     saveActiveSlot,
     saveToLocalStorage,
+    flushPersistence,
+    createPersistenceBackup,
+    loadPersistenceBackups,
+    restorePersistenceBackup,
     importSaveData,
     importSaveAsNewSlot,
     downloadSaveFile,

@@ -12,6 +12,7 @@ import {
 import {
   readJsonWithBackup,
   readText,
+  listStorageKeys,
   removeItem,
   writeText,
   writeJsonWithBackup,
@@ -61,8 +62,7 @@ export function removeSlotData(slotId) {
 export function listStoredSlotIds() {
   const slotIds = []
 
-  for (let index = 0; index < localStorage.length; index += 1) {
-    const key = localStorage.key(index)
+  for (const key of listStorageKeys()) {
     if (!key?.startsWith(SAVE_SLOT_KEY_PREFIX) || key.endsWith(SAVE_SLOT_BACKUP_SUFFIX)) {
       continue
     }

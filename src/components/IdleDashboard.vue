@@ -310,11 +310,13 @@ import { useActionStore } from '@/stores/actionStore'
 import { useAppStore } from '@/stores/appStore'
 import { usePlantingStore } from '@/stores/plantingStore'
 import { usePlayerStore } from '@/stores/playerStore'
+import { useSaveStore } from '@/stores/saveStore'
 
 const appStore = useAppStore()
 const playerStore = usePlayerStore()
 const actionStore = useActionStore()
 const plantingStore = usePlantingStore()
+const saveStore = useSaveStore()
 const store = reactive({
   ...storeToRefs(appStore),
   ...storeToRefs(playerStore),
@@ -326,6 +328,7 @@ const store = reactive({
   stopTimer: plantingStore.stopTimer,
   submitHarvest: plantingStore.submitHarvest,
   toggleAction: plantingStore.toggleAction,
+  flushPersistence: saveStore.flushPersistence,
 })
 
 const showHarvestModal = ref(false)
@@ -457,10 +460,12 @@ const handleButtonClick = async (tree) => {
   }
   openModeModal(tree)
 }
-const closeHarvestModal = () => finishHarvest('')
-const finishHarvest = (content) => {
+const closeHarvestModal = () => void finishHarvest('')
+const finishHarvest = async (content) => {
   const submitted = store.submitHarvest(content, { endReason: harvestEndReason.value })
   if (!submitted) return
+  const persisted = await store.flushPersistence({ reloadOnFailure: true })
+  if (!persisted) return
   showHarvestModal.value = false
   logContent.value = ''
   const nextTreeId = pendingTreeId.value
@@ -470,7 +475,7 @@ const finishHarvest = (content) => {
     if (nextTree) openModeModal(nextTree)
   }
 }
-const confirmHarvest = () => finishHarvest(logContent.value)
+const confirmHarvest = () => void finishHarvest(logContent.value)
 
 watch(isHarvestReady, (reachedLimit) => {
   if (reachedLimit && !showHarvestModal.value) openHarvestSummary('limit')

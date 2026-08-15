@@ -92,7 +92,7 @@
               <p class="save-card__date">最后进入：{{ formatDate(slot.lastPlayedAt) }}</p>
             </div>
             <div class="save-card__actions">
-              <button class="primary-button" @click="store.enterSlot(slot.id)">继续行动</button>
+              <button class="primary-button" @click="enterSlot(slot.id)">继续行动</button>
               <div class="save-card__secondary">
                 <button class="quiet-button" @click="renameSlot(slot)">重命名</button>
                 <button class="quiet-button" @click="store.downloadSaveFile(slot.id)">导出</button>
@@ -100,7 +100,7 @@
                   class="quiet-button"
                   :disabled="store.saveSlots[0]?.id === slot.id"
                   aria-label="向上移动"
-                  @click="store.moveSaveSlot(slot.id, -1)"
+                  @click="moveSlot(slot.id, -1)"
                 >
                   ↑
                 </button>
@@ -108,7 +108,7 @@
                   class="quiet-button"
                   :disabled="store.saveSlots[store.saveSlots.length - 1]?.id === slot.id"
                   aria-label="向下移动"
-                  @click="store.moveSaveSlot(slot.id, 1)"
+                  @click="moveSlot(slot.id, 1)"
                 >
                   ↓
                 </button>
@@ -138,8 +138,10 @@ const store = reactive({
   ...storeToRefs(saveStore),
   createSaveSlot: saveStore.createSaveSlot,
   deleteSaveSlot: saveStore.deleteSaveSlot,
+  createPersistenceBackup: saveStore.createPersistenceBackup,
   downloadSaveFile: saveStore.downloadSaveFile,
   enterSlot: saveStore.enterSlot,
+  flushPersistence: saveStore.flushPersistence,
   importSaveAsNewSlot: saveStore.importSaveAsNewSlot,
   importSaveData: saveStore.importSaveData,
   moveSaveSlot: saveStore.moveSaveSlot,
@@ -166,7 +168,14 @@ const createSlot = async () => {
   })
   if (name === null) return
   const slotId = store.createSaveSlot(name)
-  if (slotId) store.enterSlot(slotId)
+  if (!slotId) return
+  store.enterSlot(slotId)
+  await store.flushPersistence({ reloadOnFailure: true })
+}
+
+const enterSlot = async (slotId) => {
+  if (!store.enterSlot(slotId)) return
+  await store.flushPersistence({ reloadOnFailure: true })
 }
 
 const renameSlot = async (slot) => {
@@ -176,7 +185,15 @@ const renameSlot = async (slot) => {
     confirmText: '保存',
   })
   if (name === null) return
-  store.renameSaveSlot(slot.id, name)
+  if (store.renameSaveSlot(slot.id, name)) {
+    await store.flushPersistence({ reloadOnFailure: true })
+  }
+}
+
+const moveSlot = async (slotId, direction) => {
+  if (store.moveSaveSlot(slotId, direction)) {
+    await store.flushPersistence({ reloadOnFailure: true })
+  }
 }
 
 const deleteSlot = async (slot) => {
@@ -188,7 +205,9 @@ const deleteSlot = async (slot) => {
     },
   )
   if (!confirmed) return
-  store.deleteSaveSlot(slot.id)
+  if (store.deleteSaveSlot(slot.id)) {
+    await store.flushPersistence({ reloadOnFailure: true })
+  }
 }
 
 const startImportAsNew = () => {
@@ -206,9 +225,14 @@ const handleImportFile = (event) => {
   if (!file) return
 
   const reader = new FileReader()
-  reader.onload = (e) => {
+  reader.onload = async (e) => {
     const content = e.target?.result
     if (typeof content !== 'string') return
+
+    if (store.persistenceMode === 'sqlite') {
+      const backup = await store.createPersistenceBackup('before-json-import')
+      if (!backup) return
+    }
 
     if (importMode.value.type === 'new') {
       const suggested = file.name.replace(/\.json$/i, '')
@@ -216,6 +240,8 @@ const handleImportFile = (event) => {
     } else if (importMode.value.slotId) {
       store.importSaveData(content, { targetSlotId: importMode.value.slotId })
     }
+
+    await store.flushPersistence({ reloadOnFailure: true })
 
     event.target.value = ''
   }
