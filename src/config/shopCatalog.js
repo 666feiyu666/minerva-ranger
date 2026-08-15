@@ -2,21 +2,21 @@ export const SHOP_CATEGORIES = [
   {
     id: 'trees',
     name: '树种',
-    eyebrow: 'Trees',
-    desc: '选择适合当前阶段的树种。'
+    eyebrow: '树种目录',
+    desc: '选择适合当前阶段的树种。',
   },
   {
     id: 'boosts',
     name: '技能',
-    eyebrow: 'Skills',
-    desc: '提升效率的辅助道具。'
+    eyebrow: '辅助物件',
+    desc: '提升效率的辅助道具。',
   },
   {
     id: 'backgrounds',
     name: '造景',
-    eyebrow: 'Scenes',
-    desc: '用于行动空间的外观装饰。'
-  }
+    eyebrow: '场景陈设',
+    desc: '用于行动空间的外观装饰。',
+  },
 ]
 
 export const PREVIEW_SKILL_ITEMS = [
@@ -33,8 +33,8 @@ export const PREVIEW_SKILL_ITEMS = [
     badge: '暂未开放',
     meta: [
       { label: '效果', value: '日志金币 x2' },
-      { label: '持续', value: '单次任务周期' }
-    ]
+      { label: '持续', value: '单次任务周期' },
+    ],
   },
   {
     id: 'boost_focus_lens',
@@ -49,9 +49,9 @@ export const PREVIEW_SKILL_ITEMS = [
     badge: '暂未开放',
     meta: [
       { label: '效果', value: '成长时间 -20%' },
-      { label: '定位', value: '效率型技能书' }
-    ]
-  }
+      { label: '定位', value: '效率型技能书' },
+    ],
+  },
 ]
 
 export const PREVIEW_BACKGROUND_ITEMS = [
@@ -68,8 +68,8 @@ export const PREVIEW_BACKGROUND_ITEMS = [
     badge: '暂未开放',
     meta: [
       { label: '作用域', value: '单个行动' },
-      { label: '气质', value: '记录室 / 温室' }
-    ]
+      { label: '气质', value: '记录室 / 温室' },
+    ],
   },
   {
     id: 'background_watchtower',
@@ -84,7 +84,7 @@ export const PREVIEW_BACKGROUND_ITEMS = [
     badge: '暂未开放',
     meta: [
       { label: '作用域', value: '单个行动' },
-      { label: '气质', value: '瞭望台 / 野外值守' }
-    ]
-  }
+      { label: '气质', value: '瞭望台 / 野外值守' },
+    ],
+  },
 ]

@@ -1,242 +1,88 @@
 <template>
-  <div class="flex flex-col h-full overflow-hidden">
-    <div class="shrink-0 p-6 pb-3">
-      <section
-        class="rounded-[2rem] border p-6 shadow-2xl backdrop-blur-md transition-colors"
-        :class="
-          store.isNightMode
-            ? 'border-[#355140] bg-[#101915]/90 text-white'
-            : 'border-[#cfd9cc] bg-[#f7fbf4]/90 text-gray-800'
-        "
-      >
-        <div class="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-          <div class="max-w-3xl">
-            <div
-              class="text-xs uppercase tracking-[0.28em] font-bold"
-              :class="store.isNightMode ? 'text-emerald-200/60' : 'text-[#6f826d]'"
-            >
-              Ranger Supply
-            </div>
-            <h2 class="mt-3 text-3xl font-black tracking-wide">巡林补给商店</h2>
-            <p
-              class="mt-3 text-sm leading-7"
-              :class="store.isNightMode ? 'text-gray-300' : 'text-[#5e6d5c]'"
-            >
-              选择树种，扩充你的森林。
-            </p>
-          </div>
-
-          <div class="grid gap-3 sm:grid-cols-2 xl:min-w-[21rem]">
-            <div
-              class="rounded-2xl border px-4 py-4"
-              :class="
-                store.isNightMode ? 'border-white/10 bg-black/25' : 'border-white/70 bg-white/70'
-              "
-            >
-              <div
-                class="text-[11px] uppercase tracking-[0.22em] font-bold"
-                :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
-              >
-                Current Funds
-              </div>
-              <div class="mt-2 text-3xl font-black text-yellow-500">
-                🪙 {{ Math.floor(store.coins) }}
-              </div>
-            </div>
-
-            <div
-              class="rounded-2xl border px-4 py-4"
-              :class="
-                store.isNightMode ? 'border-white/10 bg-black/25' : 'border-white/70 bg-white/70'
-              "
-            >
-              <div
-                class="text-[11px] uppercase tracking-[0.22em] font-bold"
-                :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
-              >
-                Collected
-              </div>
-              <div class="mt-2 text-3xl font-black">
-                {{ store.inventoryTrees.length }}
-              </div>
-              <div
-                class="mt-1 text-xs"
-                :class="store.isNightMode ? 'text-gray-400' : 'text-[#657463]'"
-              >
-                已收录树种
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-
-    <div class="shrink-0 px-6 pb-3">
-      <div class="flex gap-2 overflow-x-auto pb-1 custom-scrollbar">
-        <button
-          v-for="category in categories"
-          :key="category.id"
-          @click="selectedCategoryId = category.id"
-          class="shrink-0 rounded-full border px-4 py-2 text-sm font-bold transition-all"
-          :class="categoryTabClass(category.id)"
-        >
-          {{ category.name }}
-          <span class="ml-2 opacity-70">{{ category.items.length }}</span>
-        </button>
+  <div class="nursery-page subtle-scrollbar">
+    <header class="nursery-header paper-panel">
+      <div>
+        <p class="paper-label">培育补给</p>
+        <h2 class="display-title">巡林苗圃</h2>
+        <p>挑选适合当前阶段的树种与物件，让每次行动留下不同的生长痕迹。</p>
       </div>
-    </div>
+      <dl class="nursery-summary">
+        <div>
+          <dt>可用金币</dt>
+          <dd>{{ Math.floor(store.coins) }}</dd>
+        </div>
+        <div>
+          <dt>已收录树种</dt>
+          <dd>{{ store.inventoryTrees.length }}</dd>
+        </div>
+      </dl>
+    </header>
 
-    <div class="flex-1 overflow-y-auto px-6 pb-24 custom-scrollbar">
-      <section
-        v-if="selectedCategory"
-        class="rounded-[2rem] border shadow-2xl overflow-hidden"
-        :class="
-          store.isNightMode
-            ? 'border-[#355140] bg-[#111915]/90'
-            : 'border-[#d5ddd1] bg-[#f8fbf5]/90'
-        "
+    <nav class="nursery-tabs" aria-label="苗圃分类">
+      <button
+        v-for="category in categories"
+        :key="category.id"
+        :class="{ 'is-active': selectedCategoryId === category.id }"
+        @click="selectedCategoryId = category.id"
       >
-        <div
-          class="border-b px-6 py-5 flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between"
-          :class="
-            store.isNightMode ? 'border-white/10 bg-black/20' : 'border-[#dee6db] bg-white/55'
-          "
+        {{ category.name }} <span>{{ category.items.length }}</span>
+      </button>
+    </nav>
+
+    <section v-if="selectedCategory" class="nursery-catalog paper-panel">
+      <header class="nursery-catalog__header">
+        <div>
+          <p class="paper-label">{{ selectedCategory.eyebrow }}</p>
+          <h3>{{ selectedCategory.name }}</h3>
+          <p>{{ selectedCategory.desc }}</p>
+        </div>
+        <span>{{ selectedCategory.items.length }} 件可查看</span>
+      </header>
+
+      <div class="nursery-grid">
+        <article
+          v-for="item in selectedCategory.items"
+          :key="item.id"
+          class="nursery-card"
+          :class="{ 'nursery-card--preview': item.availability === 'preview' }"
         >
-          <div>
-            <div
-              class="text-[11px] uppercase tracking-[0.24em] font-bold"
-              :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
-            >
-              {{ selectedCategory.eyebrow }}
-            </div>
-            <h3 class="mt-2 text-2xl font-black">{{ selectedCategory.name }}</h3>
-            <p class="mt-2 text-sm" :class="store.isNightMode ? 'text-gray-300' : 'text-[#60705f]'">
-              {{ selectedCategory.desc }}
-            </p>
+          <div class="nursery-card__visual">
+            <img v-if="item.icon" :src="item.icon" class="pixel-art" :alt="item.name" />
+            <span v-else aria-hidden="true">{{ item.iconEmoji || '·' }}</span>
           </div>
 
-          <span
-            class="rounded-full border px-3 py-1.5 text-xs font-bold"
-            :class="
-              store.isNightMode
-                ? 'border-white/10 bg-black/25 text-emerald-200'
-                : 'border-white/70 bg-white/80 text-[#4f6650]'
-            "
-          >
-            {{ selectedCategory.items.length }} 件在售
-          </span>
-        </div>
-
-        <div class="grid gap-5 p-6 md:grid-cols-2 2xl:grid-cols-3">
-          <article
-            v-for="item in selectedCategory.items"
-            :key="item.id"
-            class="rounded-[1.75rem] border p-5 transition-all duration-300 hover:-translate-y-1"
-            :class="cardClass(item)"
-          >
-            <div class="flex items-start justify-between gap-4">
-              <div class="min-w-0">
-                <span
-                  class="rounded-full border px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide"
-                  :class="badgeClass(item)"
-                >
-                  {{ item.badge }}
-                </span>
-                <h4 class="mt-3 text-xl font-black">{{ item.name }}</h4>
-                <p
-                  class="mt-2 text-sm leading-6"
-                  :class="store.isNightMode ? 'text-gray-300' : 'text-[#5e6d5c]'"
-                >
-                  {{ item.desc }}
-                </p>
-              </div>
-
-              <div
-                class="w-16 h-16 shrink-0 rounded-2xl border flex items-center justify-center overflow-hidden"
-                :class="
-                  store.isNightMode ? 'border-white/10 bg-black/25' : 'border-white/70 bg-white/80'
-                "
-              >
-                <img
-                  v-if="item.icon"
-                  :src="item.icon"
-                  class="w-12 h-12 object-contain pixel-art"
-                  alt="shop item"
-                />
-                <span v-else class="text-3xl">{{ item.iconEmoji || '🧺' }}</span>
-              </div>
+          <div class="nursery-card__body">
+            <div class="nursery-card__heading">
+              <span class="nursery-card__badge">{{ item.badge }}</span>
+              <span>Lv. {{ item.levelReq }}</span>
             </div>
+            <h4>{{ item.name }}</h4>
+            <p>{{ item.desc }}</p>
 
-            <div class="mt-5 grid grid-cols-2 gap-2">
-              <div
-                v-for="meta in item.meta"
-                :key="`${item.id}-${meta.label}`"
-                class="rounded-2xl border px-3 py-3"
-                :class="
-                  store.isNightMode ? 'border-white/10 bg-black/20' : 'border-[#dbe3d7] bg-white/70'
-                "
-              >
-                <div
-                  class="text-[11px] uppercase tracking-[0.2em] font-bold"
-                  :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
-                >
-                  {{ meta.label }}
-                </div>
-                <div class="mt-1 text-sm font-bold">{{ meta.value }}</div>
+            <dl class="nursery-card__meta">
+              <div v-for="meta in item.meta" :key="`${item.id}-${meta.label}`">
+                <dt>{{ meta.label }}</dt>
+                <dd>{{ meta.value }}</dd>
               </div>
-            </div>
+            </dl>
 
-            <div class="mt-5 flex items-center justify-between gap-3">
+            <footer>
               <div>
-                <div
-                  class="text-[11px] uppercase tracking-[0.2em] font-bold"
-                  :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
-                >
-                  Price
-                </div>
-                <div class="mt-1 text-lg font-black text-yellow-500">🪙 {{ item.price }}</div>
+                <small>所需金币</small><strong>{{ item.price }}</strong>
               </div>
-
-              <div
-                class="rounded-full border px-3 py-1.5 text-xs font-bold"
-                :class="
-                  store.globalLevel >= item.levelReq
-                    ? store.isNightMode
-                      ? 'border-emerald-800 bg-emerald-900/20 text-emerald-300'
-                      : 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                    : store.isNightMode
-                      ? 'border-red-900 bg-red-900/20 text-red-300'
-                      : 'border-red-200 bg-red-50 text-red-600'
-                "
+              <button
+                :disabled="!store.canPurchaseShopItem(item)"
+                @click="store.purchaseShopItem(item)"
               >
-                Lv.{{ item.levelReq }}
-              </div>
-            </div>
+                {{ buttonLabel(item) }}
+              </button>
+            </footer>
+          </div>
+        </article>
+      </div>
+    </section>
 
-            <button
-              @click="store.purchaseShopItem(item)"
-              :disabled="!store.canPurchaseShopItem(item)"
-              class="mt-5 w-full rounded-2xl px-4 py-3 text-sm font-bold transition-all"
-              :class="buttonClass(item)"
-            >
-              {{ buttonLabel(item) }}
-            </button>
-          </article>
-        </div>
-      </section>
-
-      <section
-        v-else
-        class="rounded-[2rem] border px-6 py-16 text-center shadow-2xl"
-        :class="
-          store.isNightMode
-            ? 'border-[#355140] bg-[#111915]/90 text-gray-300'
-            : 'border-[#d5ddd1] bg-[#f8fbf5]/90 text-[#60705f]'
-        "
-      >
-        当前没有可购买内容。
-      </section>
-    </div>
+    <section v-else class="nursery-empty paper-panel">当前没有可查看的苗圃内容。</section>
   </div>
 </template>
 
@@ -256,7 +102,6 @@ const store = reactive({
   purchaseShopItem: playerStore.purchaseShopItem,
 })
 const selectedCategoryId = ref(null)
-
 const categories = computed(() => store.shopCatalog)
 
 watch(
@@ -266,7 +111,6 @@ watch(
       selectedCategoryId.value = null
       return
     }
-
     if (!nextCategories.some((category) => category.id === selectedCategoryId.value)) {
       selectedCategoryId.value = nextCategories[0].id
     }
@@ -278,89 +122,307 @@ const selectedCategory = computed(
   () => categories.value.find((category) => category.id === selectedCategoryId.value) || null,
 )
 
-const categoryTabClass = (categoryId) => {
-  if (selectedCategoryId.value === categoryId) {
-    return store.isNightMode
-      ? 'border-emerald-700 bg-emerald-900/30 text-white shadow-[0_0_30px_rgba(16,185,129,0.08)]'
-      : 'border-emerald-300 bg-emerald-50 text-gray-800 shadow-[0_10px_24px_rgba(16,185,129,0.08)]'
-  }
-
-  return store.isNightMode
-    ? 'border-white/10 bg-black/20 text-gray-300 hover:bg-black/30'
-    : 'border-white/70 bg-white/70 text-gray-700 hover:bg-white'
-}
-
-const badgeClass = (item) => {
-  if (item.availability === 'preview') {
-    return store.isNightMode
-      ? 'border-amber-800 bg-amber-900/20 text-amber-300'
-      : 'border-amber-200 bg-amber-50 text-amber-700'
-  }
-
-  return store.isNightMode
-    ? 'border-emerald-800 bg-emerald-900/20 text-emerald-300'
-    : 'border-emerald-200 bg-emerald-50 text-emerald-700'
-}
-
-const cardClass = (item) => {
-  if (item.availability === 'preview') {
-    return store.isNightMode
-      ? 'border-[#4d4122] bg-[#1b1710] text-white'
-      : 'border-[#e8d8b0] bg-[#fff9ec] text-gray-800'
-  }
-
-  return store.isNightMode
-    ? 'border-white/10 bg-[#141c18] text-white hover:border-emerald-800'
-    : 'border-white/80 bg-white/85 text-gray-800 hover:border-emerald-200'
-}
-
 const buttonLabel = (item) => {
   if (store.ownsShopItem(item)) return '已收录'
   if (item.availability === 'preview') return '暂未开放'
   if (store.globalLevel < item.levelReq) return '等级不足'
   if (store.coins < item.price) return '金币不足'
-  return item.type === 'tree' ? '购买树种' : '购买'
-}
-
-const buttonClass = (item) => {
-  if (store.ownsShopItem(item)) {
-    return store.isNightMode
-      ? 'border border-white/10 bg-black/25 text-gray-500 cursor-not-allowed'
-      : 'border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
-  }
-
-  if (item.availability === 'preview') {
-    return store.isNightMode
-      ? 'border border-amber-900 bg-amber-900/15 text-amber-300 cursor-not-allowed'
-      : 'border border-amber-200 bg-amber-50 text-amber-700 cursor-not-allowed'
-  }
-
-  if (store.globalLevel < item.levelReq || store.coins < item.price) {
-    return store.isNightMode
-      ? 'border border-white/10 bg-black/25 text-gray-500 cursor-not-allowed'
-      : 'border border-gray-200 bg-gray-100 text-gray-400 cursor-not-allowed'
-  }
-
-  return 'bg-gradient-to-r from-emerald-700 to-lime-700 text-white hover:from-emerald-600 hover:to-lime-600 shadow-[0_18px_40px_rgba(20,83,45,0.25)] active:scale-[0.99]'
+  return item.type === 'tree' ? '收录树种' : '购买'
 }
 </script>
 
 <style scoped>
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+.nursery-page {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding: 24px clamp(24px, 3vw, 42px) 56px;
+  color: var(--ink-strong);
+  background: radial-gradient(circle at 90% 0%, var(--sage-wash), transparent 28%);
+}
+.nursery-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 24px 28px;
+}
+.nursery-header > div:first-child {
+  min-width: 0;
+  flex: 1;
+}
+.nursery-header h2 {
+  margin: 7px 0 6px;
+}
+.nursery-header > div > p:last-child {
+  max-width: 650px;
+  color: var(--ink-muted);
+  font-size: 14px;
+  line-height: 1.7;
+}
+.nursery-summary {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(110px, 1fr));
+  min-width: 0;
+  flex: 0 1 320px;
+  margin: 0;
+  border-left: 1px solid var(--line-soft);
+}
+.nursery-summary div {
+  padding: 3px 20px;
+}
+.nursery-summary dt {
+  color: var(--ink-faint);
+  font-size: 11px;
+}
+.nursery-summary dd {
+  margin: 3px 0 0;
+  color: var(--forest-700);
+  font-family: Georgia, serif;
+  font-size: 26px;
+  font-weight: 750;
+}
+.nursery-tabs {
+  display: flex;
+  gap: 6px;
+  margin: 14px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--line-soft);
+}
+.nursery-tabs button {
+  min-height: 34px;
+  padding: 6px 13px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--ink-muted);
+  font-size: 13px;
+  font-weight: 750;
+  transition: 140ms ease;
+}
+.nursery-tabs button:hover {
+  color: var(--forest-700);
+  background: var(--paper-raised);
+}
+.nursery-tabs button.is-active {
+  color: var(--paper-raised);
+  background: var(--forest-700);
+}
+.nursery-tabs span {
+  margin-left: 5px;
+  opacity: 0.65;
+  font-size: 11px;
+}
+.nursery-catalog {
+  overflow: hidden;
+}
+.nursery-catalog__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--line-soft);
+  background: var(--paper-muted);
+}
+.nursery-catalog__header h3 {
+  margin: 4px 0 3px;
+  font-family: Georgia, 'Noto Serif SC', serif;
+  font-size: 22px;
+}
+.nursery-catalog__header p:last-child {
+  color: var(--ink-muted);
+  font-size: 13px;
+}
+.nursery-catalog__header > span {
+  color: var(--ink-faint);
+  font-size: 12px;
+}
+.nursery-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 16px;
+}
+.nursery-card {
+  min-height: 234px;
+  display: grid;
+  grid-template-columns: 116px minmax(0, 1fr);
+  border: 1px solid var(--line-soft);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--paper-raised);
+  transition: 150ms ease;
+}
+.nursery-card:hover {
+  border-color: var(--line-strong);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-card);
+}
+.nursery-card--preview {
+  background: color-mix(in srgb, var(--amber-wash) 52%, var(--paper-raised));
+}
+.nursery-card__visual {
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  border-right: 1px solid var(--line-soft);
+  background: var(--paper-muted);
+}
+.nursery-card__visual img {
+  width: 76px;
+  height: 94px;
+  object-fit: contain;
+}
+.nursery-card__visual span {
+  color: var(--forest-700);
+  font-family: Georgia, serif;
+  font-size: 34px;
+}
+.nursery-card__body {
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+}
+.nursery-card__heading {
+  display: flex;
+  justify-content: space-between;
+  color: var(--ink-faint);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+.nursery-card__badge {
+  color: var(--forest-700);
+}
+.nursery-card h4 {
+  margin: 7px 0 4px;
+  font-family: Georgia, 'Noto Serif SC', serif;
+  font-size: 19px;
+}
+.nursery-card__body > p {
+  min-height: 38px;
+  color: var(--ink-muted);
+  font-size: 12px;
+  line-height: 1.55;
+}
+.nursery-card__meta {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin: 10px 0 12px;
+}
+.nursery-card__meta div {
+  padding: 6px 8px;
+  border-left: 2px solid var(--sage-300);
+  background: var(--paper-muted);
+}
+.nursery-card__meta dt {
+  color: var(--ink-faint);
+  font-size: 9px;
+}
+.nursery-card__meta dd {
+  margin: 2px 0 0;
+  font-size: 11px;
+  font-weight: 700;
+}
+.nursery-card footer {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+}
+.nursery-card footer div {
+  display: grid;
+}
+.nursery-card footer small {
+  color: var(--ink-faint);
+  font-size: 9px;
+}
+.nursery-card footer strong {
+  color: var(--amber-700);
+  font-family: Georgia, serif;
+  font-size: 18px;
+}
+.nursery-card footer button {
+  min-height: 32px;
+  padding: 6px 12px;
+  border-radius: 5px;
+  color: white;
+  background: var(--forest-700);
+  font-size: 11px;
+  font-weight: 800;
+}
+.nursery-card footer button:disabled {
+  color: var(--ink-faint);
+  background: var(--paper-muted);
+  cursor: not-allowed;
+}
+.nursery-empty {
+  display: grid;
+  min-height: 280px;
+  place-items: center;
+  color: var(--ink-muted);
+}
+@media (min-width: 1540px) {
+  .nursery-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1160px) {
+  .nursery-header {
+    align-items: flex-start;
+  }
+  .nursery-summary {
+    min-width: 230px;
+  }
+  .nursery-card {
+    grid-template-columns: 88px minmax(0, 1fr);
+  }
+  .nursery-card__visual img {
+    width: 58px;
+  }
 }
 
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
+@media (max-width: 980px) {
+  .nursery-page {
+    padding: 16px 16px 42px;
+  }
+
+  .nursery-header {
+    flex-direction: column;
+    gap: 18px;
+    padding: 20px;
+  }
+
+  .nursery-summary {
+    width: 100%;
+    flex-basis: auto;
+    border-top: 1px solid var(--line-soft);
+    border-left: 0;
+    padding-top: 14px;
+  }
+
+  .nursery-summary div {
+    padding-inline: 0;
+  }
+
+  .nursery-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.3);
-  border-radius: 20px;
-}
+@media (max-height: 680px) {
+  .nursery-page {
+    padding-top: 14px;
+  }
 
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(156, 163, 175, 0.5);
+  .nursery-header {
+    padding-block: 16px;
+  }
 }
 </style>

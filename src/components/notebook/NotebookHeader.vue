@@ -1,74 +1,94 @@
 <template>
-  <section
-    class="rounded-[2rem] border shadow-2xl shrink-0 overflow-hidden transition-colors"
-    :class="
-      isNightMode
-        ? 'bg-[#141914]/95 border-[#33463a] text-white'
-        : 'bg-[#faf8f1]/95 border-[#d8d4c6] text-gray-800'
-    "
-  >
-    <div
-      class="px-6 py-6 border-b"
-      :class="isNightMode ? 'border-white/10 bg-black/15' : 'border-[#e5dfd1] bg-white/60'"
-    >
-      <div class="flex flex-col gap-5 xl:flex-row xl:items-start xl:justify-between">
-        <div class="max-w-3xl">
-          <div
-            class="text-xs uppercase tracking-[0.28em] font-bold"
-            :class="isNightMode ? 'text-emerald-200/60' : 'text-[#7a7f72]'"
-          >
-            Ranger Notes
-          </div>
-          <h2 class="mt-3 text-3xl font-black tracking-wide">{{ title }}</h2>
-          <p
-            class="mt-3 text-sm leading-7"
-            :class="isNightMode ? 'text-gray-300' : 'text-[#625f55]'"
-          >
-            {{ description }}
-          </p>
-        </div>
-
-        <div class="flex flex-col items-start gap-3 xl:items-end">
-          <button
-            v-if="showBack"
-            class="rounded-full border px-3 py-1.5 text-xs font-bold transition-colors"
-            :class="
-              isNightMode
-                ? 'border-white/10 bg-black/25 text-gray-300 hover:text-white'
-                : 'border-[#ddd5c7] bg-white/80 text-gray-600 hover:text-gray-800'
-            "
-            @click="$emit('back')"
-          >
-            ← 返回栏目
-          </button>
-          <div class="flex flex-wrap gap-2">
-            <span
-              v-for="crumb in breadcrumbs"
-              :key="crumb"
-              class="rounded-full border px-3 py-1 text-xs font-bold"
-              :class="
-                isNightMode
-                  ? 'border-white/10 bg-black/25 text-gray-300'
-                  : 'border-[#dfd8cb] bg-white/80 text-[#5b6a58]'
-              "
-            >
-              {{ crumb }}
-            </span>
-          </div>
-        </div>
-      </div>
+  <header class="notebook-header">
+    <div>
+      <p class="paper-label">巡林手记</p>
+      <h2 class="display-title">{{ title }}</h2>
+      <p>{{ description }}</p>
     </div>
-  </section>
+    <div class="notebook-header__trail">
+      <button v-if="showBack" class="quiet-button" @click="$emit('back')">返回笔记目录</button>
+      <ol aria-label="当前位置">
+        <li v-for="crumb in breadcrumbs" :key="crumb">{{ crumb }}</li>
+      </ol>
+    </div>
+  </header>
 </template>
 
 <script setup>
 defineProps({
   title: { type: String, required: true },
   description: { type: String, required: true },
-  breadcrumbs: { type: Array, default: () => ['栏目'] },
+  breadcrumbs: { type: Array, default: () => ['笔记目录'] },
   showBack: { type: Boolean, default: false },
   isNightMode: { type: Boolean, default: false },
 })
 
 defineEmits(['back'])
 </script>
+
+<style scoped>
+.notebook-header {
+  display: flex;
+  min-width: 0;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  padding: 2px 4px 18px;
+  border-bottom: 1px solid var(--line-soft);
+  color: var(--ink-strong);
+}
+.notebook-header > div:first-child {
+  min-width: 0;
+  flex: 1;
+}
+.notebook-header h2 {
+  margin: 7px 0 5px;
+}
+.notebook-header > div > p:last-child {
+  max-width: 680px;
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.65;
+}
+.notebook-header__trail {
+  min-width: 0;
+  flex: 0 1 auto;
+  display: grid;
+  justify-items: end;
+  gap: 9px;
+}
+.notebook-header__trail ol {
+  display: flex;
+  max-width: 100%;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  color: var(--ink-faint);
+  font-size: 11px;
+  list-style: none;
+}
+
+@media (max-width: 980px) {
+  .notebook-header {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .notebook-header__trail {
+    width: 100%;
+    justify-items: start;
+  }
+
+  .notebook-header__trail ol {
+    justify-content: flex-start;
+  }
+}
+.notebook-header__trail li + li::before {
+  content: '/';
+  margin-right: 5px;
+  color: var(--line-strong);
+}
+</style>

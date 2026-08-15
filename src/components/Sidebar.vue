@@ -1,74 +1,34 @@
 <template>
-  <aside
-    class="w-72 flex-shrink-0 border-r flex flex-col h-full select-none transition-all duration-500 backdrop-blur-md z-20"
-    :class="
-      store.isNightMode ? 'bg-black/60 border-white/10' : 'bg-white/80 border-gray-200/50 shadow-xl'
-    "
-  >
-    <div
-      class="h-16 flex items-center justify-center border-b shrink-0 transition-colors"
-      :class="store.isNightMode ? 'border-white/10 bg-black/20' : 'border-gray-200/50 bg-white/40'"
-    >
-      <h1
-        class="text-xl font-bold tracking-widest uppercase flex items-center gap-2"
-        :class="store.isNightMode ? 'text-green-500' : 'text-emerald-700'"
-      >
-        <span>🌲</span> 密涅瓦的巡林官
-      </h1>
+  <aside class="app-sidebar flex h-full flex-shrink-0 select-none flex-col">
+    <div class="app-sidebar__brand">
+      <div class="app-sidebar__seal" aria-hidden="true">M</div>
+      <h1 class="display-title text-lg">密涅瓦的巡林官</h1>
     </div>
 
-    <div
-      class="px-4 py-3 border-b shrink-0 transition-colors"
-      :class="store.isNightMode ? 'border-white/10 bg-black/10' : 'border-gray-200/50 bg-white/20'"
-    >
+    <div class="app-sidebar__progress">
       <div class="flex justify-between items-end text-xs mb-1">
-        <span class="font-bold" :class="store.isNightMode ? 'text-purple-400' : 'text-purple-600'"
-          >Global Rank {{ store.globalLevel }}</span
-        >
-        <span :class="store.isNightMode ? 'text-gray-500' : 'text-gray-500'"
-          >{{ Math.floor(store.globalXP) }} XP</span
-        >
+        <span class="font-bold">巡林等级 {{ store.globalLevel }}</span>
+        <span>{{ Math.floor(store.globalXP) }} 经验</span>
       </div>
-      <div
-        class="w-full h-1.5 rounded-full overflow-hidden"
-        :class="store.isNightMode ? 'bg-gray-700' : 'bg-gray-300'"
-        title="Global Level Progress"
-      >
+      <div class="app-sidebar__progress-track" title="巡林等级进度">
         <div
-          class="bg-gradient-to-r from-purple-600 to-blue-500 h-full transition-all duration-500"
+          class="h-full transition-all duration-500"
           :style="{ width: store.globalLevelProgress + '%' }"
         ></div>
       </div>
     </div>
 
-    <div
-      class="p-3 border-b shrink-0 transition-colors"
-      :class="store.isNightMode ? 'border-white/10 bg-black/20' : 'border-gray-200/50 bg-white/40'"
-    >
-      <div
-        class="rounded-2xl border p-2.5 transition-colors"
-        :class="
-          store.isNightMode
-            ? 'border-emerald-900/40 bg-[#0d1511]'
-            : 'border-emerald-200/80 bg-[#f3f8f1]'
-        "
-      >
+    <div class="app-sidebar__system">
+      <div>
         <button
           @click="systemAppsExpanded = !systemAppsExpanded"
-          class="w-full flex items-center justify-between px-3 py-2 rounded-xl text-xs font-bold uppercase tracking-[0.18em] transition-colors"
-          :class="
-            store.isNightMode
-              ? 'text-emerald-200 hover:bg-white/5'
-              : 'text-[#496148] hover:bg-black/5'
-          "
+          class="app-sidebar__section-toggle"
         >
-          <div class="text-left">
-            <span>系统应用</span>
-          </div>
-          <span class="transition-transform" :class="systemAppsExpanded ? 'rotate-90' : ''">▶</span>
+          <span>图志目录</span>
+          <span aria-hidden="true">{{ systemAppsExpanded ? '−' : '+' }}</span>
         </button>
 
-        <div v-show="systemAppsExpanded" class="mt-2 space-y-1">
+        <div v-show="systemAppsExpanded" class="mt-1 space-y-1">
           <button
             @click="store.openShop()"
             :class="
@@ -81,7 +41,7 @@
               )
             "
           >
-            <span class="text-xl">🏪</span><span>商店</span>
+            <span class="app-sidebar__nav-mark">苗</span><span>巡林苗圃</span>
           </button>
           <button
             @click="store.openMap()"
@@ -89,7 +49,7 @@
               navBtnClass('map', 'text-amber-500', 'bg-amber-900', 'text-amber-700', 'bg-amber-100')
             "
           >
-            <span class="text-xl">🗺️</span><span>密涅瓦</span>
+            <span class="app-sidebar__nav-mark">图</span><span>密涅瓦地图</span>
           </button>
           <button
             @click="store.openNotebook()"
@@ -103,20 +63,17 @@
               )
             "
           >
-            <span class="text-xl">📝</span><span>巡林官手记</span>
+            <span class="app-sidebar__nav-mark">记</span><span>巡林笔记</span>
           </button>
         </div>
       </div>
     </div>
 
-    <div
-      class="px-4 py-2 text-xs font-bold uppercase tracking-widest mt-2 flex justify-between items-center"
-      :class="store.isNightMode ? 'text-green-200/60' : 'text-[#6d7d58]'"
-    >
+    <div class="app-sidebar__section-label">
       <span>技能与行动</span>
     </div>
 
-    <div class="flex-1 overflow-y-auto p-2 custom-scrollbar overflow-x-visible">
+    <div class="subtle-scrollbar flex-1 overflow-y-auto overflow-x-visible px-2 pb-2">
       <div
         v-if="groupedActions.length === 0"
         class="p-4 text-center text-sm mt-4"
@@ -127,7 +84,7 @@
 
       <div v-for="group in groupedActions" :key="group.id || 'unclassified'" class="mb-2">
         <div
-          class="px-3 py-2 flex items-center justify-between text-xs font-bold uppercase tracking-widest cursor-pointer transition-colors group rounded-md"
+          class="app-sidebar__skill-row group"
           :class="[
             store.isNightMode
               ? 'text-gray-400 hover:text-white hover:bg-white/5'
@@ -147,7 +104,7 @@
             <span
               class="transition-transform inline-block"
               :class="expandedSkills.has(group.id) ? 'rotate-90' : ''"
-              >▶</span
+              >›</span
             >
 
             <div v-if="editingSkillId === group.id" @click.stop>
@@ -172,7 +129,7 @@
               class="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded"
               title="重命名技能"
             >
-              ✏️
+              改
             </button>
             <button
               v-if="group.id"
@@ -180,7 +137,7 @@
               class="p-1 hover:bg-red-500/20 text-red-500 rounded"
               title="删除技能"
             >
-              🗑️
+              删
             </button>
             <span v-if="!group.id" class="text-[10px]">未归属技能</span>
           </div>
@@ -222,7 +179,7 @@
             ></div>
 
             <div
-              class="group/item w-full flex items-center p-2 rounded-md border-l-4 transition-all relative cursor-pointer backdrop-blur-sm pr-8"
+              class="app-sidebar__action-row group/item"
               :class="[
                 isActive(action.id)
                   ? store.isNightMode
@@ -245,10 +202,8 @@
                 ⋮⋮
               </div>
 
-              <div
-                class="mr-3 ml-3 text-2xl transition-transform group-hover/item:scale-105 pointer-events-none"
-              >
-                {{ action.icon }}
+              <div class="app-sidebar__action-mark pointer-events-none">
+                {{ actionMark(action) }}
               </div>
 
               <div class="text-left flex-1 min-w-0">
@@ -285,7 +240,7 @@
                     :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
                   >
                     <span>Lv. {{ action.level }}</span>
-                    <span>{{ action.totalTrees }} 🌲</span>
+                    <span>{{ action.totalTrees }} 棵树</span>
                   </div>
                   <div
                     class="w-full h-1 mt-1 rounded-full overflow-hidden"
@@ -308,7 +263,7 @@
                     ? 'text-gray-400 hover:text-white hover:bg-white/10'
                     : 'text-gray-400 hover:text-gray-800 hover:bg-black/5',
                 ]"
-                title="More Options"
+                title="更多操作"
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -344,7 +299,7 @@
                       : 'border-gray-100 text-blue-600'
                   "
                 >
-                  <span>✏️</span> 重命名
+                  <span aria-hidden="true">改</span> 重命名
                 </button>
                 <button
                   @click="openMergeModal(action)"
@@ -355,7 +310,7 @@
                       : 'border-gray-100 text-amber-600'
                   "
                 >
-                  <span>🔀</span> 合并到...
+                  <span aria-hidden="true">并</span> 合并到…
                 </button>
                 <button
                   @click="handleDelete(action)"
@@ -366,7 +321,7 @@
                       : 'text-red-600 border-gray-100'
                   "
                 >
-                  <span>🗑️</span> 删除
+                  <span aria-hidden="true">删</span> 删除
                 </button>
               </div>
             </div>
@@ -385,10 +340,7 @@
       </div>
     </div>
 
-    <div
-      class="p-4 border-t shrink-0 flex flex-col gap-4 transition-colors"
-      :class="store.isNightMode ? 'border-white/10 bg-black/20' : 'border-gray-200/50 bg-white/40'"
-    >
+    <div class="app-sidebar__footer">
       <div v-if="createMode !== null" class="flex flex-col gap-2">
         <div
           class="text-xs font-bold mb-1 uppercase tracking-widest"
@@ -468,7 +420,7 @@
               class="text-xs font-bold uppercase tracking-widest mb-1"
               :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
             >
-              Merge Action
+              行动整理
             </div>
             <h3
               class="text-xl font-bold"
@@ -593,7 +545,7 @@
               class="text-xs font-bold uppercase tracking-widest mb-1"
               :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
             >
-              Delete Action
+              行动归档
             </div>
             <h3
               class="text-xl font-bold"
@@ -965,8 +917,7 @@ const handleDeleteSkill = async (skill) => {
 const navBtnClass = (view, nightText, nightBg, dayText, dayBg) => {
   const isActive = store.activeView === view
   const isNight = store.isNightMode
-  const base =
-    'w-full flex items-center gap-3 p-3 rounded-md transition-all font-bold uppercase tracking-wide text-sm'
+  const base = 'app-sidebar__nav-button'
   return isActive
     ? [
         base,
@@ -980,5 +931,284 @@ const navBtnClass = (view, nightText, nightBg, dayText, dayBg) => {
       ]
 }
 
+const actionMark = (action) => (action?.name || '行').trim().slice(0, 1)
 const isActive = (id) => store.activeActionId === id && store.activeView === 'dashboard'
 </script>
+
+<style scoped>
+.app-sidebar {
+  position: relative;
+  z-index: 50;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  width: clamp(276px, 23vw, 304px);
+  border-right: 1px solid var(--line-strong);
+  color: var(--ink);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--paper-strong) 96%, transparent), var(--paper)),
+    var(--paper);
+  box-shadow: 12px 0 36px rgba(44, 48, 37, 0.09);
+}
+
+.app-sidebar::after {
+  position: absolute;
+  top: 0;
+  right: 6px;
+  bottom: 0;
+  width: 1px;
+  content: '';
+  pointer-events: none;
+  background: color-mix(in srgb, var(--line) 70%, transparent);
+}
+
+.app-sidebar__brand {
+  display: flex;
+  height: 68px;
+  flex: 0 0 68px;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--line);
+}
+
+.app-sidebar__seal {
+  display: grid;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 50% 50% 48% 52%;
+  color: var(--paper-strong);
+  background: var(--forest-deep);
+  font-family: var(--font-display);
+  font-size: 16px;
+  font-weight: 800;
+  box-shadow: inset 0 0 0 3px color-mix(in srgb, var(--sage) 24%, transparent);
+}
+
+.app-sidebar__progress {
+  flex: 0 0 auto;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--line);
+  color: var(--ink-soft);
+}
+
+.app-sidebar__progress-track {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 99px;
+  background: color-mix(in srgb, var(--ink-soft) 14%, transparent);
+}
+
+.app-sidebar__progress-track > div {
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--sage), var(--forest));
+}
+
+.app-sidebar__system {
+  flex: 0 0 auto;
+  padding: 10px 10px 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.app-sidebar__section-toggle,
+.app-sidebar__section-label {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+
+.app-sidebar__section-toggle {
+  border-radius: 8px;
+  padding: 7px 9px;
+}
+
+.app-sidebar__section-toggle:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--sage) 12%, transparent);
+}
+
+.app-sidebar__section-label {
+  flex: 0 0 auto;
+  padding: 14px 18px 8px;
+}
+
+:deep(.app-sidebar__nav-button) {
+  display: flex;
+  width: 100%;
+  min-height: 38px;
+  align-items: center;
+  gap: 10px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  padding: 7px 9px;
+  color: var(--ink-soft) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-align: left;
+  text-transform: none;
+}
+
+:deep(.app-sidebar__nav-button:hover) {
+  color: var(--ink) !important;
+  background: color-mix(in srgb, var(--sage) 11%, transparent) !important;
+}
+
+:deep(.app-sidebar__nav-button.ring-1) {
+  border-color: var(--line-strong) !important;
+  color: var(--forest-deep) !important;
+  background: color-mix(in srgb, var(--sage) 20%, var(--paper-strong)) !important;
+}
+
+.app-sidebar__nav-mark {
+  display: grid;
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  color: var(--forest);
+  background: var(--paper-strong);
+  font-family: var(--font-display);
+  font-size: 12px;
+}
+
+.app-sidebar__skill-row {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  padding: 7px 8px;
+  color: var(--ink-soft) !important;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: none;
+  cursor: pointer;
+}
+
+.app-sidebar__skill-row:hover {
+  color: var(--ink) !important;
+  background: color-mix(in srgb, var(--sage) 9%, transparent) !important;
+}
+
+.app-sidebar__action-row {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-height: 58px;
+  align-items: center;
+  border: 1px solid transparent;
+  border-left: 3px solid transparent;
+  border-radius: 7px;
+  padding: 8px 31px 8px 10px;
+  cursor: pointer;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.app-sidebar__action-row:hover {
+  background: color-mix(in srgb, var(--paper-strong) 82%, transparent) !important;
+}
+
+.app-sidebar__action-row.border-emerald-500 {
+  border-color: color-mix(in srgb, var(--forest) 34%, transparent) !important;
+  border-left-color: var(--forest) !important;
+  background: color-mix(in srgb, var(--sage) 17%, var(--paper-strong)) !important;
+  box-shadow: none !important;
+}
+
+.app-sidebar__action-mark {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  margin: 0 10px 0 3px;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  color: var(--forest);
+  background: var(--paper-strong);
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.app-sidebar__footer {
+  display: flex;
+  flex: 0 0 auto;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 14px;
+  border-top: 1px solid var(--line);
+  background: color-mix(in srgb, var(--paper-strong) 74%, transparent);
+}
+
+@media (max-width: 1120px) {
+  .app-sidebar {
+    width: 244px;
+  }
+
+  .app-sidebar__brand {
+    padding-inline: 14px;
+  }
+}
+
+@media (max-width: 920px) {
+  .app-sidebar {
+    width: 218px;
+  }
+
+  .app-sidebar__brand {
+    height: 58px;
+    flex-basis: 58px;
+    gap: 9px;
+    padding-inline: 12px;
+  }
+
+  .app-sidebar__brand h1 {
+    font-size: 15px;
+  }
+
+  .app-sidebar__progress {
+    padding: 9px 12px;
+  }
+
+  .app-sidebar__system {
+    padding-inline: 6px;
+  }
+
+  .app-sidebar__section-label {
+    padding-inline: 12px;
+  }
+}
+
+@media (max-height: 680px) {
+  .app-sidebar__brand {
+    height: 56px;
+    flex-basis: 56px;
+  }
+
+  .app-sidebar__progress {
+    padding-block: 8px;
+  }
+
+  .app-sidebar__footer {
+    padding-block: 8px;
+  }
+}
+</style>

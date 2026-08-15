@@ -1,61 +1,46 @@
 <template>
   <Teleport to="body">
     <Transition name="dialog-fade">
-      <div
-        v-if="activeDialog"
-        class="fixed inset-0 z-[200] flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
-        @keydown.esc.prevent="handleCancel"
-      >
-        <div
-          class="w-full max-w-md rounded-[2rem] border border-white/10 bg-[#10171a]/95 p-6 text-white shadow-2xl"
-          role="dialog"
-          aria-modal="true"
-          :aria-labelledby="dialogTitleId"
-        >
-          <div class="mb-4">
-            <div class="text-xs uppercase tracking-[0.28em] text-emerald-200/70">
-              Dialog
-            </div>
-            <h2 :id="dialogTitleId" class="mt-3 text-2xl font-black">
+      <div v-if="activeDialog" class="dialog-backdrop" @keydown.esc.prevent="handleCancel">
+        <div class="app-dialog" role="dialog" aria-modal="true" :aria-labelledby="dialogTitleId">
+          <div class="app-dialog__header">
+            <div class="paper-label">巡林提示</div>
+            <h2 :id="dialogTitleId">
               {{ activeDialog.title }}
             </h2>
           </div>
 
-          <p class="whitespace-pre-line text-sm leading-7 text-slate-200/90">
+          <p class="app-dialog__message">
             {{ activeDialog.message }}
           </p>
 
-          <div v-if="activeDialog.type === 'prompt'" class="mt-5">
+          <div v-if="activeDialog.type === 'prompt'" class="app-dialog__field">
             <input
               ref="promptInput"
               v-model="promptValue"
               type="text"
-              class="w-full rounded-2xl border border-white/15 bg-black/30 px-4 py-3 text-white outline-none transition-colors focus:border-emerald-300/50"
+              class="ranger-input"
               :placeholder="activeDialog.placeholder || '请输入内容'"
               @keydown.enter.prevent="handleConfirm"
             />
           </div>
 
-          <div class="mt-6 flex justify-end gap-3">
-            <button
-              v-if="activeDialog.type !== 'alert'"
-              class="rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
-              @click="handleCancel"
-            >
+          <div class="app-dialog__actions">
+            <button v-if="activeDialog.type !== 'alert'" class="quiet-button" @click="handleCancel">
               {{ activeDialog.cancelText }}
             </button>
             <button
               v-for="choice in activeDialog.type === 'choice' ? activeDialog.choices : []"
               :key="choice.value"
-              class="rounded-2xl px-4 py-3 text-sm font-bold transition-colors"
-              :class="choice.className || 'border border-white/15 bg-white/5 text-white hover:bg-white/10'"
+              class="quiet-button"
+              :class="choice.className || ''"
               @click="resolveDialog(choice.value)"
             >
               {{ choice.label }}
             </button>
             <button
               v-if="activeDialog.type !== 'choice'"
-              class="rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-bold text-slate-950 transition-colors hover:bg-emerald-400"
+              class="primary-button"
               @click="handleConfirm"
             >
               {{ activeDialog.confirmText }}
@@ -76,7 +61,7 @@ const promptValue = ref('')
 const dialogTitleId = 'app-dialog-title'
 const activeDialog = computed(() => dialogState.active)
 
-watch(activeDialog, async dialog => {
+watch(activeDialog, async (dialog) => {
   promptValue.value = dialog?.defaultValue || ''
 
   if (dialog?.type === 'prompt') {
@@ -103,6 +88,66 @@ const handleConfirm = () => {
 </script>
 
 <style scoped>
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(17, 24, 19, 0.68);
+  backdrop-filter: blur(7px);
+}
+
+.app-dialog {
+  width: min(100%, 440px);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 24px;
+  color: var(--ink);
+  background: var(--paper-strong);
+  box-shadow: var(--shadow-paper);
+}
+
+.app-dialog__header {
+  margin-bottom: 14px;
+}
+
+.app-dialog__header h2 {
+  margin-top: 7px;
+  font-family: var(--font-display);
+  font-size: 24px;
+  font-weight: 750;
+}
+
+.app-dialog__message {
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.75;
+  white-space: pre-line;
+}
+
+.app-dialog__field {
+  margin-top: 18px;
+}
+
+.app-dialog .ranger-input {
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 10px 12px;
+  color: var(--ink);
+  background: var(--paper);
+}
+
+.app-dialog__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  margin-top: 22px;
+}
+
 .dialog-fade-enter-active,
 .dialog-fade-leave-active {
   transition: opacity 0.18s ease;

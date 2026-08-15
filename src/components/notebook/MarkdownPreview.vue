@@ -23,6 +23,18 @@ const rendered = computed(() => renderMarkdown(props.source))
 </script>
 
 <style scoped>
+.markdown-preview {
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: normal;
+}
+
+.markdown-preview :deep(img),
+.markdown-preview :deep(table) {
+  max-width: 100%;
+}
+
 .markdown-preview :deep(h1),
 .markdown-preview :deep(h2),
 .markdown-preview :deep(h3) {
@@ -31,15 +43,30 @@ const rendered = computed(() => renderMarkdown(props.source))
   line-height: 1.25;
 }
 
-.markdown-preview :deep(h1) { font-size: 1.8rem; }
-.markdown-preview :deep(h2) { font-size: 1.45rem; }
-.markdown-preview :deep(h3) { font-size: 1.2rem; }
+.markdown-preview :deep(h1) {
+  font-size: 1.8rem;
+}
+.markdown-preview :deep(h2) {
+  font-size: 1.45rem;
+}
+.markdown-preview :deep(h3) {
+  font-size: 1.2rem;
+}
 .markdown-preview :deep(p),
 .markdown-preview :deep(ul),
 .markdown-preview :deep(ol),
-.markdown-preview :deep(blockquote) { margin: 0.8em 0; line-height: 1.8; }
-.markdown-preview :deep(ul) { list-style: disc; padding-left: 1.5rem; }
-.markdown-preview :deep(ol) { list-style: decimal; padding-left: 1.5rem; }
+.markdown-preview :deep(blockquote) {
+  margin: 0.8em 0;
+  line-height: 1.8;
+}
+.markdown-preview :deep(ul) {
+  list-style: disc;
+  padding-left: 1.5rem;
+}
+.markdown-preview :deep(ol) {
+  list-style: decimal;
+  padding-left: 1.5rem;
+}
 .markdown-preview :deep(blockquote) {
   border-left: 3px solid rgb(14 165 233 / 0.6);
   padding-left: 1rem;
@@ -57,6 +84,12 @@ const rendered = computed(() => renderMarkdown(props.source))
   color: #e2e8f0;
   padding: 1rem;
 }
-.markdown-preview :deep(pre code) { background: transparent; padding: 0; }
-.markdown-preview :deep(a) { color: #0284c7; text-decoration: underline; }
+.markdown-preview :deep(pre code) {
+  background: transparent;
+  padding: 0;
+}
+.markdown-preview :deep(a) {
+  color: #0284c7;
+  text-decoration: underline;
+}
 </style>

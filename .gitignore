@@ -69,3 +69,4 @@ build
 tmp
 mr-script.tar.gz
 .agents
+art-reference/*

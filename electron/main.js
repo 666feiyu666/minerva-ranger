@@ -10,18 +10,20 @@ function getWindowIconPath() {
   return path.join(__dirname, '../public/favicon.ico')
 }
 
-function createWindow () {
+function createWindow() {
   const win = new BrowserWindow({
     width: 1200,
     height: 800,
+    minWidth: 1024,
+    minHeight: 720,
     title: '密涅瓦的巡林官',
     icon: getWindowIconPath(),
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
       sandbox: true,
-      devTools: !app.isPackaged
-    }
+      devTools: !app.isPackaged,
+    },
   })
 
   win.setMenuBarVisibility(false)

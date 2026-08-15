@@ -1,12 +1,12 @@
 <template>
   <div
-    class="flex-1 flex flex-col h-full overflow-hidden relative selection:bg-transparent"
+    class="forest-page flex-1 flex flex-col h-full overflow-hidden relative selection:bg-transparent"
     :class="store.isNightMode ? 'bg-[#221c15]' : 'bg-[#eadcc8]'"
   >
     <div v-if="!viewingAction" class="flex flex-col h-full">
-      <div class="shrink-0 p-6 pb-3">
+      <div class="forest-page__hero shrink-0">
         <div
-          class="rounded-[2rem] border shadow-2xl overflow-hidden transition-all duration-500"
+          class="forest-paper border overflow-hidden transition-all duration-500"
           :class="
             store.isNightMode
               ? 'bg-[#17120e] border-[#453628]'
@@ -25,13 +25,13 @@
                   class="text-xs uppercase tracking-[0.28em] font-bold"
                   :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
                 >
-                  Skill Overview
+                  技能总览
                 </div>
                 <h2
                   class="text-3xl font-bold flex items-center gap-3 mt-2 transition-colors"
                   :class="store.isNightMode ? 'text-emerald-300' : 'text-emerald-700'"
                 >
-                  <span>🦉</span>
+                  <span class="forest-section-mark" aria-hidden="true">林</span>
                   {{
                     currentSkillName === '全局' ? '全局森林巡视' : currentSkillName + ' · 森林巡视'
                   }}
@@ -49,7 +49,7 @@
                   class="text-xs uppercase tracking-[0.24em]"
                   :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
                 >
-                  Summary
+                  汇总
                 </div>
                 <div
                   class="mt-2 text-2xl font-black"
@@ -61,7 +61,7 @@
                   class="text-sm mt-1"
                   :class="store.isNightMode ? 'text-emerald-300' : 'text-emerald-700'"
                 >
-                  🌲 {{ displayTreeCount }} trees in view
+                  {{ displayTreeCount }} 棵树木
                 </div>
               </div>
             </div>
@@ -69,9 +69,9 @@
         </div>
       </div>
 
-      <div class="flex-1 overflow-y-auto p-6 pt-6 custom-scrollbar">
+      <div class="forest-page__list flex-1 overflow-y-auto custom-scrollbar">
         <div
-          class="rounded-[2rem] border shadow-2xl overflow-hidden"
+          class="forest-paper border overflow-hidden"
           :class="
             store.isNightMode
               ? 'bg-[#17120e] border-[#453628]'
@@ -89,7 +89,7 @@
                 class="text-xs uppercase tracking-[0.24em] font-bold"
                 :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
               >
-                Action Arrangement
+                行动编排
               </div>
               <div
                 class="text-lg font-bold mt-1"
@@ -118,7 +118,7 @@
                     : 'border-white/60 bg-white/75 text-[#5d4633]'
                 "
               >
-                List First
+                列表优先
               </span>
               <span
                 class="px-3 py-1.5 rounded-full text-xs font-bold border"
@@ -128,7 +128,7 @@
                     : 'border-white/60 bg-white/75 text-[#5d4633]'
                 "
               >
-                Inspect By Action
+                按行动巡视
               </span>
             </div>
           </div>
@@ -138,7 +138,7 @@
             class="px-7 py-14 text-center"
             :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
           >
-            <div class="text-4xl mb-3">🪑</div>
+            <div class="forest-empty-mark" aria-hidden="true">空</div>
             <p class="font-semibold">这个技能下还没有行动。</p>
             <p class="text-sm mt-2">可以先在左侧新建行动，或把现有行动拖进这个技能。</p>
           </div>
@@ -190,9 +190,9 @@
                   class="flex flex-wrap items-center gap-3 mt-2 text-xs"
                   :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'"
                 >
-                  <span>🌲 {{ action.totalTrees }} trees</span>
+                  <span>{{ action.totalTrees }} 棵树</span>
                   <span>⏱ {{ formatDuration(action.totalTimeSpent) }}</span>
-                  <span>📚 {{ getActionTreeStats(action).length }} tree types</span>
+                  <span>{{ getActionTreeStats(action).length }} 种树木</span>
                 </div>
 
                 <div class="mt-3 flex flex-wrap gap-2">
@@ -240,7 +240,7 @@
                   class="text-[10px] uppercase tracking-[0.2em]"
                   :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
                 >
-                  Inspect
+                  查看
                 </div>
               </div>
             </button>
@@ -266,7 +266,7 @@
           "
         >
           <span>←</span>
-          <span class="text-sm font-bold uppercase group-hover:pl-1 transition-all">Back</span>
+          <span class="text-sm font-bold group-hover:pl-1 transition-all">返回行动列表</span>
         </button>
 
         <div
@@ -314,7 +314,7 @@
         >
           <div class="text-4xl animate-bounce mb-2">🌱</div>
           <span class="bg-black/40 text-white px-3 py-1 rounded text-xs whitespace-nowrap"
-            >Empty world... Plant something!</span
+            >这里还没有树木，先完成一次行动吧。</span
           >
         </div>
 
@@ -555,6 +555,85 @@ const formatDuration = (seconds) => {
 </script>
 
 <style scoped>
+.forest-page {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 100% 0%, var(--sage-wash), transparent 28%), var(--paper-base) !important;
+}
+
+.forest-page__hero {
+  padding: 22px clamp(24px, 3vw, 42px) 10px;
+}
+
+.forest-page__list {
+  min-height: 0;
+  overscroll-behavior: contain;
+  padding: 4px clamp(24px, 3vw, 42px) 48px;
+}
+
+.forest-paper {
+  border-radius: 12px;
+  border-color: var(--line-soft) !important;
+  color: var(--ink-strong) !important;
+  background: var(--paper-raised) !important;
+  box-shadow: 0 10px 30px rgba(48, 47, 41, 0.08);
+}
+
+.forest-paper > div:first-child {
+  border-color: var(--line-soft) !important;
+  background: var(--paper-muted) !important;
+}
+
+.forest-paper button {
+  border-color: var(--line-soft);
+}
+
+.forest-paper h2,
+.forest-paper h3 {
+  color: var(--ink-strong) !important;
+}
+
+.forest-paper p,
+.forest-paper [class*='text-gray'] {
+  color: var(--ink-muted) !important;
+}
+
+.forest-section-mark,
+.forest-empty-mark {
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  color: var(--forest-700);
+  font-family: var(--font-display);
+}
+
+.forest-section-mark {
+  width: 34px;
+  height: 34px;
+  font-size: 15px;
+}
+
+.forest-empty-mark {
+  width: 44px;
+  height: 44px;
+  margin: 0 auto 12px;
+  font-size: 16px;
+}
+
+@container (max-width: 700px) {
+  .forest-page__hero {
+    padding: 14px 12px 8px;
+  }
+
+  .forest-page__list {
+    padding: 2px 12px 32px;
+  }
+}
+
 .pixel-art {
   image-rendering: pixelated;
   image-rendering: crisp-edges;

@@ -1,205 +1,122 @@
 <template>
-  <div class="min-h-screen w-full flex bg-[#0b1220] text-white overflow-hidden">
-    <aside
-      class="hidden lg:flex w-[28rem] flex-col justify-between border-r border-white/10 bg-[linear-gradient(180deg,rgba(7,18,35,0.95),rgba(8,25,26,0.92))] p-10"
-    >
+  <div class="save-atlas">
+    <aside class="save-atlas__intro">
       <div>
-        <div class="text-sm uppercase tracking-[0.35em] text-emerald-300/80 mb-6">
-          Minerva Ranger
+        <div class="save-atlas__brand">
+          <span class="save-atlas__seal">M</span>
+          <span>密涅瓦巡林志</span>
         </div>
-        <h1 class="text-5xl font-black leading-tight text-white mb-6">选择你的身份档案</h1>
-        <p class="text-lg leading-8 text-slate-300 max-w-md">
-          每份身份档案代表一个长期身份。进入后，通过技能组织你反复实践的行动。
+        <p class="paper-label">身份档案</p>
+        <h1>选择今天<br />要走进的森林</h1>
+        <p class="save-atlas__lead">
+          每份档案对应一个长期身份。你反复实践的行动会在这里生长成技能、树木与可回看的记录。
         </p>
       </div>
 
-      <div class="space-y-4">
-        <div class="rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-5">
-          <div class="text-sm font-bold text-emerald-200 mb-2">推荐用法</div>
-          <p class="text-sm leading-7 text-emerald-50/90">
-            为不同的长期身份建立独立档案，例如“开发设计师”或“人类学家”。
-          </p>
-        </div>
-        <div class="text-xs text-slate-500">身份档案仍保存在本地，不依赖账号或网络。</div>
+      <div class="save-atlas__note">
+        <strong>使用建议</strong>
+        <p>为不同的长期方向建立独立档案，例如“开发设计师”或“人类学研究者”。</p>
+        <small>档案仅保存在当前设备，请定期导出 JSON 备份。</small>
       </div>
     </aside>
 
-    <main class="flex-1 relative overflow-y-auto">
-      <div
-        class="absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(52,211,153,0.16),transparent_28%),radial-gradient(circle_at_bottom_left,rgba(59,130,246,0.14),transparent_25%)]"
-      ></div>
-      <div class="relative max-w-6xl mx-auto px-6 py-10 lg:px-10">
-        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8">
+    <main class="save-atlas__main subtle-scrollbar">
+      <div class="save-atlas__content">
+        <header class="save-atlas__header">
           <div>
-            <div class="text-sm uppercase tracking-[0.3em] text-emerald-300/80 mb-2">
-              Identity Profiles
-            </div>
-            <h2 class="text-4xl font-black text-white mb-2">选择要进入的身份档案</h2>
-            <p class="text-slate-300">当前共有 {{ store.saveSlots.length }} 个身份档案。</p>
+            <p class="paper-label">巡林入口</p>
+            <h2 class="display-title">身份档案</h2>
+            <p>共 {{ store.saveSlots.length }} 份档案，选择一份继续今天的行动。</p>
           </div>
+          <div class="save-atlas__header-actions">
+            <button class="quiet-button" @click="startImportAsNew">导入档案</button>
+            <button class="primary-button" @click="createSlot">新建档案</button>
+          </div>
+        </header>
 
-          <div class="flex flex-wrap gap-3">
-            <button
-              @click="createSlot"
-              class="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition-colors"
-            >
-              + 新建身份档案
-            </button>
-            <button
-              @click="startImportAsNew"
-              class="px-5 py-3 rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 text-white font-semibold transition-colors"
-            >
-              导入为新身份档案
-            </button>
-          </div>
+        <div class="save-atlas__storage-note" role="note">
+          <span aria-hidden="true">本地</span>
+          <p>所有档案都保存在这台设备上；导出备份后，可在另一台设备中继续使用。</p>
         </div>
 
-        <section
-          class="mb-8 rounded-3xl border border-emerald-400/20 bg-emerald-400/10 p-5 text-sm text-emerald-50/90 backdrop-blur-md"
-        >
-          <div class="font-bold text-emerald-200">本地身份档案</div>
-          <p class="mt-2 leading-6">
-            所有档案保存在当前设备的 localStorage 中。请定期使用导出功能保留独立 JSON 备份。
-          </p>
+        <component :is="DevToolsPanel" v-if="DevToolsPanel" class="save-atlas__devtools" />
+
+        <section v-if="store.saveSlots.length === 0" class="save-atlas__empty paper-panel">
+          <span class="save-atlas__empty-mark" aria-hidden="true">＋</span>
+          <h3>还没有身份档案</h3>
+          <p>先创建一个长期身份，或导入已有的 JSON 档案。</p>
+          <div>
+            <button class="primary-button" @click="createSlot">创建第一份档案</button>
+            <button class="quiet-button" @click="startImportAsNew">导入已有档案</button>
+          </div>
         </section>
 
-        <component :is="DevToolsPanel" v-if="DevToolsPanel" class="mb-8" />
-
-        <div
-          v-if="store.saveSlots.length === 0"
-          class="rounded-[2rem] border border-dashed border-white/15 bg-black/20 p-10 text-center"
-        >
-          <div class="text-5xl mb-4">🌲</div>
-          <h3 class="text-2xl font-bold mb-3">还没有身份档案</h3>
-          <p class="text-slate-300 mb-6">可以先创建“开发设计师”身份档案，或导入已有 JSON 档案。</p>
-          <div class="flex justify-center gap-3">
-            <button
-              @click="createSlot"
-              class="px-5 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition-colors"
-            >
-              创建第一个身份档案
-            </button>
-            <button
-              @click="startImportAsNew"
-              class="px-5 py-3 rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 text-white font-semibold transition-colors"
-            >
-              导入现有身份档案
-            </button>
-          </div>
-        </div>
-
-        <div v-else class="space-y-5">
+        <section v-else class="save-atlas__list" aria-label="身份档案列表">
           <article
-            v-for="slot in store.saveSlots"
+            v-for="(slot, index) in store.saveSlots"
             :key="slot.id"
-            class="rounded-[2rem] border p-6 shadow-2xl backdrop-blur-md transition-all"
-            :class="
-              store.activeSlotId === slot.id
-                ? 'border-emerald-400/60 bg-emerald-500/10'
-                : 'border-white/10 bg-black/20'
-            "
+            class="save-card paper-panel"
+            :class="{ 'save-card--recent': store.saveIndex.lastSelectedSlotId === slot.id }"
           >
-            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
-              <div class="min-w-0 flex-1">
-                <div class="flex flex-wrap items-center gap-2 mb-3">
-                  <span
-                    class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-white/10 text-slate-200 border border-white/10"
-                  >
-                    身份档案
-                  </span>
-                  <span
-                    v-if="store.saveIndex.lastSelectedSlotId === slot.id"
-                    class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-emerald-400/15 text-emerald-200 border border-emerald-400/20"
-                  >
-                    最近使用
-                  </span>
-                  <span
-                    v-if="store.activeSlotId === slot.id"
-                    class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide bg-blue-400/15 text-blue-200 border border-blue-400/20"
-                  >
-                    当前激活
-                  </span>
-                </div>
-
-                <h3 class="text-3xl font-black text-white mb-3 break-words">{{ slot.name }}</h3>
-
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
-                  <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
-                    <div class="text-xs uppercase tracking-wide text-slate-400 mb-1">等级</div>
-                    <div class="text-lg font-bold text-white">
-                      Lv. {{ slot.summary.globalLevel }}
-                    </div>
-                  </div>
-                  <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
-                    <div class="text-xs uppercase tracking-wide text-slate-400 mb-1">技能</div>
-                    <div class="text-lg font-bold text-white">{{ slot.summary.skillCount }}</div>
-                  </div>
-                  <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
-                    <div class="text-xs uppercase tracking-wide text-slate-400 mb-1">行动</div>
-                    <div class="text-lg font-bold text-white">{{ slot.summary.actionCount }}</div>
-                  </div>
-                  <div class="rounded-2xl bg-white/5 border border-white/10 p-3">
-                    <div class="text-xs uppercase tracking-wide text-slate-400 mb-1">会话记录</div>
-                    <div class="text-lg font-bold text-white">{{ slot.summary.noteCount }}</div>
-                  </div>
-                </div>
-
-                <div class="text-sm text-slate-300">
-                  最后游玩：{{ formatDate(slot.lastPlayedAt) }}
-                </div>
+            <div class="save-card__index" aria-hidden="true">
+              {{ String(index + 1).padStart(2, '0') }}
+            </div>
+            <div class="save-card__body">
+              <div class="save-card__meta">
+                <span>身份档案</span>
+                <span v-if="store.saveIndex.lastSelectedSlotId === slot.id">最近使用</span>
+                <span v-if="store.activeSlotId === slot.id">当前档案</span>
               </div>
-
-              <div class="w-full lg:w-64 shrink-0 space-y-3">
-                <button
-                  @click="store.enterSlot(slot.id)"
-                  class="w-full px-4 py-3 rounded-2xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold transition-colors"
-                >
-                  进入身份档案
-                </button>
-                <div class="grid grid-cols-2 gap-3">
-                  <button
-                    @click="store.moveSaveSlot(slot.id, -1)"
-                    :disabled="store.saveSlots[0]?.id === slot.id"
-                    class="px-4 py-3 rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold transition-colors disabled:opacity-30"
-                  >
-                    ↑ 上移
-                  </button>
-                  <button
-                    @click="store.moveSaveSlot(slot.id, 1)"
-                    :disabled="store.saveSlots[store.saveSlots.length - 1]?.id === slot.id"
-                    class="px-4 py-3 rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold transition-colors disabled:opacity-30"
-                  >
-                    ↓ 下移
-                  </button>
-                  <button
-                    @click="renameSlot(slot)"
-                    class="px-4 py-3 rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold transition-colors"
-                  >
-                    重命名
-                  </button>
-                  <button
-                    @click="store.downloadSaveFile(slot.id)"
-                    class="px-4 py-3 rounded-2xl border border-white/15 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold transition-colors"
-                  >
-                    导出
-                  </button>
-                  <button
-                    @click="startOverwriteImport(slot.id)"
-                    class="px-4 py-3 rounded-2xl border border-amber-400/20 bg-amber-400/10 hover:bg-amber-400/20 text-amber-100 text-sm font-semibold transition-colors"
-                  >
-                    导入覆盖
-                  </button>
-                  <button
-                    @click="deleteSlot(slot)"
-                    class="px-4 py-3 rounded-2xl border border-red-400/20 bg-red-400/10 hover:bg-red-400/20 text-red-100 text-sm font-semibold transition-colors"
-                  >
-                    删除
-                  </button>
+              <h3>{{ slot.name }}</h3>
+              <dl class="save-card__stats">
+                <div>
+                  <dt>巡林等级</dt>
+                  <dd>Lv. {{ slot.summary.globalLevel }}</dd>
                 </div>
+                <div>
+                  <dt>技能</dt>
+                  <dd>{{ slot.summary.skillCount }}</dd>
+                </div>
+                <div>
+                  <dt>行动</dt>
+                  <dd>{{ slot.summary.actionCount }}</dd>
+                </div>
+                <div>
+                  <dt>笔记</dt>
+                  <dd>{{ slot.summary.noteCount }}</dd>
+                </div>
+              </dl>
+              <p class="save-card__date">最后进入：{{ formatDate(slot.lastPlayedAt) }}</p>
+            </div>
+            <div class="save-card__actions">
+              <button class="primary-button" @click="store.enterSlot(slot.id)">进入档案</button>
+              <div class="save-card__secondary">
+                <button class="quiet-button" @click="renameSlot(slot)">重命名</button>
+                <button class="quiet-button" @click="store.downloadSaveFile(slot.id)">导出</button>
+                <button
+                  class="quiet-button"
+                  :disabled="store.saveSlots[0]?.id === slot.id"
+                  aria-label="向上移动"
+                  @click="store.moveSaveSlot(slot.id, -1)"
+                >
+                  ↑
+                </button>
+                <button
+                  class="quiet-button"
+                  :disabled="store.saveSlots[store.saveSlots.length - 1]?.id === slot.id"
+                  aria-label="向下移动"
+                  @click="store.moveSaveSlot(slot.id, 1)"
+                >
+                  ↓
+                </button>
+                <button class="quiet-button" @click="startOverwriteImport(slot.id)">
+                  覆盖导入
+                </button>
+                <button class="danger-button" @click="deleteSlot(slot)">删除</button>
               </div>
             </div>
           </article>
-        </div>
+        </section>
       </div>
 
       <input ref="fileInput" type="file" accept=".json" class="hidden" @change="handleImportFile" />
@@ -233,8 +150,8 @@ const DevToolsPanel = isDevToolsMode
   : null
 
 const formatDate = (value) => {
-  if (!value) return '未进入过'
-  return new Date(value).toLocaleString()
+  if (!value) return '尚未进入'
+  return new Date(value).toLocaleString('zh-CN', { hour12: false })
 }
 
 const createSlot = async () => {
@@ -260,7 +177,7 @@ const renameSlot = async (slot) => {
 }
 
 const deleteSlot = async (slot) => {
-  const confirmed = await confirmDialog(`确认删除身份档案 "${slot.name}" 吗？该操作不可恢复。`, {
+  const confirmed = await confirmDialog(`确认删除身份档案“${slot.name}”吗？此操作无法恢复。`, {
     title: '删除身份档案',
     confirmText: '删除',
   })
@@ -299,3 +216,342 @@ const handleImportFile = (event) => {
   reader.readAsText(file)
 }
 </script>
+
+<style scoped>
+.save-atlas {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-columns: clamp(250px, 28vw, 420px) minmax(0, 1fr);
+  overflow: hidden;
+  color: var(--ink-strong);
+  background: var(--paper-base);
+}
+
+.save-atlas__intro {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: clamp(40px, 5vw, 72px);
+  overflow: hidden;
+  color: #f5f1df;
+  background:
+    linear-gradient(180deg, rgba(25, 64, 49, 0.7), rgba(16, 47, 39, 0.94)),
+    url('@/assets/background/normal_background_day.png') center / cover;
+}
+
+.save-atlas__intro::after {
+  content: '';
+  position: absolute;
+  inset: 18px;
+  border: 1px solid rgba(245, 241, 223, 0.2);
+  pointer-events: none;
+}
+
+.save-atlas__brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 88px;
+  font-size: 14px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+}
+.save-atlas__seal {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  font-family: Georgia, serif;
+}
+.save-atlas__intro .paper-label {
+  color: #d7dfb7;
+}
+.save-atlas__intro h1 {
+  max-width: 440px;
+  margin: 12px 0 24px;
+  font-family: Georgia, 'Noto Serif SC', serif;
+  font-size: clamp(40px, 4.4vw, 66px);
+  line-height: 1.12;
+  letter-spacing: -0.035em;
+}
+.save-atlas__lead {
+  max-width: 440px;
+  color: rgba(245, 241, 223, 0.8);
+  font-size: 16px;
+  line-height: 1.9;
+}
+.save-atlas__note {
+  position: relative;
+  z-index: 1;
+  max-width: 390px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(245, 241, 223, 0.28);
+}
+.save-atlas__note strong {
+  font-size: 13px;
+  letter-spacing: 0.08em;
+}
+.save-atlas__note p {
+  margin: 8px 0 10px;
+  color: rgba(245, 241, 223, 0.76);
+  font-size: 13px;
+  line-height: 1.7;
+}
+.save-atlas__note small {
+  color: rgba(245, 241, 223, 0.52);
+}
+
+.save-atlas__main {
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 96% 0%, var(--sage-wash), transparent 34%), var(--paper-base);
+}
+.save-atlas__content {
+  width: min(960px, calc(100% - 64px));
+  margin: 0 auto;
+  padding: 54px 0 64px;
+}
+.save-atlas__header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 28px;
+}
+.save-atlas__header > div:first-child {
+  min-width: 0;
+  flex: 1 1 300px;
+}
+.save-atlas__header h2 {
+  margin: 8px 0 5px;
+}
+.save-atlas__header p:last-child {
+  color: var(--ink-muted);
+  font-size: 14px;
+}
+.save-atlas__header-actions {
+  display: flex;
+  gap: 10px;
+}
+.save-atlas__storage-note {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin: 28px 0 20px;
+  padding: 12px 16px;
+  border-block: 1px solid var(--line-soft);
+  color: var(--ink-muted);
+  font-size: 13px;
+}
+.save-atlas__storage-note span {
+  padding: 3px 7px;
+  border-radius: 3px;
+  color: var(--forest-700);
+  background: var(--sage-wash);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+.save-atlas__devtools {
+  margin-bottom: 20px;
+}
+.save-atlas__empty {
+  display: grid;
+  place-items: center;
+  min-height: 340px;
+  padding: 50px;
+  text-align: center;
+}
+.save-atlas__empty-mark {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  color: var(--forest-700);
+  font-size: 28px;
+}
+.save-atlas__empty h3 {
+  margin-top: 18px;
+  font-family: Georgia, 'Noto Serif SC', serif;
+  font-size: 26px;
+}
+.save-atlas__empty p {
+  margin: 8px 0 22px;
+  color: var(--ink-muted);
+}
+.save-atlas__empty div {
+  display: flex;
+  gap: 10px;
+}
+.save-atlas__list {
+  display: grid;
+  gap: 12px;
+}
+
+.save-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) 240px;
+  gap: 18px;
+  align-items: center;
+  padding: 20px;
+  overflow: hidden;
+}
+.save-card::before {
+  content: '';
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: transparent;
+}
+.save-card--recent::before {
+  background: var(--forest-600);
+}
+.save-card__index {
+  align-self: stretch;
+  display: grid;
+  place-items: start center;
+  padding-top: 4px;
+  border-right: 1px solid var(--line-soft);
+  color: var(--ink-faint);
+  font-family: Georgia, serif;
+  font-size: 18px;
+}
+.save-card__meta {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 7px;
+  color: var(--forest-700);
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.save-card__body {
+  min-width: 0;
+}
+.save-card__meta span {
+  padding: 2px 6px;
+  background: var(--sage-wash);
+  border-radius: 3px;
+}
+.save-card h3 {
+  margin: 0 0 13px;
+  font-family: Georgia, 'Noto Serif SC', serif;
+  font-size: 24px;
+}
+.save-card__stats {
+  display: flex;
+  gap: 24px;
+  margin: 0;
+}
+.save-card__stats div {
+  min-width: 58px;
+}
+.save-card__stats dt {
+  color: var(--ink-faint);
+  font-size: 11px;
+}
+.save-card__stats dd {
+  margin: 3px 0 0;
+  color: var(--ink-strong);
+  font-weight: 800;
+}
+.save-card__date {
+  margin-top: 12px;
+  color: var(--ink-faint);
+  font-size: 11px;
+}
+.save-card__actions {
+  display: grid;
+  gap: 9px;
+}
+.save-card__secondary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.save-card__secondary button {
+  min-height: 30px;
+  padding: 5px 8px;
+  font-size: 11px;
+}
+
+@media (max-width: 1240px) {
+  .save-atlas {
+    grid-template-columns: 250px minmax(0, 1fr);
+  }
+  .save-atlas__intro {
+    padding: 40px 34px;
+  }
+  .save-atlas__brand {
+    margin-bottom: 64px;
+  }
+  .save-atlas__content {
+    width: calc(100% - 40px);
+    padding-top: 38px;
+  }
+  .save-card {
+    grid-template-columns: 40px minmax(0, 1fr) 198px;
+  }
+  .save-card__stats {
+    gap: 14px;
+  }
+}
+
+@media (max-width: 980px) {
+  .save-atlas {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+  .save-atlas__intro {
+    padding: 30px 24px;
+  }
+  .save-atlas__brand {
+    margin-bottom: 44px;
+  }
+  .save-atlas__intro h1 {
+    font-size: 34px;
+  }
+  .save-atlas__lead {
+    font-size: 13px;
+  }
+  .save-atlas__content {
+    width: calc(100% - 24px);
+    padding-top: 28px;
+  }
+  .save-atlas__header {
+    align-items: flex-start;
+    gap: 14px;
+  }
+  .save-card {
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 12px;
+    padding: 16px;
+  }
+  .save-card__actions {
+    grid-column: 2;
+  }
+  .save-card__stats {
+    flex-wrap: wrap;
+  }
+}
+
+@media (max-height: 680px) {
+  .save-atlas__brand {
+    margin-bottom: 38px;
+  }
+  .save-atlas__note {
+    display: none;
+  }
+}
+</style>

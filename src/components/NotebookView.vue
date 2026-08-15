@@ -1,5 +1,5 @@
 <template>
-  <div class="relative flex h-full flex-1 flex-col overflow-hidden bg-transparent p-6">
+  <div class="notebook-page">
     <NotebookHeader
       :title="pageMeta.title"
       :description="pageMeta.description"
@@ -9,7 +9,7 @@
       @back="handleBack"
     />
 
-    <div class="custom-scrollbar flex-1 overflow-y-auto pb-24 pr-2 pt-4">
+    <div class="notebook-page__content subtle-scrollbar">
       <NotebookHome v-if="currentSection === 'home'" @open="openSection" />
       <NotebookActionArchive
         v-else-if="currentSection === 'actions'"
@@ -42,23 +42,23 @@ let unregisterViewGuard = null
 const metaBySection = {
   home: {
     title: '巡林笔记',
-    description: '通过书写来表达、整理和沉淀。',
-    breadcrumbs: ['笔记首页'],
+    description: '把行动留下的线索整理为可回看的档案、随笔与变更记录。',
+    breadcrumbs: ['笔记目录'],
   },
   actions: {
     title: '行动档案',
-    description: '按行动、技能或未分类追溯植树记录与相关随笔。',
-    breadcrumbs: ['巡林笔记', '行动档案'],
+    description: '按行动、技能或未分类状态追溯种植记录与相关随笔。',
+    breadcrumbs: ['笔记目录', '行动档案'],
   },
   essays: {
     title: '巡林随笔',
     description: '使用 Markdown 书写阶段总结、灵感与结构化复盘。',
-    breadcrumbs: ['巡林笔记', '巡林随笔'],
+    breadcrumbs: ['笔记目录', '巡林随笔'],
   },
   system: {
     title: '系统记录',
     description: '集中查看行动合并、删除等影响笔记归属的系统事件。',
-    breadcrumbs: ['巡林笔记', '系统记录'],
+    breadcrumbs: ['笔记目录', '系统记录'],
   },
 }
 
@@ -108,7 +108,49 @@ onUnmounted(() => unregisterViewGuard?.())
 </script>
 
 <style scoped>
-.custom-scrollbar::-webkit-scrollbar { width: 6px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgb(156 163 175 / 0.32); border-radius: 999px; }
+.notebook-page {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 24px clamp(24px, 3vw, 42px) 0;
+  color: var(--ink-strong);
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0 31px,
+      color-mix(in srgb, var(--danger-500) 18%, transparent) 31px 32px,
+      transparent 32px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      transparent 0 31px,
+      color-mix(in srgb, var(--lake-500) 8%, transparent) 31px 32px
+    );
+}
+.notebook-page__content {
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding: 16px 2px 56px;
+}
+
+@media (max-width: 980px) {
+  .notebook-page {
+    padding: 18px 16px 0;
+  }
+}
+
+@media (max-height: 680px) {
+  .notebook-page {
+    padding-top: 14px;
+  }
+}
 </style>

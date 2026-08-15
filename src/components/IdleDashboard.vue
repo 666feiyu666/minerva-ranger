@@ -1,457 +1,302 @@
 <template>
-  <div class="flex-1 p-6 flex flex-col h-full overflow-hidden bg-transparent relative">
-    <div
-      class="rounded-2xl p-6 mb-6 shadow-lg shrink-0 border backdrop-blur-md transition-all duration-300"
-      :class="
-        store.isNightMode
-          ? 'bg-[#1a1a1a]/80 border-gray-700'
-          : 'bg-white/70 border-white/60 shadow-xl ring-1 ring-black/5'
-      "
-    >
-      <div class="flex justify-between items-start mb-4">
-        <div class="flex items-center gap-5">
-          <div
-            class="p-4 rounded-xl text-4xl shadow-inner border transition-colors duration-300"
-            :class="
-              store.isNightMode
-                ? 'bg-[#333] border-[#444] text-gray-200'
-                : 'bg-white border-gray-200 text-gray-800 shadow-sm'
-            "
-          >
-            {{ store.activeAction?.icon || '📁' }}
+  <div class="ranger-dashboard">
+    <div class="ranger-dashboard__scroll subtle-scrollbar">
+      <section class="paper-panel ranger-dashboard__summary">
+        <div class="ranger-dashboard__identity">
+          <div class="ranger-dashboard__action-mark" aria-hidden="true">
+            {{ (store.activeAction?.name || '行').slice(0, 1) }}
           </div>
-
-          <div>
-            <div
-              class="text-xs uppercase tracking-widest mb-1 font-bold transition-colors"
-              :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
-            >
-              Current Action
-            </div>
-            <h2
-              class="text-3xl font-bold tracking-wide transition-colors duration-300"
-              :class="store.isNightMode ? 'text-white' : 'text-gray-800'"
-            >
+          <div class="min-w-0 flex-1">
+            <div class="paper-label">当前实践路径</div>
+            <h2 class="display-title mt-1 truncate text-2xl">
               {{ store.activeAction?.name || '未选择行动' }}
             </h2>
-
-            <div class="flex items-center gap-3 mt-2">
-              <span
-                class="px-2 py-0.5 rounded border font-bold text-xs transition-colors"
-                :class="
-                  store.isNightMode
-                    ? 'bg-blue-900/40 border-blue-800 text-blue-300'
-                    : 'bg-blue-50 border-blue-200 text-blue-600'
-                "
+            <div class="mt-3 flex flex-wrap gap-2">
+              <span class="field-chip"
+                >等级 <strong>{{ store.activeAction?.level || 1 }}</strong></span
               >
-                Lv. {{ store.activeAction?.level || 1 }}
-              </span>
-              <span
-                class="px-2 py-0.5 rounded border font-bold text-xs flex items-center gap-1 transition-colors"
-                :class="
-                  store.isNightMode
-                    ? 'bg-green-900/40 border-green-800 text-green-300'
-                    : 'bg-green-50 border-green-200 text-emerald-600'
-                "
+              <span class="field-chip"
+                >累计树木 <strong>{{ store.activeAction?.totalTrees || 0 }}</strong></span
               >
-                <span>🌲</span>{{ store.activeAction?.totalTrees || 0 }}
-              </span>
-              <span
-                class="px-2 py-0.5 rounded border font-bold text-xs flex items-center gap-1 transition-colors"
-                :class="
-                  store.isNightMode
-                    ? 'bg-purple-900/40 border-purple-800 text-purple-300'
-                    : 'bg-purple-50 border-purple-200 text-purple-600'
-                "
+              <span class="field-chip"
+                >累计投入 <strong>{{ formatDuration(displayedActionTime) }}</strong></span
               >
-                <span>⏱️</span>{{ formatDuration(displayedActionTime) }}
-              </span>
             </div>
           </div>
         </div>
-      </div>
 
-      <div
-        class="relative h-14 rounded-xl border overflow-hidden mt-6 group shadow-inner transition-colors duration-300"
-        :class="
-          store.isNightMode ? 'bg-[#0f0f0f] border-gray-700' : 'bg-gray-200/50 border-gray-300'
-        "
-      >
-        <template v-if="store.activeActionId === store.runningActionId">
-          <div
-            class="absolute top-0 left-0 h-full transition-all duration-100 ease-linear shadow-[0_0_20px_rgba(16,185,129,0.5)]"
-            :class="[
-              isHarvestReady
-                ? 'bg-gradient-to-r from-red-600 to-red-400 animate-pulse shadow-[0_0_30px_rgba(220,38,38,0.8)]'
-                : store.isNightMode
-                  ? 'bg-gradient-to-r from-emerald-900 to-emerald-600'
-                  : 'bg-gradient-to-r from-emerald-300 to-emerald-500',
-            ]"
-            :style="{ width: store.progressPercentage + '%' }"
-          ></div>
-
-          <div class="absolute inset-0 flex items-center justify-between px-6 z-10">
-            <div class="flex items-center gap-3">
-              <img
-                v-if="store.isRunning && store.activeTree && !isHarvestReady"
-                :src="store.activeTree.icon"
-                class="h-8 w-8 object-contain pixel-art animate-bounce filter drop-shadow-md"
-              />
-              <span v-else-if="store.activeTree" class="text-2xl">🌱</span>
-
-              <span
-                class="font-bold text-lg tracking-wide drop-shadow-md transition-colors"
-                :class="
-                  isHarvestReady
-                    ? 'text-red-900 animate-pulse'
-                    : store.isNightMode
-                      ? 'text-gray-200'
-                      : 'text-gray-800'
-                "
-              >
-                <template v-if="isHarvestReady"> [ TASK COMPLETE // HARVEST REQUIRED ] </template>
-                <template v-else>
-                  {{ store.activeTree ? `种植: ${store.activeTree.name}` : 'Ready...' }}
-                </template>
-              </span>
-
-              <span
-                v-if="!store.isRunning && store.timer > 0 && !isHarvestReady"
-                class="text-xs font-bold px-2 py-0.5 rounded border animate-pulse"
-                :class="
-                  store.isNightMode
-                    ? 'text-yellow-500 border-yellow-700 bg-yellow-900/30'
-                    : 'text-yellow-700 border-yellow-400 bg-yellow-100'
-                "
-              >
-                PAUSED
-              </span>
-            </div>
-
-            <div v-if="store.activeTree" class="text-right font-mono">
-              <div
-                class="text-xl font-bold transition-colors"
-                :class="
-                  isHarvestReady
-                    ? 'text-red-900'
-                    : store.isNightMode
-                      ? 'text-white'
-                      : 'text-gray-700'
-                "
-              >
-                {{ formatTime(currentCycleTime) }} / {{ formatTime(store.activeTree.time) }}
-              </div>
-              <div class="text-[10px] font-bold uppercase tracking-wider opacity-70">
-                {{ taskTimeCaption }}
-              </div>
-            </div>
-          </div>
-        </template>
-
-        <template v-else>
-          <div
-            class="absolute inset-0 flex items-center justify-center text-sm font-bold uppercase tracking-widest z-10 transition-colors"
-            :class="store.isNightMode ? 'text-gray-600' : 'text-gray-400'"
-          >
-            Waiting to grow...
-          </div>
-        </template>
-      </div>
-    </div>
-
-    <div class="flex-1 overflow-y-auto pr-2 custom-scrollbar">
-      <h3
-        class="text-sm font-bold uppercase tracking-widest mb-4 px-1 transition-colors"
-        :class="store.isNightMode ? 'text-gray-400' : 'text-gray-500'"
-      >
-        Your Inventory
-      </h3>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-24">
         <div
-          v-for="tree in store.inventoryTrees"
-          :key="tree.id"
-          @click="handleButtonClick(tree)"
-          class="relative border-2 rounded-2xl p-5 transition-all cursor-pointer group select-none hover:-translate-y-1 backdrop-blur-sm shadow-md"
-          :class="getCardClass(tree.id)"
+          class="ranger-session"
+          :class="{
+            'ranger-session--active': store.activeActionId === store.runningActionId,
+            'ranger-session--ready': isHarvestReady,
+          }"
         >
-          <div class="flex flex-col items-center text-center">
-            <div
-              class="mb-4 transform group-hover:scale-110 transition-transform filter drop-shadow-md h-16 flex items-center justify-center"
-            >
-              <img
-                :src="tree.icon"
-                class="h-full w-auto object-contain pixel-art"
-                alt="Tree Icon"
-              />
-            </div>
-
-            <h3
-              class="text-lg font-bold mb-1 transition-colors"
-              :class="store.isNightMode ? 'text-gray-100' : 'text-gray-800'"
-            >
-              {{ tree.name }}
-            </h3>
-
-            <div class="w-full space-y-2 mb-4 text-xs font-medium">
-              <div
-                class="flex items-center justify-between rounded px-3 py-1.5 transition-colors"
-                :class="
-                  store.isNightMode ? 'bg-black/20 text-gray-400' : 'bg-gray-100 text-gray-500'
-                "
-              >
-                <span>XP Gain</span>
-
-                <span
-                  class="text-sm font-bold"
-                  :class="store.isNightMode ? 'text-blue-400' : 'text-blue-600'"
-                >
-                  +{{ store.getTreeYield(tree, store.activeAction).xp }}
-                </span>
-              </div>
-
-              <div
-                class="flex items-center justify-between rounded px-3 py-1.5 transition-colors"
-                :class="
-                  store.isNightMode ? 'bg-black/20 text-gray-400' : 'bg-gray-100 text-gray-500'
-                "
-              >
-                <span>Cycle Time</span>
-
-                <span
-                  class="text-sm font-bold"
-                  :class="store.isNightMode ? 'text-emerald-400' : 'text-emerald-600'"
-                >
-                  {{ formatTime(tree.time) }}
-                </span>
+          <template v-if="store.activeActionId === store.runningActionId && store.activeTree">
+            <div class="ranger-session__tree">
+              <img :src="store.activeTree.icon" class="pixel-art h-14 w-14 object-contain" alt="" />
+              <div class="min-w-0">
+                <div class="paper-label">
+                  {{ isHarvestReady ? '本次巡林已到目标' : '正在陪伴种植' }}
+                </div>
+                <div class="display-title mt-1 text-lg">{{ store.activeTree.name }}</div>
+                <div class="mt-1 text-xs" style="color: var(--ink-soft)">
+                  {{ store.isRunning ? '计时进行中' : '已暂停，当前进度会保留' }}
+                </div>
               </div>
             </div>
 
-            <div class="w-full space-y-2">
+            <div class="ranger-session__clock">
+              <div class="paper-label">{{ store.timerModeLabel }}</div>
+              <div class="ranger-session__time">
+                {{ formatTime(currentCycleTime) }}
+                <span>/ {{ formatTime(store.activeTree.time) }}</span>
+              </div>
+              <div class="mt-1 text-xs" style="color: var(--ink-soft)">{{ taskTimeCaption }}</div>
+            </div>
+
+            <div class="ranger-session__controls">
               <button
-                class="flex w-full items-center justify-center gap-2 rounded-lg py-2.5 text-xs font-bold uppercase tracking-widest shadow-sm transition-all"
-                :class="getButtonClass(tree)"
-                @click.stop="handleButtonClick(tree)"
+                type="button"
+                :class="isHarvestReady ? 'danger-button' : 'primary-button'"
+                @click="handleButtonClick(store.activeTree)"
               >
-                <span v-if="getButtonText(tree) !== '>_ CLAIM'">
-                  {{ getButtonIcon(tree) }}
-                </span>
+                {{ getButtonText(store.activeTree) }}
+              </button>
+              <button
+                type="button"
+                class="quiet-button"
+                :disabled="!canEndPlanting(store.activeTree)"
+                @click="handleEndPlanting"
+              >
+                结束本次种植
+              </button>
+            </div>
 
+            <div class="ranger-session__progress" aria-label="当前种植周期进度">
+              <div :style="{ width: store.progressPercentage + '%' }"></div>
+            </div>
+          </template>
+
+          <template v-else>
+            <div>
+              <div class="paper-label">尚未出发</div>
+              <div class="display-title mt-1 text-lg">从下方选择一类树木</div>
+              <p class="mt-1 text-xs leading-5" style="color: var(--ink-soft)">
+                设定计时方式后，应用会安静记录这次现实行动。
+              </p>
+            </div>
+            <div class="ranger-session__empty-note">每个完整周期都会留下树木与经验</div>
+          </template>
+        </div>
+      </section>
+
+      <section class="ranger-dashboard__catalog">
+        <header class="ranger-dashboard__catalog-header">
+          <div>
+            <div class="paper-label">植物图鉴</div>
+            <h3 class="display-title mt-1 text-xl">选择本次陪伴你的树种</h3>
+          </div>
+          <p class="max-w-md text-right text-xs leading-5" style="color: var(--ink-soft)">
+            树木不是奖励爆点，而是这段投入留下的安静证据。
+          </p>
+        </header>
+
+        <div class="ranger-tree-grid">
+          <article
+            v-for="tree in store.inventoryTrees"
+            :key="tree.id"
+            class="ranger-tree-card"
+            :class="getCardClass(tree.id)"
+          >
+            <div class="ranger-tree-card__head">
+              <div class="ranger-tree-card__specimen">
+                <img :src="tree.icon" class="pixel-art h-16 w-16 object-contain" :alt="tree.name" />
+              </div>
+              <div class="min-w-0 flex-1">
+                <div class="paper-label">{{ isTreeActive(tree.id) ? '当前树种' : '可选树种' }}</div>
+                <h4 class="display-title mt-1 text-lg">{{ tree.name }}</h4>
+                <p class="mt-1 text-xs" style="color: var(--ink-soft)">
+                  单周期 {{ formatTime(tree.time) }}
+                </p>
+              </div>
+            </div>
+
+            <dl class="ranger-tree-card__facts">
+              <div>
+                <dt>每周期经验</dt>
+                <dd>+{{ store.getTreeYield(tree, store.activeAction).xp }}</dd>
+              </div>
+              <div>
+                <dt>生长节奏</dt>
+                <dd>{{ formatTime(tree.time) }}</dd>
+              </div>
+            </dl>
+
+            <div class="ranger-tree-card__actions">
+              <button type="button" :class="getButtonClass(tree)" @click="handleButtonClick(tree)">
                 {{ getButtonText(tree) }}
               </button>
-
               <button
-                class="w-full rounded-lg border px-3 py-2 text-xs font-bold transition-colors"
+                type="button"
                 :class="getEndButtonClass(tree)"
                 :disabled="!canEndPlanting(tree)"
-                @click.stop="handleEndPlanting"
+                @click="handleEndPlanting"
               >
-                ■ 结束种植
+                结束
               </button>
             </div>
-          </div>
+          </article>
         </div>
-      </div>
+      </section>
     </div>
 
     <Teleport to="body">
       <div
         v-if="showModeModal"
-        class="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/70 px-4 py-6 backdrop-blur-md"
+        class="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/55 px-6 py-8 backdrop-blur-sm"
       >
-        <div
-          class="my-auto w-full max-w-lg rounded-2xl border p-6 shadow-2xl"
-          :class="
-            store.isNightMode
-              ? 'border-gray-700 bg-[#171717] text-gray-100'
-              : 'border-emerald-200 bg-white text-gray-800'
-          "
+        <section
+          class="paper-panel my-auto w-full max-w-lg p-6"
+          :data-theme="store.isNightMode ? 'night' : 'day'"
         >
-          <div class="mb-6 flex items-start justify-between">
+          <div class="flex items-start justify-between gap-5">
             <div>
-              <p class="text-xs font-bold uppercase tracking-[0.25em] text-emerald-500">
-                Planting Timer
-              </p>
-              <h2 class="mt-2 text-2xl font-bold">选择计时模式</h2>
-            </div>
-            <button class="text-gray-400 hover:text-gray-700" @click="closeModeModal">✕</button>
-          </div>
-
-          <div class="mb-5 grid grid-cols-2 gap-3 rounded-xl bg-emerald-500/10 p-4 text-sm">
-            <div>
-              <p class="text-xs text-gray-500">当前行动</p>
-              <p class="mt-1 font-bold">{{ store.activeAction?.name }}</p>
-            </div>
-            <div>
-              <p class="text-xs text-gray-500">树种 / 单周期</p>
-              <p class="mt-1 font-bold">
-                {{ selectedTree?.name }} · {{ formatTime(selectedTree?.time || 0) }}
+              <div class="paper-label">开始一次巡林会话</div>
+              <h2 class="display-title mt-2 text-2xl">选择计时方式</h2>
+              <p class="mt-2 text-sm" style="color: var(--ink-soft)">
+                {{ store.activeAction?.name }} · {{ selectedTree?.name }}
               </p>
             </div>
+            <button type="button" class="quiet-button" @click="closeModeModal">关闭</button>
           </div>
 
-          <div class="grid grid-cols-2 gap-3">
+          <div class="mt-6 grid grid-cols-2 gap-3">
             <button
-              class="rounded-xl border p-4 text-left transition-colors"
-              :class="
-                selectedMode === store.PLANTING_MODES.COUNTUP
-                  ? 'border-emerald-500 bg-emerald-500/10 text-emerald-600'
-                  : 'border-gray-300 text-gray-500'
-              "
+              type="button"
+              class="ranger-mode-option"
+              :class="{
+                'ranger-mode-option--active': selectedMode === store.PLANTING_MODES.COUNTUP,
+              }"
               @click="selectTimerMode(store.PLANTING_MODES.COUNTUP)"
             >
-              <span class="block font-bold">正计时</span>
-              <span class="mt-1 block text-xs">显示已用时间；不设置时默认 3 小时</span>
+              <strong>正计时</strong>
+              <span>从零开始记录实际投入，适合开放式行动。</span>
             </button>
             <button
-              class="rounded-xl border p-4 text-left transition-colors"
-              :class="
-                selectedMode === store.PLANTING_MODES.COUNTDOWN
-                  ? 'border-blue-500 bg-blue-500/10 text-blue-600'
-                  : 'border-gray-300 text-gray-500'
-              "
+              type="button"
+              class="ranger-mode-option"
+              :class="{
+                'ranger-mode-option--active': selectedMode === store.PLANTING_MODES.COUNTDOWN,
+              }"
               @click="selectTimerMode(store.PLANTING_MODES.COUNTDOWN)"
             >
-              <span class="block font-bold">倒计时</span>
-              <span class="mt-1 block text-xs">显示剩余时间；归零后自动结束</span>
+              <strong>倒计时</strong>
+              <span>设定一个时段，归零后自动收束本次行动。</span>
             </button>
           </div>
 
-          <label class="mt-5 block text-sm font-bold" for="planting-duration">
-            目标时长（分钟）
-          </label>
+          <label class="mt-5 block text-sm font-bold" for="planting-duration"
+            >目标时长（分钟）</label
+          >
           <input
             id="planting-duration"
             v-model="durationMinutes"
-            class="mt-2 w-full rounded-xl border border-gray-300 bg-transparent px-4 py-3 outline-none focus:border-emerald-500"
+            class="ranger-input mt-2"
             type="number"
             :min="minimumDurationMinutes"
             max="1440"
             :placeholder="
               selectedMode === store.PLANTING_MODES.COUNTUP
                 ? '可选，默认 180 分钟'
-                : `至少 ${minimumDurationMinutes} 分钟`
+                : '至少 ' + minimumDurationMinutes + ' 分钟'
             "
             @input="modeError = ''"
           />
-          <p class="mt-2 text-xs text-gray-500">
-            可设置 {{ minimumDurationMinutes }} 至 1440 分钟，不需要是单周期时长的整数倍。
+          <p class="mt-2 text-xs" style="color: var(--ink-soft)">
+            可设置 {{ minimumDurationMinutes }} 至 1440 分钟，不需要是单周期的整数倍。
           </p>
-          <p v-if="modeError" class="mt-3 rounded-lg bg-red-500/10 px-3 py-2 text-sm text-red-500">
+          <p
+            v-if="modeError"
+            class="mt-3 rounded-lg border px-3 py-2 text-sm"
+            style="border-color: var(--danger); color: var(--danger)"
+          >
             {{ modeError }}
           </p>
 
           <div class="mt-6 flex justify-end gap-3">
-            <button
-              class="rounded-xl px-4 py-2 text-sm font-bold text-gray-500"
-              @click="closeModeModal"
-            >
-              取消
-            </button>
-            <button
-              class="rounded-xl bg-emerald-500 px-5 py-2 text-sm font-bold text-white hover:bg-emerald-400"
-              @click="confirmStartPlanting"
-            >
+            <button type="button" class="quiet-button" @click="closeModeModal">取消</button>
+            <button type="button" class="primary-button" @click="confirmStartPlanting">
               开始种植
             </button>
           </div>
-        </div>
+        </section>
       </div>
     </Teleport>
 
     <Teleport to="body">
       <div
         v-if="showHarvestModal"
-        class="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/70 px-4 py-6 backdrop-blur-md"
+        class="fixed inset-0 z-[100] flex items-center justify-center overflow-y-auto bg-black/55 px-6 py-8 backdrop-blur-sm"
       >
-        <div
-          class="my-auto flex max-h-[calc(100vh-3rem)] w-full max-w-2xl flex-col overflow-hidden rounded-lg border-2 border-green-500/50 bg-[#0a0a0a] font-mono text-green-500 shadow-[0_0_40px_rgba(34,197,94,0.15)]"
+        <section
+          class="paper-panel my-auto flex max-h-[calc(100vh-4rem)] w-full max-w-2xl flex-col overflow-hidden"
+          :data-theme="store.isNightMode ? 'night' : 'day'"
         >
-          <div
-            class="bg-green-900/30 px-4 py-2 text-xs text-green-400 border-b border-green-800/50 flex justify-between items-center"
-          >
-            <span class="animate-pulse">TERMINAL // RANGER_NOTES.EXE</span>
-            <button @click="closeHarvestModal" class="hover:text-white transition-colors">
-              [_X]
-            </button>
-          </div>
+          <header class="ranger-harvest__header">
+            <div>
+              <div class="paper-label">本次巡林记录</div>
+              <h2 class="display-title mt-2 text-2xl">种植小结</h2>
+            </div>
+            <button type="button" class="quiet-button" @click="closeHarvestModal">关闭</button>
+          </header>
 
-          <div class="custom-scrollbar-terminal space-y-4 overflow-y-auto p-6 text-sm md:text-base">
-            <div class="space-y-1">
-              <p>> SYSTEM: HARVEST PROTOCOL INITIATED...</p>
-              <p>
-                > TARGET_ACTION:
-                <span class="text-white font-bold">{{ store.runningAction?.name }}</span>
-              </p>
-              <p>
-                > TIMER_MODE: <span class="text-white font-bold">{{ store.timerModeLabel }}</span>
-              </p>
-              <p>
-                > TARGET_DURATION:
-                <span class="text-white font-bold">{{ formatTime(store.taskLimit) }}</span>
-              </p>
-              <p>
-                > DURATION_LOGGED:
-                <span class="text-white font-bold">{{ formatTime(store.timer) }}</span>
-              </p>
-              <p>
-                > COMPLETED_CYCLES: <span class="text-white font-bold">{{ harvestCycles }}</span>
-              </p>
-              <p>
-                > TREES_SETTLED: <span class="text-white font-bold">+{{ store.taskTrees }}</span>
-              </p>
-              <p>
-                > XP_SETTLED: <span class="text-white font-bold">+{{ store.taskXP }}</span>
-              </p>
-              <p>
-                > LEVEL_CHANGE:
-                <span class="text-white font-bold"
-                  >Lv.{{ store.taskStartLevel }} → Lv.{{ store.runningAction?.level }}</span
-                >
-              </p>
-              <p>
-                > END_REASON: <span class="text-white font-bold">{{ harvestEndReasonLabel }}</span>
-              </p>
-              <p v-if="isHarvestReady" class="text-red-500">> TARGET DURATION REACHED.</p>
+          <div class="subtle-scrollbar overflow-y-auto px-6 py-5">
+            <div class="ranger-harvest__grid">
+              <div>
+                <span>行动</span><strong>{{ store.runningAction?.name }}</strong>
+              </div>
+              <div>
+                <span>计时方式</span><strong>{{ store.timerModeLabel }}</strong>
+              </div>
+              <div>
+                <span>有效时长</span><strong>{{ formatTime(store.timer) }}</strong>
+              </div>
+              <div>
+                <span>完成周期</span><strong>{{ harvestCycles }}</strong>
+              </div>
+              <div>
+                <span>新增树木</span><strong>+{{ store.taskTrees }}</strong>
+              </div>
+              <div>
+                <span>新增经验</span><strong>+{{ store.taskXP }}</strong>
+              </div>
             </div>
 
-            <div class="mt-6">
-              <p class="mb-2">> ENTER_PLANTING_LOG (Optional) :</p>
-              <textarea
-                v-model="logContent"
-                @keydown.ctrl.enter="confirmHarvest"
-                class="w-full h-36 bg-[#050505] border border-green-800 rounded p-3 text-green-400 focus:outline-none focus:border-green-500 focus:shadow-[0_0_15px_rgba(34,197,94,0.3)] resize-none custom-scrollbar-terminal transition-all"
-                placeholder="> Await user input... (Press Ctrl+Enter to execute upload)"
-                autofocus
-              ></textarea>
-              <p class="text-xs mt-2 text-green-700">有效日志固定奖励 10 金币</p>
-            </div>
-
-            <div class="rounded-lg border border-green-800/60 bg-green-950/20 p-4 space-y-2">
-              <p>> ACTION_LOCKED :</p>
-              <p class="text-sm text-green-300">
-                本次成果已在周期完成时结算到
-                <span class="text-white font-bold">{{ store.runningAction?.name }}</span
-                >，关闭总结不会再次发奖。
-              </p>
-            </div>
-          </div>
-
-          <div class="p-4 border-t border-green-800/50 flex justify-end gap-4 bg-[#050505]">
-            <button
-              @click="closeHarvestModal"
-              class="px-5 py-2 text-green-700 hover:text-green-500 transition-colors"
+            <label class="mt-6 block text-sm font-bold" for="planting-log"
+              >留下一句巡林观察（可选）</label
             >
-              CLOSE_WITHOUT_LOG
-            </button>
-            <button
-              @click="confirmHarvest"
-              class="px-6 py-2 bg-green-900/40 border border-green-600 text-green-400 hover:bg-green-800 hover:text-white transition-all rounded shadow-[0_0_15px_rgba(34,197,94,0.2)]"
-            >
-              EXECUTE_UPLOAD
-            </button>
+            <textarea
+              id="planting-log"
+              v-model="logContent"
+              class="ranger-input mt-2 h-32 resize-none"
+              placeholder="这段时间里发生了什么？"
+              @keydown.ctrl.enter="confirmHarvest"
+            ></textarea>
+            <p class="mt-2 text-xs" style="color: var(--ink-soft)">
+              记录会归入行动档案；有效记录固定获得 10 金币。
+            </p>
           </div>
-        </div>
+
+          <footer class="ranger-harvest__footer">
+            <button type="button" class="quiet-button" @click="closeHarvestModal">
+              不写记录，直接结束
+            </button>
+            <button type="button" class="primary-button" @click="confirmHarvest">
+              保存记录并结束
+            </button>
+          </footer>
+        </section>
       </div>
     </Teleport>
   </div>
@@ -461,10 +306,10 @@
 import { storeToRefs } from 'pinia'
 import { computed, reactive, ref, watch } from 'vue'
 import { confirmDialog } from '@/composables/dialogService'
+import { useActionStore } from '@/stores/actionStore'
 import { useAppStore } from '@/stores/appStore'
 import { usePlantingStore } from '@/stores/plantingStore'
 import { usePlayerStore } from '@/stores/playerStore'
-import { useActionStore } from '@/stores/actionStore'
 
 const appStore = useAppStore()
 const playerStore = usePlayerStore()
@@ -483,7 +328,6 @@ const store = reactive({
   toggleAction: plantingStore.toggleAction,
 })
 
-// --- Modal 状态管理 ---
 const showHarvestModal = ref(false)
 const showModeModal = ref(false)
 const logContent = ref('')
@@ -494,133 +338,69 @@ const durationMinutes = ref('')
 const modeError = ref('')
 const harvestEndReason = ref('manual')
 
-// 计算是否满足收获条件（时间达标）
-const isHarvestReady = computed(() => {
-  return Boolean(store.activeTree && store.taskTimeState.reachedLimit)
-})
-
+const isHarvestReady = computed(() => Boolean(store.activeTree && store.taskTimeState.reachedLimit))
 const minimumDurationMinutes = computed(() => Math.ceil((selectedTree.value?.time || 0) / 60))
-
 const taskTimeCaption = computed(() => {
   if (store.timerMode === store.PLANTING_MODES.COUNTDOWN) {
     return `倒计时剩余 ${formatTime(store.taskTimeState.remaining)}`
   }
-  return `正计时 ${formatTime(store.taskTimeState.elapsed)} / ${formatTime(store.taskLimit)}`
+  return `本次已记录 ${formatTime(store.taskTimeState.elapsed)} / ${formatTime(store.taskLimit)}`
 })
-
-const harvestEndReasonLabel = computed(() => {
-  if (harvestEndReason.value === 'limit') return '达到目标时长'
-  if (harvestEndReason.value === 'switch') return '切换种植任务'
-  return '主动结束'
-})
-
 const currentCycleTime = computed(() => {
   if (!store.activeTree) return 0
   return Math.max(0, store.timer - store.settledCycles * store.activeTree.time)
 })
+const displayedActionTime = computed(() => store.activeAction?.totalTimeSpent || 0)
+const harvestCycles = computed(() => store.settledCycles)
 
-const displayedActionTime = computed(() => {
-  return store.activeAction?.totalTimeSpent || 0
-})
-
-// 计算本次总共完成了多少轮（正向计时倍数）
-const harvestCycles = computed(() => {
-  return store.settledCycles
-})
-
-// === 格式化函数 ===
-const formatTime = (s) => {
-  const seconds = Math.max(0, Math.floor(s || 0))
+const formatTime = (value) => {
+  const seconds = Math.max(0, Math.floor(value || 0))
   const hours = Math.floor(seconds / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
   const remainingSeconds = seconds % 60
   if (hours > 0) {
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
+    return `${hours.toString().padStart(2, '0')}:${minutes
+      .toString()
+      .padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
   }
   return `${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`
 }
 
 const formatDuration = (seconds) => {
-  if (!seconds) return '0m'
-  const h = Math.floor(seconds / 3600)
-  const m = Math.floor((seconds % 3600) / 60)
-  return h > 0 ? `${h}h ${m}m` : `${m}m`
+  if (!seconds) return '0 分钟'
+  const hours = Math.floor(seconds / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  return hours > 0 ? `${hours} 小时 ${minutes} 分钟` : `${minutes} 分钟`
 }
 
-// === 状态判断 ===
-const isTreeActive = (treeId) => {
-  return store.activeTreeId === treeId && store.activeActionId === store.runningActionId
-}
+const isTreeActive = (treeId) =>
+  store.activeTreeId === treeId && store.activeActionId === store.runningActionId
+const canEndPlanting = (tree) => isTreeActive(tree.id) && !isHarvestReady.value
 
-const canEndPlanting = (tree) => {
-  return isTreeActive(tree.id) && !isHarvestReady.value
-}
-
-const getEndButtonClass = (tree) => {
-  if (canEndPlanting(tree)) {
-    return 'border-red-400/60 text-red-500 hover:bg-red-500 hover:text-white'
-  }
-
-  return store.isNightMode
-    ? 'cursor-not-allowed border-gray-700 bg-gray-800/40 text-gray-600 opacity-60'
-    : 'cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400 opacity-60'
-}
-
-// === 动态样式逻辑 ===
+const getEndButtonClass = (tree) =>
+  canEndPlanting(tree) ? 'danger-button' : 'quiet-button opacity-45'
 const getCardClass = (treeId) => {
-  if (isTreeActive(treeId)) {
-    if (isHarvestReady.value) {
-      return store.isNightMode
-        ? 'border-red-600 bg-[#3a1a1a] shadow-[0_0_20px_rgba(220,38,38,0.3)]'
-        : 'border-red-500 bg-red-50 shadow-[0_0_20px_rgba(220,38,38,0.4)] ring-2 ring-red-400/30'
-    }
-    return store.isNightMode
-      ? 'border-emerald-600 bg-[#2a302a]/90'
-      : 'border-emerald-500 bg-emerald-50/90 shadow-emerald-100 ring-2 ring-emerald-500/20'
-  }
-  return store.isNightMode
-    ? 'bg-[#1a1a1a]/80 border-gray-700 hover:border-gray-500 hover:bg-[#252525]'
-    : 'bg-white/60 border-white/60 hover:border-emerald-300 hover:bg-white/90'
+  if (!isTreeActive(treeId)) return ''
+  return isHarvestReady.value ? 'ranger-tree-card--ready' : 'ranger-tree-card--active'
 }
-
 const getButtonClass = (tree) => {
-  if (isTreeActive(tree.id)) {
-    if (isHarvestReady.value) {
-      return 'bg-[#0a0a0a] text-red-400 border border-red-500 font-mono font-bold hover:bg-red-900 hover:text-white shadow-[0_0_15px_rgba(220,38,38,0.5)] animate-pulse'
-    }
-    return store.isRunning
-      ? 'bg-amber-500 text-white hover:bg-amber-600 hover:shadow-lg'
-      : 'bg-emerald-600 text-white hover:bg-emerald-500 animate-pulse hover:shadow-lg'
-  }
-  return store.isNightMode
-    ? 'bg-gray-700 text-gray-300 hover:bg-gray-600 border border-gray-600'
-    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-emerald-600 hover:border-emerald-200'
+  if (!isTreeActive(tree.id)) return 'primary-button'
+  return isHarvestReady.value ? 'danger-button' : 'quiet-button'
 }
-
 const getButtonText = (tree) => {
   if (isTreeActive(tree.id)) {
-    if (isHarvestReady.value) return '>_ CLAIM'
-    return store.isRunning ? 'Pause' : 'Resume'
+    if (isHarvestReady.value) return '完成并记录'
+    return store.isRunning ? '暂停' : '继续'
   }
-  return 'Start'
+  return '开始种植'
 }
 
-const getButtonIcon = (tree) => {
-  if (isTreeActive(tree.id)) {
-    if (isHarvestReady.value) return ''
-    return store.isRunning ? '⏸' : '▶'
-  }
-  return '🌱'
-}
-
-// === 交互行为 ===
 const openHarvestSummary = (reason = 'manual') => {
   store.stopTimer()
   logContent.value = ''
   harvestEndReason.value = reason
   showHarvestModal.value = true
 }
-
 const openModeModal = (tree) => {
   selectedTree.value = tree
   selectedMode.value = store.PLANTING_MODES.COUNTUP
@@ -628,19 +408,16 @@ const openModeModal = (tree) => {
   modeError.value = ''
   showModeModal.value = true
 }
-
 const closeModeModal = () => {
   showModeModal.value = false
   selectedTree.value = null
   modeError.value = ''
 }
-
 const selectTimerMode = (mode) => {
   selectedMode.value = mode
   durationMinutes.value = ''
   modeError.value = ''
 }
-
 const confirmStartPlanting = () => {
   if (!selectedTree.value) return
   const targetDuration = durationMinutes.value === '' ? '' : Number(durationMinutes.value) * 60
@@ -654,45 +431,36 @@ const confirmStartPlanting = () => {
   }
   closeModeModal()
 }
-
 const handleEndPlanting = async () => {
   const confirmed = await confirmDialog(
-    '是否结束当前种植任务？已完成周期的种植成果会保留，当前未完成周期不会获得树木和经验。',
-    { title: '结束种植', confirmText: '结束任务' },
+    '是否结束当前种植？已完成周期的成果会保留，未完成周期不会获得树木和经验。',
+    { title: '结束本次种植', confirmText: '结束并查看小结' },
   )
   if (confirmed) openHarvestSummary('manual')
 }
-
 const handleButtonClick = async (tree) => {
+  if (!tree) return
   if (isTreeActive(tree.id)) {
-    if (isHarvestReady.value) {
-      openHarvestSummary('limit')
-    } else {
-      store.toggleAction()
-    }
-  } else {
-    if (store.runningActionId) {
-      const confirmed = await confirmDialog(
-        '是否切换种植任务？已完成周期的成果会保留，当前未完成周期将被清空。',
-        { title: '切换种植任务', confirmText: '结束并切换' },
-      )
-      if (!confirmed) return
-      pendingTreeId.value = tree.id
-      openHarvestSummary('switch')
-      return
-    }
-    openModeModal(tree)
+    if (isHarvestReady.value) openHarvestSummary('limit')
+    else store.toggleAction()
+    return
   }
+  if (store.runningActionId) {
+    const confirmed = await confirmDialog(
+      '是否切换种植任务？已完成周期会保留，当前未完成周期将被清空。',
+      { title: '切换种植任务', confirmText: '结束并切换' },
+    )
+    if (!confirmed) return
+    pendingTreeId.value = tree.id
+    openHarvestSummary('switch')
+    return
+  }
+  openModeModal(tree)
 }
-
-const closeHarvestModal = () => {
-  finishHarvest('')
-}
-
+const closeHarvestModal = () => finishHarvest('')
 const finishHarvest = (content) => {
   const submitted = store.submitHarvest(content, { endReason: harvestEndReason.value })
   if (!submitted) return
-
   showHarvestModal.value = false
   logContent.value = ''
   const nextTreeId = pendingTreeId.value
@@ -702,7 +470,6 @@ const finishHarvest = (content) => {
     if (nextTree) openModeModal(nextTree)
   }
 }
-
 const confirmHarvest = () => finishHarvest(logContent.value)
 
 watch(isHarvestReady, (reachedLimit) => {
@@ -711,37 +478,359 @@ watch(isHarvestReady, (reachedLimit) => {
 </script>
 
 <style scoped>
-.pixel-art {
-  image-rendering: pixelated;
-  image-rendering: crisp-edges;
+.ranger-dashboard {
+  width: 100%;
+  min-width: 0;
+  min-height: 0;
+  flex: 1;
+  overflow: hidden;
 }
 
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: transparent;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background-color: rgba(156, 163, 175, 0.3);
-  border-radius: 20px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background-color: rgba(156, 163, 175, 0.5);
+.ranger-dashboard__scroll {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  padding: 18px 20px 30px;
 }
 
-/* 终端风格滚动条 */
-.custom-scrollbar-terminal::-webkit-scrollbar {
-  width: 6px;
+.ranger-dashboard__summary,
+.ranger-dashboard__catalog {
+  width: min(100%, 1280px);
+  margin-inline: auto;
 }
-.custom-scrollbar-terminal::-webkit-scrollbar-track {
-  background: #000;
+
+.ranger-dashboard__summary {
+  padding: 20px;
 }
-.custom-scrollbar-terminal::-webkit-scrollbar-thumb {
-  background-color: #166534;
-  border-radius: 4px;
+
+.ranger-dashboard__identity {
+  display: flex;
+  align-items: center;
+  gap: 15px;
 }
-.custom-scrollbar-terminal::-webkit-scrollbar-thumb:hover {
-  background-color: #22c55e;
+
+.ranger-dashboard__action-mark {
+  display: grid;
+  width: 54px;
+  height: 54px;
+  flex: 0 0 54px;
+  place-items: center;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+  color: var(--paper-strong);
+  background: var(--forest-deep);
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+}
+
+.ranger-session {
+  position: relative;
+  display: grid;
+  min-height: 112px;
+  grid-template-columns: minmax(230px, 1fr) auto auto;
+  align-items: center;
+  gap: 22px;
+  margin-top: 18px;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 16px 18px 20px;
+  background: color-mix(in srgb, var(--sage) 10%, var(--paper-strong));
+}
+
+.ranger-session:not(.ranger-session--active) {
+  grid-template-columns: minmax(260px, 1fr) auto;
+}
+
+.ranger-session--active {
+  border-color: var(--line-strong);
+}
+
+.ranger-session--ready {
+  border-color: color-mix(in srgb, var(--coral) 72%, transparent);
+  background: color-mix(in srgb, var(--coral) 9%, var(--paper-strong));
+}
+
+.ranger-session__tree {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 13px;
+}
+
+.ranger-session__clock {
+  min-width: 185px;
+  text-align: right;
+}
+
+.ranger-session__time {
+  margin-top: 3px;
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 22px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.ranger-session__time span {
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.ranger-session__controls {
+  display: flex;
+  min-width: 150px;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.ranger-session__progress {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 5px;
+  background: color-mix(in srgb, var(--ink-soft) 12%, transparent);
+}
+
+.ranger-session__progress > div {
+  height: 100%;
+  background: linear-gradient(90deg, var(--sage), var(--forest));
+  transition: width 200ms linear;
+}
+
+.ranger-session__empty-note {
+  max-width: 250px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.7;
+  text-align: right;
+}
+
+.ranger-dashboard__catalog {
+  padding-top: 22px;
+}
+
+.ranger-dashboard__catalog-header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 11px 14px;
+  background: color-mix(in srgb, var(--paper-strong) 88%, transparent);
+  box-shadow: 0 6px 18px rgba(55, 58, 44, 0.06);
+}
+
+.ranger-tree-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(230px, 1fr));
+  gap: 12px;
+}
+
+.ranger-tree-card {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+  background: color-mix(in srgb, var(--paper-strong) 94%, transparent);
+  box-shadow: 0 8px 20px rgba(55, 58, 44, 0.08);
+}
+
+.ranger-tree-card--active {
+  border-color: var(--forest);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--forest) 26%, transparent);
+}
+
+.ranger-tree-card--ready {
+  border-color: var(--coral);
+}
+
+.ranger-tree-card__head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.ranger-tree-card__specimen {
+  display: grid;
+  width: 78px;
+  height: 78px;
+  flex: 0 0 78px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 50% 50% 46% 54%;
+  background: color-mix(in srgb, var(--sage) 10%, var(--paper));
+}
+
+.ranger-tree-card__facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.ranger-tree-card__facts > div {
+  border-top: 1px solid var(--line);
+  padding-top: 9px;
+}
+
+.ranger-tree-card__facts dt {
+  color: var(--ink-soft);
+  font-size: 10px;
+}
+
+.ranger-tree-card__facts dd {
+  margin-top: 2px;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.ranger-tree-card__actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.ranger-mode-option {
+  display: flex;
+  min-height: 104px;
+  flex-direction: column;
+  gap: 7px;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  padding: 15px;
+  color: var(--ink);
+  background: color-mix(in srgb, var(--paper-strong) 76%, transparent);
+  text-align: left;
+}
+
+.ranger-mode-option span {
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.ranger-mode-option--active {
+  border-color: var(--forest);
+  background: color-mix(in srgb, var(--sage) 15%, var(--paper-strong));
+}
+
+.ranger-input {
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: 9px;
+  padding: 10px 12px;
+  color: var(--ink);
+  background: var(--paper-strong);
+}
+
+.ranger-harvest__header,
+.ranger-harvest__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 22px;
+  border-color: var(--line);
+}
+
+.ranger-harvest__header {
+  border-bottom: 1px solid var(--line);
+}
+
+.ranger-harvest__footer {
+  justify-content: flex-end;
+  border-top: 1px solid var(--line);
+}
+
+.ranger-harvest__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.ranger-harvest__grid > div {
+  display: flex;
+  min-height: 54px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  padding: 10px 12px;
+}
+
+.ranger-harvest__grid span {
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+
+.ranger-harvest__grid strong {
+  color: var(--ink);
+  font-size: 13px;
+}
+
+@media (max-width: 1240px) {
+  .ranger-tree-grid {
+    grid-template-columns: repeat(2, minmax(220px, 1fr));
+  }
+
+  .ranger-session {
+    grid-template-columns: minmax(210px, 1fr) auto;
+  }
+
+  .ranger-session__controls {
+    grid-column: 1 / -1;
+    flex-direction: row;
+  }
+}
+
+@container (max-width: 700px) {
+  .ranger-dashboard__scroll {
+    padding: 12px 12px 24px;
+  }
+
+  .ranger-dashboard__summary {
+    padding: 16px;
+  }
+
+  .ranger-dashboard__identity {
+    align-items: flex-start;
+  }
+
+  .ranger-session,
+  .ranger-session:not(.ranger-session--active) {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .ranger-session__clock,
+  .ranger-session__empty-note {
+    min-width: 0;
+    max-width: none;
+    text-align: left;
+  }
+
+  .ranger-tree-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-height: 680px) {
+  .ranger-dashboard__scroll {
+    padding-top: 12px;
+  }
 }
 </style>
