@@ -256,34 +256,13 @@
           {{ unlockButtonLabel }}
         </button>
 
-        <section v-else class="map-skill-link">
+        <section v-else class="map-journey-record">
           <div class="map-section-heading">
-            <span class="paper-label">场景归属</span>
-            <h3>关联一项长期技能</h3>
+            <span class="paper-label">共同旅程</span>
+            <h3>巡林官的世界记录</h3>
           </div>
-          <label>
-            <span class="sr-only">关联 Skill</span>
-            <select :value="selectedSkillId" @change="updateSkillAssociation">
-              <option value="">暂不关联</option>
-              <option v-for="skill in actionStore.skills" :key="skill.id" :value="skill.id">
-                {{ skill.name }}
-              </option>
-            </select>
-          </label>
-
-          <div v-if="associatedSkillSummary" class="map-skill-summary">
-            <strong>{{ associatedSkillSummary.name }}</strong>
-            <span>{{ associatedSkillSummary.actionCount }} 个行动</span>
-            <span>{{ associatedSkillSummary.totalTrees }} 棵树</span>
-            <span>{{ formatDuration(associatedSkillSummary.totalTimeSpent) }}</span>
-            <button type="button" @click="openAssociatedForest">查看关联森林 →</button>
-          </div>
-          <p
-            v-else-if="selectedLocationState.unlockRecord?.skillNameSnapshot"
-            class="map-skill-orphan"
-          >
-            曾关联“{{ selectedLocationState.unlockRecord.skillNameSnapshot }}”；原 Skill
-            已删除，可重新选择。
+          <p class="map-journey-record__description">
+            这处地点属于同一位巡林官的长期旅程，不归属于某个身份或技能。
           </p>
 
           <dl class="map-unlock-history">
@@ -328,7 +307,7 @@
             <span v-else class="map-gallery-card__placeholder" aria-hidden="true">图志</span>
             <span class="map-gallery-card__caption">
               <strong>{{ location.name }}</strong>
-              <small>{{ gallerySkillName(location) }}</small>
+              <small>{{ location.region || '密涅瓦图志' }}</small>
             </span>
           </button>
         </div>
@@ -383,17 +362,13 @@
 <script setup>
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
-import { useActionWorkflow } from '@/application/workflows/actionWorkflow'
 import { alertDialog, confirmDialog } from '@/composables/dialogService'
 import { MAP_BACKGROUND, MAP_LOCATION_BY_ID, MAP_LOCATIONS } from '@/config/mapCatalog'
 import { TREE_TYPES } from '@/config/treeCatalog'
 import { MAP_SCALE_MAX, MAP_SCALE_MIN } from '@/local-backend/domain/mapModel'
-import { useActionStore } from '@/stores/actionStore'
 import { useMapStore } from '@/stores/mapStore'
 
 const mapStore = useMapStore()
-const actionStore = useActionStore()
-const actionWorkflow = useActionWorkflow()
 const {
   mapState,
   locationsWithState,
@@ -472,11 +447,6 @@ const unlockButtonLabel = computed(() => {
   if (selectedLocationState.value?.status === 'undiscovered') return '路径尚未显现'
   return '树木不足'
 })
-const selectedSkillId = computed(() => selectedLocationState.value?.unlockRecord?.skillId || '')
-const associatedSkillSummary = computed(() =>
-  actionStore.skillSummaries.find((skill) => skill.id === selectedSkillId.value),
-)
-
 let panState = null
 let viewportSaveTimer = null
 let discoveryTimer = null
@@ -601,37 +571,13 @@ const confirmUnlock = async (location) => {
   }
 }
 
-const updateSkillAssociation = async (event) => {
-  const location = selectedLocationState.value
-  if (!location) return
-  const result = mapStore.associateLocationSkill(location.id, event.target.value || null)
-  if (!result.ok) {
-    await alertDialog('关联结果未能写入本地存档，已恢复原状态。', { title: '关联失败' })
-  }
-}
-const openAssociatedForest = () => {
-  if (associatedSkillSummary.value) actionWorkflow.openSkillForest(associatedSkillSummary.value.id)
-}
 const openScene = (location) => {
   if (location.status === 'unlocked') fullscreenLocation.value = location
-}
-const gallerySkillName = (location) => {
-  const skillId = location.unlockRecord?.skillId
-  return (
-    actionStore.skills.find((skill) => skill.id === skillId)?.name ||
-    location.unlockRecord?.skillNameSnapshot ||
-    '未关联 Skill'
-  )
 }
 const formatDate = (value) => {
   if (!value) return '起始地点'
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? '记录时间未知' : date.toLocaleString()
-}
-const formatDuration = (seconds = 0) => {
-  const hours = Math.floor(seconds / 3600)
-  const minutes = Math.floor((seconds % 3600) / 60)
-  return hours > 0 ? hours + ' 小时 ' + minutes + ' 分' : minutes + ' 分钟'
 }
 const handleKeydown = (event) => {
   if (event.key !== 'Escape') return
@@ -1244,7 +1190,7 @@ onUnmounted(() => {
 }
 
 .map-requirements,
-.map-skill-link {
+.map-journey-record {
   margin-top: 14px;
   padding-top: 13px;
   border-top: 1px solid var(--line);
@@ -1311,44 +1257,7 @@ onUnmounted(() => {
   background: var(--paper-muted);
 }
 
-.map-skill-link select {
-  width: 100%;
-  margin-top: 9px;
-  border: 1px solid var(--line-strong);
-  border-radius: 8px;
-  padding: 8px 10px;
-  color: var(--ink);
-  background: var(--paper);
-  font-size: 11px;
-}
-
-.map-skill-summary {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px 9px;
-  margin-top: 9px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 9px;
-  background: color-mix(in srgb, var(--sage) 10%, transparent);
-  font-size: 9px;
-}
-
-.map-skill-summary strong,
-.map-skill-summary button {
-  grid-column: 1 / -1;
-}
-
-.map-skill-summary button {
-  margin-top: 3px;
-  border-top: 1px solid var(--line);
-  padding-top: 7px;
-  color: var(--forest);
-  font-weight: 800;
-  text-align: left;
-}
-
-.map-skill-orphan {
+.map-journey-record__description {
   margin-top: 9px;
   color: var(--ink-soft);
   font-size: 10px;

@@ -79,6 +79,7 @@ test('地图领域模型计算四态、迁移旧树木并执行幂等解锁', as
       damaged: 0,
       unknown: 2,
     })
+    assert.deepEqual(migrated.cumulativeTrees, migrated.availableTrees)
 
     const normalizedAgain = normalizeMapState({
       mapData: { ...migrated, availableTrees: { t1: 4 } },
@@ -87,6 +88,31 @@ test('地图领域模型计算四态、迁移旧树木并执行幂等解锁', as
       now: 1000,
     })
     assert.deepEqual(normalizedAgain.availableTrees, { t1: 4 })
+    assert.equal(normalizedAgain.cumulativeTrees.t1, 5)
+  })
+
+  await t.test('v1 地图升级后移除地点与 Skill 的历史关联', () => {
+    const normalized = normalizeMapState({
+      mapData: {
+        version: 1,
+        availableTrees: { t1: 1 },
+        unlockedLocations: {
+          camp: {
+            unlockedAt: new Date(0).toISOString(),
+            recipeSnapshot: {},
+            skillId: 'legacy-skill',
+            skillNameSnapshot: '旧技能',
+          },
+        },
+      },
+      actions: [{ forest: { t1: 2 } }],
+      locations: LOCATIONS,
+      now: 0,
+    })
+
+    assert.equal(normalized.version, 2)
+    assert.equal(normalized.unlockedLocations.camp.skillId, undefined)
+    assert.deepEqual(normalized.cumulativeTrees, { t1: 2 })
   })
 
   await t.test('地点通过形态状态区分发现、可解锁与已解锁', () => {

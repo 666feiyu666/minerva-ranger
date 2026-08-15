@@ -1,18 +1,20 @@
 import {
   DEFAULT_IDENTITY_BOOTSTRAP_KEY,
+  RANGER_PROFILE_BACKUP_KEY,
+  RANGER_PROFILE_KEY,
   SAVE_INDEX_BACKUP_KEY,
   SAVE_INDEX_KEY,
   SAVE_SLOT_BACKUP_SUFFIX,
   SAVE_SLOT_KEY_PREFIX,
   getSlotBackupStorageKey,
-  getSlotStorageKey
+  getSlotStorageKey,
 } from '@/config/storageKeys'
 import {
   readJsonWithBackup,
   readText,
   removeItem,
   writeText,
-  writeJsonWithBackup
+  writeJsonWithBackup,
 } from './localStorageClient'
 
 export function hasBootstrappedDefaultIdentity() {
@@ -35,6 +37,14 @@ export function writeSaveIndex(index) {
   writeJsonWithBackup(SAVE_INDEX_KEY, SAVE_INDEX_BACKUP_KEY, index)
 }
 
+export function readRangerProfile() {
+  return readJsonWithBackup(RANGER_PROFILE_KEY, RANGER_PROFILE_BACKUP_KEY)
+}
+
+export function writeRangerProfile(profile) {
+  writeJsonWithBackup(RANGER_PROFILE_KEY, RANGER_PROFILE_BACKUP_KEY, profile)
+}
+
 export function readSlotData(slotId) {
   return readJsonWithBackup(getSlotStorageKey(slotId), getSlotBackupStorageKey(slotId))
 }
@@ -53,10 +63,7 @@ export function listStoredSlotIds() {
 
   for (let index = 0; index < localStorage.length; index += 1) {
     const key = localStorage.key(index)
-    if (
-      !key?.startsWith(SAVE_SLOT_KEY_PREFIX) ||
-      key.endsWith(SAVE_SLOT_BACKUP_SUFFIX)
-    ) {
+    if (!key?.startsWith(SAVE_SLOT_KEY_PREFIX) || key.endsWith(SAVE_SLOT_BACKUP_SUFFIX)) {
       continue
     }
     slotIds.push(key.slice(SAVE_SLOT_KEY_PREFIX.length))

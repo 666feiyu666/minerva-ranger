@@ -5,29 +5,30 @@ import {
   hasBootstrappedDefaultIdentity,
   listStoredSlotIds,
   markDefaultIdentityBootstrapped,
+  readRangerProfile,
   readSaveIndex,
   readSlotData,
   removeSlotData,
   writeSaveIndex,
+  writeRangerProfile,
   writeSlotData,
 } from '@/local-backend/storage/saveSlotRepository'
 
-export { hasBootstrappedDefaultIdentity, markDefaultIdentityBootstrapped }
+export {
+  hasBootstrappedDefaultIdentity,
+  markDefaultIdentityBootstrapped,
+  readRangerProfile,
+  writeRangerProfile,
+}
 
 export function buildSaveData(snapshot) {
   return {
     slotId: snapshot.activeSlotId,
     slotName: snapshot.activeSlotName || '未命名身份',
     timestamp: Date.now(),
-    coins: snapshot.coins,
-    globalXP: snapshot.globalXP,
-    unlockedTreeIds: snapshot.unlockedTreeIds,
-    ownedBoostIds: snapshot.ownedBoostIds,
-    unlockedBackgroundIds: snapshot.unlockedBackgroundIds,
     skills: snapshot.skills,
     actions: snapshot.actions,
     notebook: snapshot.notebook,
-    map: snapshot.map,
     activeView: snapshot.activeView,
     activeSkillId: snapshot.activeSkillId,
     activeActionId: snapshot.activeActionId,

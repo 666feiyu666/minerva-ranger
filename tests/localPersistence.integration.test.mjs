@@ -47,12 +47,12 @@ async function withMutedConsoleError(operation) {
   try {
     return await operation()
   } finally {
-    await new Promise(resolve => setTimeout(resolve, 0))
+    await new Promise((resolve) => setTimeout(resolve, 0))
     console.error = originalConsoleError
   }
 }
 
-test('localStorage 存档在重启、损坏和写入失败时保持可恢复', async t => {
+test('localStorage 存档在重启、损坏和写入失败时保持可恢复', async (t) => {
   const repoRoot = path.resolve(import.meta.dirname, '..')
   const bundledStorePath = path.join(tmpdir(), `mr-local-storage-${Date.now()}.mjs`)
   const storage = new MemoryStorage()
@@ -86,7 +86,7 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
         }
       `,
       resolveDir: repoRoot,
-      sourcefile: 'local-storage-test-entry.mjs'
+      sourcefile: 'local-storage-test-entry.mjs',
     },
     bundle: true,
     platform: 'node',
@@ -94,9 +94,9 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
     outfile: bundledStorePath,
     loader: { '.png': 'dataurl' },
     define: {
-      'import.meta.env.DEV': 'false'
+      'import.meta.env.DEV': 'false',
     },
-    alias: { '@': path.join(repoRoot, 'src') }
+    alias: { '@': path.join(repoRoot, 'src') },
   })
 
   try {
@@ -114,7 +114,7 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
       })
 
       assert.deepEqual(
-        normalized.slots.map(slot => slot.name),
+        normalized.slots.map((slot) => slot.name),
         ['未命名身份', '新身份 #2', '人类学研究者'],
       )
     })
@@ -127,7 +127,10 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
       assert.equal(save.saveSlots.length, 1)
       assert.equal(save.saveSlots[0].name, '开发设计师')
       assert.equal(save.enterSlot(save.saveSlots[0].id), true)
-      assert.deepEqual(action.skills.map(skill => skill.name), ['写代码', '做设计', '推广与宣传'])
+      assert.deepEqual(
+        action.skills.map((skill) => skill.name),
+        ['写代码', '做设计', '推广与宣传'],
+      )
     })
 
     await t.test('用户手动创建的新身份保持空白', () => {
@@ -160,7 +163,7 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
 
       const startResult = restored.planting.startAction('t1', {
         mode: 'countup',
-        targetDuration: ''
+        targetDuration: '',
       })
       assert.equal(startResult.ok, true)
       restored.planting.stopTimer()
@@ -175,7 +178,7 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
       first.actionWorkflow.createAction('行动 B')
       const startResult = first.planting.startAction('t1', {
         mode: 'countup',
-        targetDuration: ''
+        targetDuration: '',
       })
       assert.equal(startResult.ok, true)
       first.planting.stopTimer()
@@ -243,7 +246,7 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
       const restored = createTestArchitecture()
       restored.save.initSaveSystem()
       assert.equal(restored.save.saveSlots.length, 2)
-      assert.ok(restored.save.saveSlots.some(slot => slot.id === slotId))
+      assert.ok(restored.save.saveSlots.some((slot) => slot.id === slotId))
       assert.doesNotThrow(() => JSON.parse(storage.getItem('minerva_save_index')))
     })
 
@@ -280,8 +283,8 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
           skills: [],
           actions: [],
           notebook: [],
-          unlockedTreeIds: ['t1']
-        })
+          unlockedTreeIds: ['t1'],
+        }),
       )
 
       assert.ok(importedSlotId)
@@ -290,8 +293,8 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
       const restored = createTestArchitecture()
       restored.save.initSaveSystem()
       assert.equal(
-        restored.save.saveSlots.find(slot => slot.id === importedSlotId)?.name,
-        '已重命名'
+        restored.save.saveSlots.find((slot) => slot.id === importedSlotId)?.name,
+        '已重命名',
       )
       assert.equal(restored.save.enterSlot(importedSlotId), true)
       assert.equal(restored.player.coins, 42)
@@ -301,8 +304,34 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
       afterDelete.save.initSaveSystem()
       assert.equal(afterDelete.save.saveSlots.length, 1)
       assert.equal(afterDelete.save.saveSlots[0].name, '开发设计师')
+      assert.equal(afterDelete.player.coins, 42)
       assert.equal(storage.getItem(`minerva_slot_${importedSlotId}`), null)
       assert.equal(storage.getItem(`minerva_slot_${importedSlotId}_backup`), null)
+    })
+
+    await t.test('巡林官成长跨身份共享且删除身份不会让全局进度倒退', () => {
+      storage.clear()
+      const first = createTestArchitecture()
+      first.save.initSaveSystem()
+      const designerSlotId = first.save.saveSlots[0].id
+      first.save.enterSlot(designerSlotId)
+      first.player.cheatAddCoins()
+      first.actionWorkflow.createAction('设计行动')
+      first.save.saveActiveSlot(false)
+
+      const anthropologistSlotId = first.save.createSaveSlot('人类学研究者')
+      first.save.enterSlot(anthropologistSlotId)
+      assert.equal(first.player.coins, 1000)
+      assert.equal(first.player.globalXP, 1000)
+      assert.deepEqual(first.action.actions, [])
+
+      assert.equal(first.save.deleteSaveSlot(designerSlotId), true)
+      const restored = createTestArchitecture()
+      restored.save.initSaveSystem()
+      restored.save.enterSlot(anthropologistSlotId)
+      assert.equal(restored.player.coins, 1000)
+      assert.equal(restored.player.globalXP, 1000)
+      assert.equal(restored.action.actions.length, 0)
     })
 
     await t.test('拒绝结构无效的导入存档', async () => {

@@ -2,17 +2,28 @@ import { defineStore } from 'pinia'
 import { computed, ref, watch } from 'vue'
 import { useGameSnapshot } from '@/application/persistence/gameSnapshot'
 import { alertDialog } from '@/composables/dialogService'
+import { MAP_LOCATIONS } from '@/config/mapCatalog'
+import {
+  hasLegacyRangerProgress,
+  legacySourceId,
+  mergeLegacySaveIntoRangerProfile,
+  mergeRangerProfiles,
+  migrateLegacySlotsToRangerProfile,
+  normalizeRangerProfile,
+} from '@/local-backend/domain/rangerProfile'
 import { normalizeSaveIndex, validateSaveDataShape } from '@/local-backend/domain/saveSchema'
 import {
   createSaveSlotData,
   hasBootstrappedDefaultIdentity,
   markDefaultIdentityBootstrapped,
   persistSlotDataToRepository,
+  readRangerProfile,
   readSaveIndex,
   readSlotData,
   rebuildSaveIndexFromStoredSlots,
   removeSlotData,
   shouldPersistActiveSlot,
+  writeRangerProfile,
   writeSaveIndex,
 } from '@/local-backend/services/saveService'
 import { useAppStore } from './appStore'
@@ -34,6 +45,7 @@ export const useSaveStore = defineStore('save', () => {
   const bootStage = ref('slot-select')
   const saveIndex = ref({ lastSelectedSlotId: null, slots: [] })
   const activeSlotId = ref(null)
+  const rangerMetadata = ref({})
   const isHydrating = ref(false)
   const persistenceError = ref(null)
   let notifiedPersistenceError = null
@@ -42,6 +54,15 @@ export const useSaveStore = defineStore('save', () => {
   const activeSlotMeta = computed(
     () => saveSlots.value.find((slot) => slot.id === activeSlotId.value) || null,
   )
+  const rangerSummary = computed(() => ({
+    globalLevel: playerStore.globalLevel,
+    globalXP: playerStore.globalXP,
+    coins: playerStore.coins,
+    totalTrees: Object.values(mapStore.cumulativeTrees).reduce(
+      (sum, count) => sum + (Number(count) || 0),
+      0,
+    ),
+  }))
 
   function clearPersistenceError() {
     persistenceError.value = null
@@ -88,6 +109,95 @@ export const useSaveStore = defineStore('save', () => {
     return saveIndex.value
   }
 
+  function getRangerData() {
+    return normalizeRangerProfile(
+      {
+        ...rangerMetadata.value,
+        ...snapshot.createRangerSnapshot(),
+      },
+      MAP_LOCATIONS,
+    )
+  }
+
+  function applyRangerData(profile) {
+    const normalized = normalizeRangerProfile(profile, MAP_LOCATIONS)
+    const previousHydrating = isHydrating.value
+    try {
+      isHydrating.value = true
+      rangerMetadata.value = {
+        version: normalized.version,
+        profileId: normalized.profileId,
+        migratedLegacySourceIds: normalized.migratedLegacySourceIds,
+        mergedProfileIds: normalized.mergedProfileIds,
+      }
+      snapshot.hydrateRangerSnapshot(normalized)
+      return true
+    } finally {
+      isHydrating.value = previousHydrating
+    }
+  }
+
+  function persistRangerData(profile = getRangerData()) {
+    try {
+      const normalized = normalizeRangerProfile(profile, MAP_LOCATIONS)
+      writeRangerProfile(normalized)
+      rangerMetadata.value = {
+        version: normalized.version,
+        profileId: normalized.profileId,
+        migratedLegacySourceIds: normalized.migratedLegacySourceIds,
+        mergedProfileIds: normalized.mergedProfileIds,
+      }
+      clearPersistenceError()
+      return true
+    } catch (error) {
+      return reportPersistenceError('保存巡林官全局进度', error)
+    }
+  }
+
+  function commitRangerData(nextProfile) {
+    const previous = getRangerData()
+    applyRangerData(nextProfile)
+    if (persistRangerData()) return true
+    applyRangerData(previous)
+    return false
+  }
+
+  function readLegacySlotEntries() {
+    const entries = []
+    for (const slot of saveSlots.value) {
+      try {
+        const saveData = readSlotData(slot.id)
+        if (saveData) entries.push({ slotId: slot.id, saveData })
+      } catch (error) {
+        console.error(`Failed to include legacy identity ${slot.id} in ranger migration.`, error)
+      }
+    }
+    return entries
+  }
+
+  function loadRangerData() {
+    try {
+      const stored = readRangerProfile()
+      const profile = stored
+        ? normalizeRangerProfile(stored, MAP_LOCATIONS)
+        : migrateLegacySlotsToRangerProfile(readLegacySlotEntries(), MAP_LOCATIONS)
+      applyRangerData(profile)
+      if (!stored && !persistRangerData(profile)) return false
+      clearPersistenceError()
+      return true
+    } catch (error) {
+      const recovered = migrateLegacySlotsToRangerProfile(readLegacySlotEntries(), MAP_LOCATIONS)
+      applyRangerData(recovered)
+      if (persistRangerData(recovered)) {
+        void alertDialog('巡林官全局进度无法读取，已从现有身份记录中重建。', {
+          title: '全局进度已恢复',
+        })
+        return true
+      }
+      return reportPersistenceError('读取巡林官全局进度', error)
+    }
+  }
+
   function updateSlotMeta(slotId, updates = {}) {
     const slot = saveSlots.value.find((item) => item.id === slotId)
     if (!slot) return null
@@ -113,20 +223,20 @@ export const useSaveStore = defineStore('save', () => {
   }
 
   function getSaveData() {
-    return snapshot.createGameSnapshot({
+    return snapshot.createIdentitySnapshot({
       activeSlotId: activeSlotId.value,
       activeSlotName: activeSlotMeta.value?.name,
     })
   }
 
   function resetGameState() {
-    snapshot.resetGameSnapshot()
+    snapshot.resetIdentitySnapshot()
   }
 
   function applySaveData(data, silent = false) {
     try {
       isHydrating.value = true
-      snapshot.hydrateGameSnapshot(data)
+      snapshot.hydrateIdentitySnapshot(data)
       if (!silent) saveToLocalStorage()
       return true
     } catch (error) {
@@ -140,12 +250,13 @@ export const useSaveStore = defineStore('save', () => {
 
   function saveActiveSlot(markPlayed = false) {
     if (!activeSlotId.value) return false
-    return Boolean(
+    const identitySaved = Boolean(
       persistSlotData(activeSlotId.value, getSaveData(), {
         markPlayed,
         slotName: activeSlotMeta.value?.name,
       }),
     )
+    return identitySaved ? persistRangerData() : false
   }
 
   function saveToLocalStorage() {
@@ -178,13 +289,29 @@ export const useSaveStore = defineStore('save', () => {
     persist: saveToLocalStorage,
     flush: flushRuntimeState,
   })
-  mapStore.configurePersistenceAdapter({ persist: saveActiveSlot })
+  mapStore.configurePersistenceAdapter({ persist: persistRangerData })
+
+  function toIdentitySaveData(data = {}) {
+    const identityData = { ...data }
+    for (const field of [
+      'coins',
+      'globalXP',
+      'unlockedTreeIds',
+      'ownedBoostIds',
+      'unlockedBackgroundIds',
+      'map',
+      'ranger',
+    ]) {
+      delete identityData[field]
+    }
+    return identityData
+  }
 
   function createSaveSlot(name, initialData = null, options = {}) {
     const { slotId, slotName, slotData } = createSaveSlotData(
       name,
       saveSlots.value.length,
-      initialData,
+      initialData ? toIdentitySaveData(initialData) : null,
       options,
     )
     const persisted = persistSlotData(slotId, slotData, { markPlayed: false, slotName })
@@ -294,11 +421,45 @@ export const useSaveStore = defineStore('save', () => {
       targetSlotId = activeSlotId.value,
       createNewSlot = false,
       slotName = null,
+      replaceRanger = false,
     } = options
     try {
-      const data = JSON.parse(jsonString)
+      const imported = JSON.parse(jsonString)
+      const isEnvelope = Boolean(
+        imported &&
+        typeof imported === 'object' &&
+        Number(imported.formatVersion) >= 2 &&
+        Object.hasOwn(imported, 'identity'),
+      )
+      const data = isEnvelope ? imported.identity : imported
+      const importedRanger = isEnvelope ? imported.ranger || null : null
       const validation = validateSaveDataShape(data)
       if (!validation.ok) throw new Error(validation.error)
+      if (importedRanger && (typeof importedRanger !== 'object' || Array.isArray(importedRanger))) {
+        throw new Error('巡林官全局进度必须是对象。')
+      }
+
+      if (replaceRanger) {
+        const replacement = importedRanger
+          ? normalizeRangerProfile(importedRanger, MAP_LOCATIONS)
+          : migrateLegacySlotsToRangerProfile(
+              [{ slotId: data.slotId || legacySourceId(data), saveData: data }],
+              MAP_LOCATIONS,
+            )
+        if (!commitRangerData(replacement)) return false
+      } else if (importedRanger) {
+        const merged = mergeRangerProfiles(getRangerData(), importedRanger, MAP_LOCATIONS)
+        if (!commitRangerData(merged)) return false
+      } else if (hasLegacyRangerProgress(data)) {
+        const merged = mergeLegacySaveIntoRangerProfile(
+          getRangerData(),
+          data,
+          MAP_LOCATIONS,
+          legacySourceId(data),
+        )
+        if (!commitRangerData(merged)) return false
+      }
+
       if (createNewSlot) return createSaveSlot(slotName || data.slotName || data.name, data)
       if (!targetSlotId) return false
       const targetMeta = saveSlots.value.find((slot) => slot.id === targetSlotId)
@@ -320,8 +481,8 @@ export const useSaveStore = defineStore('save', () => {
     }
   }
 
-  function importSaveAsNewSlot(jsonString, slotName = null) {
-    return importSaveData(jsonString, { createNewSlot: true, slotName })
+  function importSaveAsNewSlot(jsonString, slotName = null, options = {}) {
+    return importSaveData(jsonString, { ...options, createNewSlot: true, slotName })
   }
 
   function initSaveSystem() {
@@ -332,6 +493,7 @@ export const useSaveStore = defineStore('save', () => {
         Boolean(createSaveSlot('开发设计师', null, { includeDefaultSkills: true }))
       if (defaultSlotReady) markDefaultIdentityBootstrapped()
     }
+    loadRangerData()
     if (!activeSlotId.value) resetGameState()
     bootStage.value = 'slot-select'
   }
@@ -348,7 +510,13 @@ export const useSaveStore = defineStore('save', () => {
     if (!data) return
     const slotName =
       saveSlots.value.find((slot) => slot.id === slotId)?.name || data.slotName || 'save'
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' })
+    const exportData = {
+      formatVersion: 2,
+      exportedAt: new Date().toISOString(),
+      identity: data,
+      ranger: getRangerData(),
+    }
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' })
     const url = URL.createObjectURL(blob)
     const anchor = document.createElement('a')
     anchor.href = url
@@ -361,15 +529,9 @@ export const useSaveStore = defineStore('save', () => {
 
   watch(
     [
-      () => playerStore.coins,
-      () => playerStore.globalXP,
-      () => playerStore.unlockedTreeIds,
-      () => playerStore.ownedBoostIds,
-      () => playerStore.unlockedBackgroundIds,
       () => actionStore.skills,
       () => actionStore.actions,
       () => notebookStore.notebook,
-      () => mapStore.mapState,
       () => appStore.activeView,
       () => actionStore.activeSkillId,
       () => actionStore.activeActionId,
@@ -382,10 +544,26 @@ export const useSaveStore = defineStore('save', () => {
     { deep: true },
   )
 
+  watch(
+    [
+      () => playerStore.coins,
+      () => playerStore.globalXP,
+      () => playerStore.unlockedTreeIds,
+      () => playerStore.ownedBoostIds,
+      () => playerStore.unlockedBackgroundIds,
+      () => mapStore.mapState,
+    ],
+    () => {
+      if (!isHydrating.value) persistRangerData()
+    },
+    { deep: true },
+  )
+
   return {
     bootStage,
     saveIndex,
     saveSlots,
+    rangerSummary,
     activeSlotId,
     activeSlotMeta,
     persistenceError,
@@ -403,6 +581,8 @@ export const useSaveStore = defineStore('save', () => {
     importSaveAsNewSlot,
     downloadSaveFile,
     getSaveData,
+    getRangerData,
+    persistRangerData,
     saveSaveIndex,
     clearPersistenceError,
   }

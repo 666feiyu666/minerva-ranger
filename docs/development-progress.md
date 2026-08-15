@@ -1,12 +1,12 @@
 # 开发交付进度
 
-规格版本：[v0.3 地图展示与场景解锁系统策划案](https://app.notion.com/p/3b8bb2de567281da96e8d20b3daa07d1)
+规格版本：[v0.4 全局巡林官与身份侧面系统策划案](v0.4-global-ranger-spec.md)
 
 检查日期：2026-08-15
 
-本次范围：v0.3 地图探索、地点解锁、场景图志、存档迁移与发布准备
+本次范围：巡林官全局成长、共享地图与森林、身份侧面隔离、地图 Skill 解耦、旧存档迁移与三分支同步
 
-目标环境：Windows 桌面窗口，本地单机 localStorage 数据链路
+目标环境：Windows 桌面窗口，本地单机 localStorage 数据链路；目标分支为 `main`、`cloud`、`local-desktop`
 
 ## 状态汇总
 
@@ -14,8 +14,8 @@
 |---|---:|
 | 未开始 | 0 |
 | 进行中 | 0 |
-| 待验证 | 0 |
-| 已完成 | 4 |
+| 待验证 | 1 |
+| 已完成 | 3 |
 | 阻塞 | 0 |
 | 暂缓 | 0 |
 
@@ -23,16 +23,16 @@
 
 | 需求引用 | 交付切片 | 状态 | 实现位置 | 验证证据与层级 | 目标环境 | 风险、阻塞或偏差 | 下一步 |
 |---|---|---|---|---|---|---|---|
-| SPEC-MAP-AC-01～09、17～22 | 地点配置、四态领域模型、原子解锁与旧档迁移 | 已完成 | `src/config/mapCatalog.js`、`src/local-backend/domain/mapModel.js`、`src/stores/mapStore.js` | 领域与集成测试；写入失败回滚、幂等解锁、迁移只执行一次 | 本地单机 | 无阻塞 | 随后续存档版本维护迁移兼容性 |
-| SPEC-MAP-AC-02、20 | 种树结算、Skill 生命周期与开发场景接入 | 已完成 | `src/stores/plantingStore.js`、`src/application/workflows/skillWorkflow.js`、`src/devtools/saveFixtures.js` | 集成测试；六类开发场景人工检查 | 本地单机 | 无阻塞 | 保持开发场景与配置同步 |
-| SPEC-MAP-AC-10～16、23～26 | 水彩地图、详情、资源栏、画廊与完整场景 | 已完成 | `src/components/MapView.vue`、`src/assets/concepts/map-location/` | `1024×720`、`1200×800`、`1600×1000`；昼夜、缩放、滚动、解锁和持久化实测 | Windows 桌面窗口 | 四个地点仍使用图志占位 | 后续补充并压缩正式场景插画 |
-| v0.3 发布门槛 | 回归、文档、人工验收与版本标记 | 已完成 | `README.md`、`CHANGELOG.md`、`package.json` | `npm run check`；34/34 测试；生产构建；2026-08-15 用户人工验收 | 本地发布 | Electron 安装包与多平台运行不在本次地图交付证据内 | 进入 1.0 发布清单与桌面打包验收 |
+| SPEC-RANGER-AC-01～06 | 全局巡林官数据所有权、身份侧面隔离、共享种植结算与删除身份规则 | 已完成 | `src/local-backend/domain/rangerProfile.js`、`src/application/persistence/gameSnapshot.js`、`src/stores/saveStore.js`、`src/stores/mapStore.js` | 领域及 localStorage 集成测试；两个身份切换、删除身份与共享进度人工验收 | 本地单机 | 全局累计成果刻意不随身份删除回退 | 保持后续新增资源先明确全局或身份归属 |
+| SPEC-RANGER-AC-04～05 | 地图去除 Skill 关联并改为纯叙事激励系统 | 已完成 | `src/components/MapView.vue`、`src/local-backend/domain/mapModel.js`、`src/application/workflows/skillWorkflow.js` | `1024×720`、`1200×800`、`1600×900` 及昼夜模式人工验收；地图 v1→v2 迁移测试 | Windows 桌面窗口 | 地点插画仍是主要包体积来源 | 后续发布优化纳入图片压缩与懒加载预算 |
+| SPEC-RANGER-AC-07～10 | 多身份旧档合并、新版导入导出、来源去重、主备份恢复与失败回滚 | 已完成 | `src/local-backend/domain/rangerProfile.js`、`src/local-backend/services/saveService.js`、`src/local-backend/storage/saveSlotRepository.js` | `npm run check`；`npm test` 38/38；临时干净输出目录生产构建通过 | Windows 本地存档 | 常规 `dist/favicon.ico` 被外部进程占用，标准输出目录无法覆盖；使用全新输出目录验证编译链路无误 | 释放占用后可重新生成默认 `dist`，不影响源代码交付 |
+| v0.4 三分支交付 | 文档、代码和验证结果同步到 `main`、`cloud`、`local-desktop` | 待验证 | Git 分支与远端引用 | 待提交后核对三个本地及远端分支指向同一提交 | GitHub 远端 | 无已知分支分叉 | 提交、推送并核对远端引用 |
 
 ## 当前风险与阻塞
 
-- 当前无阻塞项。
-- v0.3 标签证明本地地图功能交付，不代表 Electron 安装包、Windows 安装流程或其他平台已经通过验收。
-- 地图与四张场景图体积较大，后续发布优化应加入图片压缩和加载性能预算。
+- 当前无产品或代码阻塞项。
+- 默认 `dist` 目录中的 `favicon.ico` 在本机被其他进程占用；同一生产构建在全新的临时输出目录成功，因此归类为本地输出目录占用，而非构建产物错误。
+- 全局档案使用本地设备级存储，本轮不提供账号或云端数据同步；`cloud` 分支只表示代码交付分支，不改变这一产品边界。
 
 ## 下一批交付切片
 

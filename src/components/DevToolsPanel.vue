@@ -93,7 +93,9 @@ const openJsonImport = () => {
 }
 
 const importDevSave = (saveData, slotName, shouldEnter = false) => {
-  const slotId = store.importSaveAsNewSlot(JSON.stringify(saveData), slotName)
+  const slotId = store.importSaveAsNewSlot(JSON.stringify(saveData), slotName, {
+    replaceRanger: true,
+  })
   if (slotId && shouldEnter) store.enterSlot(slotId)
   return slotId
 }

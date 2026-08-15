@@ -1,4 +1,4 @@
-export const MAP_DATA_VERSION = 1
+export const MAP_DATA_VERSION = 2
 export const MAP_SCALE_MIN = 0.85
 export const MAP_SCALE_MAX = 2.2
 
@@ -42,8 +42,6 @@ function createLocationSnapshot(location, unlockedAt) {
     descriptionSnapshot: location.description,
     sceneAltSnapshot: location.sceneAlt,
     accentSnapshot: location.accent,
-    skillId: null,
-    skillNameSnapshot: null,
   }
 }
 
@@ -72,6 +70,7 @@ export function createInitialMapState(locations, now = Date.now()) {
   return {
     version: MAP_DATA_VERSION,
     availableTrees: {},
+    cumulativeTrees: {},
     unlockedLocations,
     discoveredLocationIds: getDiscoverableLocationIds(locations, unlockedLocations),
     selectedLocationId:
@@ -101,8 +100,6 @@ function normalizeUnlockedLocations(unlockedLocations, locations, fallbackUnlock
       descriptionSnapshot: record.descriptionSnapshot || location?.description || '',
       sceneAltSnapshot: record.sceneAltSnapshot || location?.sceneAlt || '',
       accentSnapshot: record.accentSnapshot || location?.accent || '#71856b',
-      skillId: record.skillId || null,
-      skillNameSnapshot: record.skillNameSnapshot || null,
     }
   }
   return normalized
@@ -110,12 +107,15 @@ function normalizeUnlockedLocations(unlockedLocations, locations, fallbackUnlock
 
 export function normalizeMapState({ mapData, actions = [], locations, now = Date.now() }) {
   const fallbackUnlockedAt = new Date(now).toISOString()
-  if (!mapData || Number(mapData.version) < MAP_DATA_VERSION) {
+  if (!mapData) {
     const migrated = createInitialMapState(locations, now)
     migrated.availableTrees = collectForestTreeCounts(actions)
+    migrated.cumulativeTrees = collectForestTreeCounts(actions)
     migrated.migratedFromLegacy = true
     return migrated
   }
+
+  const migratedFromV1 = Number(mapData.version) < MAP_DATA_VERSION
 
   const unlockedLocations = normalizeUnlockedLocations(
     mapData.unlockedLocations,
@@ -146,6 +146,9 @@ export function normalizeMapState({ mapData, actions = [], locations, now = Date
   return {
     version: MAP_DATA_VERSION,
     availableTrees: normalizeTreeCounts(mapData.availableTrees),
+    cumulativeTrees: normalizeTreeCounts(
+      mapData.cumulativeTrees || (migratedFromV1 ? collectForestTreeCounts(actions) : {}),
+    ),
     unlockedLocations,
     discoveredLocationIds: [...discoveredLocationIds],
     selectedLocationId,
@@ -154,7 +157,7 @@ export function normalizeMapState({ mapData, actions = [], locations, now = Date
       y: Number.isFinite(Number(viewport.y)) ? Number(viewport.y) : 0,
       scale: clamp(Number(viewport.scale) || 1, MAP_SCALE_MIN, MAP_SCALE_MAX),
     },
-    migratedFromLegacy: Boolean(mapData.migratedFromLegacy),
+    migratedFromLegacy: Boolean(mapData.migratedFromLegacy || migratedFromV1),
   }
 }
 

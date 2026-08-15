@@ -14,41 +14,49 @@ export function useGameSnapshot() {
   const mapStore = useMapStore()
   const plantingStore = usePlantingStore()
 
-  function createGameSnapshot({ activeSlotId, activeSlotName }) {
+  function createIdentitySnapshot({ activeSlotId, activeSlotName }) {
     return buildSaveData({
       activeSlotId,
       activeSlotName,
-      ...playerStore.toPlayerSnapshot(),
       ...actionStore.toActionSnapshot(),
       ...notebookStore.toNotebookSnapshot(),
-      ...mapStore.toMapSnapshot(),
       ...appStore.toAppSnapshot(),
       ...plantingStore.toPlantingSnapshot(),
     })
   }
 
-  function hydrateGameSnapshot(data) {
+  function createRangerSnapshot() {
+    return {
+      ...playerStore.toPlayerSnapshot(),
+      ...mapStore.toMapSnapshot(),
+    }
+  }
+
+  function hydrateIdentitySnapshot(data) {
     plantingStore.stopTimer()
-    playerStore.hydratePlayerState(data)
     actionStore.hydrateActionState(data)
     notebookStore.hydrateNotebookState(data)
-    mapStore.hydrateMapState(data)
     appStore.hydrateAppState(data)
     plantingStore.hydratePlantingState(data)
   }
 
-  function resetGameSnapshot() {
+  function hydrateRangerSnapshot(data) {
+    playerStore.hydratePlayerState(data)
+    mapStore.hydrateMapState(data)
+  }
+
+  function resetIdentitySnapshot() {
     plantingStore.resetPlantingState()
-    playerStore.resetPlayerState()
     actionStore.resetActionState()
     notebookStore.resetNotebookState()
-    mapStore.resetMapState()
     appStore.resetAppState()
   }
 
   return {
-    createGameSnapshot,
-    hydrateGameSnapshot,
-    resetGameSnapshot,
+    createIdentitySnapshot,
+    createRangerSnapshot,
+    hydrateIdentitySnapshot,
+    hydrateRangerSnapshot,
+    resetIdentitySnapshot,
   }
 }

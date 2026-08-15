@@ -36,7 +36,7 @@
                 {{ store.activeSlotMeta?.name || '未命名身份' }}
               </div>
               <p class="mt-2 text-xs leading-5" style="color: var(--ink-soft)">
-                身份与进度保存在当前设备。建议定期导出备份。
+                巡林官全局进度与当前身份记录都保存在本设备。建议定期导出备份。
               </p>
               <div
                 v-if="store.persistenceError"

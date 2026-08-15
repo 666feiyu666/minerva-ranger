@@ -1,11 +1,9 @@
 import { useNotebookStore } from '@/stores/notebookStore'
-import { useMapStore } from '@/stores/mapStore'
 import { useActionStore } from '@/stores/actionStore'
 
 export function useSkillWorkflow() {
   const actionStore = useActionStore()
   const notebookStore = useNotebookStore()
-  const mapStore = useMapStore()
 
   function deleteSkill(skillId) {
     const skill = actionStore.skills.find((item) => item.id === skillId)
@@ -15,7 +13,6 @@ export function useSkillWorkflow() {
       .map((item) => item.id)
 
     actionStore.deleteSkill(skillId)
-    mapStore.handleSkillDeleted(skill)
     affectedActionIds.forEach((actionId) => notebookStore.syncActionOwnership(actionId))
     notebookStore.migrateDeletedSkill(skill)
     return true

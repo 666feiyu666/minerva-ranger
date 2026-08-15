@@ -6,17 +6,17 @@
           <span class="save-atlas__seal">M</span>
           <span>密涅瓦巡林志</span>
         </div>
-        <p class="paper-label">长期身份</p>
+        <p class="paper-label">同一位巡林官 · 多个身份侧面</p>
         <h1>选择今天<br />要走进的森林</h1>
         <p class="save-atlas__lead">
-          每个身份对应一条长期方向。你反复实践的行动会在这里生长成技能、树木与可回看的记录。
+          每个身份整理一条长期方向；所有方向共同生长巡林等级、世界地图与同一片森林。
         </p>
       </div>
 
       <div class="save-atlas__note">
         <strong>使用建议</strong>
-        <p>为不同的长期方向建立独立身份，例如“开发设计师”或“人类学研究者”。</p>
-        <small>身份与进度仅保存在当前设备，请定期导出 JSON 备份。</small>
+        <p>用“开发设计师”或“人类学研究者”等侧面整理行动，而不是建立彼此隔离的世界。</p>
+        <small>巡林官与身份数据仅保存在当前设备，请定期导出 JSON 备份。</small>
       </div>
     </aside>
 
@@ -26,7 +26,7 @@
           <div>
             <p class="paper-label">巡林入口</p>
             <h2 class="display-title">选择身份</h2>
-            <p>共 {{ store.saveSlots.length }} 个身份，选择一个继续今天的行动。</p>
+            <p>共 {{ store.saveSlots.length }} 个身份侧面，选择一个继续今天的行动。</p>
           </div>
           <div class="save-atlas__header-actions">
             <button class="quiet-button" @click="startImportAsNew">导入备份</button>
@@ -36,7 +36,10 @@
 
         <div class="save-atlas__storage-note" role="note">
           <span aria-hidden="true">本地</span>
-          <p>所有身份与进度都保存在这台设备上；导出备份后，可在另一台设备中继续使用。</p>
+          <p>
+            巡林等级 Lv. {{ store.rangerSummary.globalLevel }} · 已种植
+            {{ store.rangerSummary.totalTrees }} 棵 · 所有身份共享地图与巡林官成长。
+          </p>
         </div>
 
         <component :is="DevToolsPanel" v-if="DevToolsPanel" class="save-atlas__devtools" />
@@ -70,8 +73,8 @@
               <h3>{{ slot.name }}</h3>
               <dl class="save-card__stats">
                 <div>
-                  <dt>巡林等级</dt>
-                  <dd>Lv. {{ slot.summary.globalLevel }}</dd>
+                  <dt>贡献树木</dt>
+                  <dd>{{ slot.summary.totalTrees }}</dd>
                 </div>
                 <div>
                   <dt>技能</dt>
@@ -177,10 +180,13 @@ const renameSlot = async (slot) => {
 }
 
 const deleteSlot = async (slot) => {
-  const confirmed = await confirmDialog(`确认删除身份“${slot.name}”吗？此操作无法恢复。`, {
-    title: '删除身份',
-    confirmText: '删除',
-  })
+  const confirmed = await confirmDialog(
+    `确认删除身份“${slot.name}”吗？该身份的技能、行动与笔记无法恢复；已经形成的巡林官全局进度和地图不会倒退。`,
+    {
+      title: '删除身份',
+      confirmText: '删除',
+    },
+  )
   if (!confirmed) return
   store.deleteSaveSlot(slot.id)
 }

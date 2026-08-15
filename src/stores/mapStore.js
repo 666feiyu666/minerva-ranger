@@ -13,7 +13,6 @@ import {
   unlockMapLocation,
   validateMapCatalog,
 } from '@/local-backend/domain/mapModel'
-import { useActionStore } from './actionStore'
 
 const EMPTY_PERSISTENCE_ADAPTER = Object.freeze({ persist: () => true })
 
@@ -33,7 +32,6 @@ const createHistoricalLocation = (id, record) => ({
 })
 
 export const useMapStore = defineStore('map', () => {
-  const actionStore = useActionStore()
   const mapState = ref(createInitialMapState(MAP_LOCATIONS))
   let persistenceAdapter = EMPTY_PERSISTENCE_ADAPTER
 
@@ -73,13 +71,7 @@ export const useMapStore = defineStore('map', () => {
     Object.values(availableTrees.value).reduce((sum, count) => sum + (Number(count) || 0), 0),
   )
   const cumulativeTrees = computed(() => {
-    const totals = {}
-    for (const action of actionStore.actions) {
-      for (const [treeId, count] of Object.entries(action.forest || {})) {
-        totals[treeId] = (totals[treeId] || 0) + Math.max(0, Number(count) || 0)
-      }
-    }
-    return totals
+    return mapState.value.cumulativeTrees || {}
   })
   const treeResources = computed(() =>
     TREE_TYPES.map((tree) => ({
@@ -124,6 +116,10 @@ export const useMapStore = defineStore('map', () => {
       ...mapState.value.availableTrees,
       [treeId]: (mapState.value.availableTrees[treeId] || 0) + count,
     }
+    mapState.value.cumulativeTrees = {
+      ...mapState.value.cumulativeTrees,
+      [treeId]: (mapState.value.cumulativeTrees[treeId] || 0) + count,
+    }
     return true
   }
 
@@ -136,42 +132,6 @@ export const useMapStore = defineStore('map', () => {
     if (!result.ok || result.alreadyUnlocked) return result
     if (!commitPersistedState(result.mapState)) return { ok: false, error: 'save_failed' }
     return result
-  }
-
-  function associateLocationSkill(locationId, skillId = null) {
-    const record = mapState.value.unlockedLocations[locationId]
-    if (!record) return { ok: false, error: 'location_locked' }
-    const skill = skillId ? actionStore.skills.find((item) => item.id === skillId) : null
-    if (skillId && !skill) return { ok: false, error: 'skill_missing' }
-    const nextMapState = {
-      ...mapState.value,
-      unlockedLocations: {
-        ...mapState.value.unlockedLocations,
-        [locationId]: {
-          ...record,
-          skillId: skill?.id || null,
-          skillNameSnapshot: skill?.name || null,
-        },
-      },
-    }
-    return commitPersistedState(nextMapState) ? { ok: true } : { ok: false, error: 'save_failed' }
-  }
-
-  function handleSkillDeleted(skill) {
-    if (!skill?.id) return false
-    let changed = false
-    const unlockedLocations = Object.fromEntries(
-      Object.entries(mapState.value.unlockedLocations).map(([locationId, record]) => {
-        if (record.skillId !== skill.id) return [locationId, record]
-        changed = true
-        return [
-          locationId,
-          { ...record, skillId: null, skillNameSnapshot: skill.name || record.skillNameSnapshot },
-        ]
-      }),
-    )
-    if (changed) mapState.value.unlockedLocations = unlockedLocations
-    return changed
   }
 
   function selectLocation(locationId) {
@@ -213,7 +173,6 @@ export const useMapStore = defineStore('map', () => {
   function replaceMapState(nextState) {
     mapState.value = normalizeMapState({
       mapData: { ...nextState, version: nextState?.version || 1 },
-      actions: actionStore.actions,
       locations: MAP_LOCATIONS,
     })
   }
@@ -223,6 +182,7 @@ export const useMapStore = defineStore('map', () => {
       map: {
         ...mapState.value,
         availableTrees: normalizeTreeCounts(mapState.value.availableTrees),
+        cumulativeTrees: normalizeTreeCounts(mapState.value.cumulativeTrees),
       },
     }
   }
@@ -241,8 +201,6 @@ export const useMapStore = defineStore('map', () => {
     MAP_LOCATIONS,
     addTreeBalance,
     unlockLocation,
-    associateLocationSkill,
-    handleSkillDeleted,
     selectLocation,
     setViewport,
     resetViewport,

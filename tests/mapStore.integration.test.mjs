@@ -35,7 +35,7 @@ class MemoryStorage {
   }
 }
 
-test('地图 Store 接入种树、存档和 Skill 生命周期', async () => {
+test('地图 Store 接入全局巡林官进度、身份切换与种树结算', async () => {
   const repoRoot = path.resolve(import.meta.dirname, '..')
   const bundledStorePath = path.join(tmpdir(), `mr-map-store-${Date.now()}.mjs`)
   const storage = new MemoryStorage()
@@ -46,7 +46,6 @@ test('地图 Store 接入种树、存档和 Skill 生命周期', async () => {
       contents: `
         import { createPinia, setActivePinia } from 'pinia'
         import { useActionWorkflow } from '@/application/workflows/actionWorkflow'
-        import { useSkillWorkflow } from '@/application/workflows/skillWorkflow'
         import { useActionStore } from '@/stores/actionStore'
         import { useMapStore } from '@/stores/mapStore'
         import { usePlantingStore } from '@/stores/plantingStore'
@@ -61,7 +60,6 @@ test('地图 Store 接入种树、存档和 Skill 生命周期', async () => {
             map: useMapStore(),
             planting: usePlantingStore(),
             actionWorkflow: useActionWorkflow(),
-            skillWorkflow: useSkillWorkflow(),
           }
         }
       `,
@@ -113,13 +111,14 @@ test('地图 Store 接入种树、存档和 Skill 生命周期', async () => {
     assert.equal(first.map.unlockLocation('old-forest-gate').alreadyUnlocked, true)
     assert.equal(first.map.availableTrees.t1, 2)
 
-    first.map.associateLocationSkill('old-forest-gate', 'skill_map')
-    assert.equal(first.skillWorkflow.deleteSkill('skill_map'), true)
-    assert.equal(first.map.mapState.unlockedLocations['old-forest-gate'].skillId, null)
-    assert.equal(
-      first.map.mapState.unlockedLocations['old-forest-gate'].skillNameSnapshot,
-      '地图研究',
-    )
+    assert.equal(first.map.cumulativeTrees.t1, 3)
+    assert.equal(first.map.mapState.unlockedLocations['old-forest-gate'].skillId, undefined)
+
+    const secondSlotId = first.save.createSaveSlot('人类学研究者')
+    assert.equal(first.save.enterSlot(secondSlotId), true)
+    assert.deepEqual(first.action.actions, [])
+    assert.equal(first.map.availableTrees.t1, 2)
+    assert.ok(first.map.mapState.unlockedLocations['old-forest-gate'])
 
     first.actionWorkflow.createAction('继续巡林')
     const runningAction = first.action.actions.at(-1)
@@ -130,13 +129,18 @@ test('地图 Store 接入种树、存档和 Skill 生命周期', async () => {
     first.planting.timer = 25 * 60
     first.planting.settleFinishedCycles()
     assert.equal(first.map.availableTrees.t1, mapBalanceBeforeCycle + 1)
+    assert.equal(first.map.cumulativeTrees.t1, 4)
     assert.equal(runningAction.forest.t1, 1)
+
+    assert.equal(first.save.deleteSaveSlot(legacySlotId), true)
+    assert.equal(first.map.cumulativeTrees.t1, 4)
 
     assert.equal(first.save.saveActiveSlot(false), true)
     const restored = createArchitecture()
     restored.save.initSaveSystem()
-    assert.equal(restored.save.enterSlot(legacySlotId), true)
+    assert.equal(restored.save.enterSlot(secondSlotId), true)
     assert.equal(restored.map.availableTrees.t1, first.map.availableTrees.t1)
+    assert.equal(restored.map.cumulativeTrees.t1, 4)
     assert.equal(restored.map.mapState.unlockedLocations['old-forest-gate'].recipeSnapshot.t1, 1)
 
     restored.map.addTreeBalance('t1', 10)

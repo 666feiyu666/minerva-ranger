@@ -3,6 +3,8 @@ export const SAVE_INDEX_KEY = 'minerva_save_index'
 export const SAVE_INDEX_BACKUP_KEY = 'minerva_save_index_backup'
 export const SAVE_SLOT_KEY_PREFIX = 'minerva_slot_'
 export const SAVE_SLOT_BACKUP_SUFFIX = '_backup'
+export const RANGER_PROFILE_KEY = 'minerva_ranger_profile'
+export const RANGER_PROFILE_BACKUP_KEY = 'minerva_ranger_profile_backup'
 
 export function getSlotStorageKey(slotId) {
   return `${SAVE_SLOT_KEY_PREFIX}${slotId}`
