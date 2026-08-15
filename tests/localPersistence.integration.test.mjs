@@ -312,6 +312,7 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
         save.initSaveSystem()
 
         assert.equal(save.importSaveAsNewSlot('{"actions":{}}'), false)
+        assert.equal(save.importSaveAsNewSlot('{"map":[]}'), false)
         assert.equal(save.saveSlots.length, 1)
       })
     })

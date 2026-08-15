@@ -27,6 +27,7 @@ export function buildSaveData(snapshot) {
     skills: snapshot.skills,
     actions: snapshot.actions,
     notebook: snapshot.notebook,
+    map: snapshot.map,
     activeView: snapshot.activeView,
     activeSkillId: snapshot.activeSkillId,
     activeActionId: snapshot.activeActionId,

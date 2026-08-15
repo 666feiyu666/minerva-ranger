@@ -18,6 +18,7 @@ import {
 } from '@/local-backend/services/plantingModeService.mjs'
 import { getRunningTimerDelta } from '@/local-backend/services/timerService'
 import { useNotebookStore } from './notebookStore'
+import { useMapStore } from './mapStore'
 import { usePlayerStore } from './playerStore'
 import { useActionStore } from './actionStore'
 
@@ -30,6 +31,7 @@ export const usePlantingStore = defineStore('planting', () => {
   const playerStore = usePlayerStore()
   const actionStore = useActionStore()
   const notebookStore = useNotebookStore()
+  const mapStore = useMapStore()
 
   const runningActionId = ref(null)
   const activeTreeId = ref(null)
@@ -93,6 +95,7 @@ export const usePlantingStore = defineStore('planting', () => {
     const result = applyCompletedTreeCycles(targetAction, activeTree.value, times)
     if (result) {
       playerStore.addGlobalXP(result.totalXP)
+      mapStore.addTreeBalance(activeTree.value.id, result.totalTrees)
       settledCycles.value += Math.max(0, Math.floor(times))
       taskTrees.value += result.totalTrees
       taskXP.value += result.totalXP

@@ -1,3 +1,6 @@
+import { MAP_LOCATIONS } from '@/config/mapCatalog'
+import { createInitialMapState } from '@/local-backend/domain/mapModel'
+
 const now = Date.now()
 
 const iso = (secondsAgo) => new Date(now - secondsAgo * 1000).toISOString()
@@ -42,6 +45,7 @@ const baseSave = (overrides) => ({
   skills: [],
   actions: [],
   notebook: [],
+  map: createInitialMapState(MAP_LOCATIONS, now),
   activeView: 'forest',
   activeActionId: null,
   runningActionId: null,
@@ -52,7 +56,154 @@ const baseSave = (overrides) => ({
   ...overrides,
 })
 
+const createMapFixtureState = ({
+  availableTrees = {},
+  unlockedLocationIds = ['ranger-camp'],
+  discoveredLocationIds = null,
+  selectedLocationId = unlockedLocationIds.at(-1) || 'ranger-camp',
+  viewport = { x: 0, y: 0, scale: 1 },
+}) => {
+  const initial = createInitialMapState(MAP_LOCATIONS, now)
+  const unlockedLocations = Object.fromEntries(
+    unlockedLocationIds.map((locationId, index) => [
+      locationId,
+      {
+        unlockedAt: new Date(now - index * 3600 * 1000).toISOString(),
+        recipeSnapshot: {},
+      },
+    ]),
+  )
+  return {
+    ...initial,
+    availableTrees,
+    unlockedLocations,
+    discoveredLocationIds:
+      discoveredLocationIds ||
+      MAP_LOCATIONS.filter(
+        (location) =>
+          unlockedLocations[location.id] ||
+          location.prerequisites?.some((locationId) => unlockedLocations[locationId]),
+      ).map((location) => location.id),
+    selectedLocationId,
+    viewport,
+  }
+}
+
+const mapFixtureActions = [
+  {
+    id: 'action_map_walk',
+    name: '沿溪巡林',
+    icon: '径',
+    totalXP: 1800,
+    totalTrees: 24,
+    totalTimeSpent: 28800,
+    forest: { t1: 16, t2: 4, t3: 3, t4: 1 },
+    skillId: 'skill_map_world',
+  },
+]
+
+const mapFixtureSkills = [{ id: 'skill_map_world', name: '理解自己的世界', x: 50, y: 50 }]
+
 export const devSaveFixtures = [
+  {
+    id: 'map-fresh',
+    name: 'Map Fresh',
+    tag: 'Map 0.3',
+    summary: 'Only the ranger camp is unlocked; all transplantable tree balances are zero.',
+    createSave: () =>
+      baseSave({
+        slotName: 'DEV - Map Fresh',
+        skills: mapFixtureSkills,
+        actions: [],
+        map: createMapFixtureState({ availableTrees: {} }),
+        activeView: 'map',
+      }),
+  },
+  {
+    id: 'map-locked',
+    name: 'Map Locked',
+    tag: 'Map 0.3',
+    summary: 'Several places are discovered, but current tree balances cannot unlock them.',
+    createSave: () =>
+      baseSave({
+        slotName: 'DEV - Map Locked',
+        skills: mapFixtureSkills,
+        actions: mapFixtureActions,
+        map: createMapFixtureState({ availableTrees: { t1: 0 } }),
+        activeView: 'map',
+      }),
+  },
+  {
+    id: 'map-ready',
+    name: 'Map Ready',
+    tag: 'Map 0.3',
+    summary: 'The forest gate and mist lake dock can both be unlocked immediately.',
+    createSave: () =>
+      baseSave({
+        slotName: 'DEV - Map Ready',
+        skills: mapFixtureSkills,
+        actions: mapFixtureActions,
+        map: createMapFixtureState({ availableTrees: { t1: 12, t2: 1, t3: 1 } }),
+        activeView: 'map',
+      }),
+  },
+  {
+    id: 'map-progressed',
+    name: 'Map Progressed',
+    tag: 'Map 0.3',
+    summary: 'Four places are unlocked and the scene gallery contains multiple illustrations.',
+    createSave: () =>
+      baseSave({
+        slotName: 'DEV - Map Progressed',
+        skills: mapFixtureSkills,
+        actions: mapFixtureActions,
+        map: createMapFixtureState({
+          availableTrees: { t1: 14, t2: 3, t3: 2 },
+          unlockedLocationIds: [
+            'ranger-camp',
+            'old-forest-gate',
+            'mist-lake-dock',
+            'moss-stone-courtyard',
+          ],
+          selectedLocationId: 'mist-lake-dock',
+        }),
+        activeView: 'map',
+      }),
+  },
+  {
+    id: 'map-complete',
+    name: 'Map Complete',
+    tag: 'Map 0.3',
+    summary: 'All eight locations are unlocked for gallery and long-content review.',
+    createSave: () =>
+      baseSave({
+        slotName: 'DEV - Map Complete',
+        skills: mapFixtureSkills,
+        actions: mapFixtureActions,
+        map: createMapFixtureState({
+          availableTrees: { t1: 28, t2: 8, t3: 10, t4: 2, t5: 2 },
+          unlockedLocationIds: MAP_LOCATIONS.map((location) => location.id),
+          selectedLocationId: 'golden-harbor',
+        }),
+        activeView: 'map',
+      }),
+  },
+  {
+    id: 'map-legacy',
+    name: 'Map Legacy',
+    tag: 'Migration',
+    summary: 'A v0.2-style save with action forests and no map data, ready for migration checks.',
+    createSave: () => {
+      const save = baseSave({
+        slotName: 'DEV - Map Legacy',
+        skills: mapFixtureSkills,
+        actions: mapFixtureActions,
+        activeView: 'map',
+      })
+      delete save.map
+      return save
+    },
+  },
   {
     id: 'fresh-ranger',
     name: 'Fresh Ranger',
