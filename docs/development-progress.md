@@ -14,8 +14,8 @@
 |---|---:|
 | 未开始 | 0 |
 | 进行中 | 0 |
-| 待验证 | 1 |
-| 已完成 | 3 |
+| 待验证 | 0 |
+| 已完成 | 4 |
 | 阻塞 | 0 |
 | 暂缓 | 0 |
 
@@ -26,7 +26,7 @@
 | SPEC-RANGER-AC-01～06 | 全局巡林官数据所有权、身份侧面隔离、共享种植结算与删除身份规则 | 已完成 | `src/local-backend/domain/rangerProfile.js`、`src/application/persistence/gameSnapshot.js`、`src/stores/saveStore.js`、`src/stores/mapStore.js` | 领域及 localStorage 集成测试；两个身份切换、删除身份与共享进度人工验收 | 本地单机 | 全局累计成果刻意不随身份删除回退 | 保持后续新增资源先明确全局或身份归属 |
 | SPEC-RANGER-AC-04～05 | 地图去除 Skill 关联并改为纯叙事激励系统 | 已完成 | `src/components/MapView.vue`、`src/local-backend/domain/mapModel.js`、`src/application/workflows/skillWorkflow.js` | `1024×720`、`1200×800`、`1600×900` 及昼夜模式人工验收；地图 v1→v2 迁移测试 | Windows 桌面窗口 | 地点插画仍是主要包体积来源 | 后续发布优化纳入图片压缩与懒加载预算 |
 | SPEC-RANGER-AC-07～10 | 多身份旧档合并、新版导入导出、来源去重、主备份恢复与失败回滚 | 已完成 | `src/local-backend/domain/rangerProfile.js`、`src/local-backend/services/saveService.js`、`src/local-backend/storage/saveSlotRepository.js` | `npm run check`；`npm test` 38/38；临时干净输出目录生产构建通过 | Windows 本地存档 | 常规 `dist/favicon.ico` 被外部进程占用，标准输出目录无法覆盖；使用全新输出目录验证编译链路无误 | 释放占用后可重新生成默认 `dist`，不影响源代码交付 |
-| v0.4 三分支交付 | 文档、代码和验证结果同步到 `main`、`cloud`、`local-desktop` | 待验证 | Git 分支与远端引用 | 待提交后核对三个本地及远端分支指向同一提交 | GitHub 远端 | 无已知分支分叉 | 提交、推送并核对远端引用 |
+| v0.4 三分支交付 | 文档、代码和验证结果同步到 `main`、`cloud`、`local-desktop` | 已完成 | Git 分支与远端引用 | `git rev-parse` 与 `git ls-remote origin` 核对三个本地及远端分支指向同一提交 | GitHub 远端 | 三分支在交付前无分叉 | 后续功能从该共同基线继续开发 |
 
 ## 当前风险与阻塞
 
