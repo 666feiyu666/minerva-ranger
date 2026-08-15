@@ -2,7 +2,7 @@
 
 > 当 **Forest（专注森林）** 遇上 **Melvor Idle（梅尔沃放置）**，把技能、行动和日志沉淀成一片可生长的生活森林。
 
-![Version](https://img.shields.io/badge/version-0.4.0--rc.1-orange)
+![Version](https://img.shields.io/badge/version-0.4.0-green)
 ![License](https://img.shields.io/badge/license-MIT-blue)
 ![Vue](https://img.shields.io/badge/Vue-3.x-green)
 
@@ -12,21 +12,21 @@
 
 它不是简单记录“你专注了多久”，而是把专注行为映射到一个持续成长的行动系统里：你选择行动、种植树木、积累经验、沉淀日志，并通过技能、行动、手记和系统记录来生长自己的生活森林。
 
-当前仓库正在 `local-desktop` 分支正式开发 **0.4.0**。全局巡林官与身份侧面、Windows Electron + SQLite 权威存档、事务、旧档迁移、备份恢复和安装器自动化已经进入首个发布候选；通过全部 V0.4 验收前不视为稳定发布。
+**0.4.0** 已作为 Windows x64 稳定版发布。它完成了全局巡林官与身份侧面、Electron + SQLite 权威存档、事务、旧档迁移、备份恢复和 Windows 安装/卸载链路；后续开发继续从 `local-desktop` 推进。
 
 ## 🧭 当前状态
 
-- 当前版本：`0.4.0-rc.1`；实现分支为 `local-desktop`，以 GitHub 预发布版提供 Windows x64 安装包。
-- 当前重点：Windows Electron + SQLite 本地持久化、旧 localStorage 迁移、备份恢复与发布候选验收。
+- 当前版本：[`0.4.0`](https://github.com/666feiyu666/minerva-ranger/releases/tag/v0.4.0)；GitHub 正式版提供 Windows x64 安装包。
+- 当前重点：稳定版运行反馈、存档兼容维护和 `1.0.0` 正式产品里程碑准备。
 - 数据路线：Electron 桌面版以 SQLite 为权威数据源；浏览器开发环境保留 localStorage 兼容适配器；未打包的 Electron 开发态与安装版使用相互隔离的 SQLite 目录。
 - 兼容边界：`0.1.0` 是首个存档基线；`0.2.0` 标准化旧版笔记；`0.3.0` 引入地图；`0.4.0` 会把已有身份中的巡林官成长与地图一次性合并为全局档案。
 - 运行边界：当前分支只实现本地单机链路，不包含账号、云同步或云服务器运行链路。
 - Electron 状态：已升级到 `43.4.0`，内置 Node `24.18.1` / SQLite `3.53.1`；开发态、打包态、可选安装目录、覆盖安装和双路径卸载自动化已通过。
-- 发布计划：`1.0.0` 会作为第一个正式发布版本。
+- 发布计划：`1.0.0` 会作为第一个主要产品里程碑。
 
 ### 版本记录
 
-- [`v0.4.0-rc.1`](https://github.com/666feiyu666/minerva-ranger/releases/tag/v0.4.0-rc.1)（预发布）：全局巡林官与身份侧面、Electron SQLite、legacy 迁移、事务、备份恢复和 Windows 安装包。
+- [`v0.4.0`](https://github.com/666feiyu666/minerva-ranger/releases/tag/v0.4.0)：全局巡林官与身份侧面、Electron SQLite、legacy 迁移、事务、备份恢复和 Windows 安装包。
 - [`v0.3.0`](https://github.com/666feiyu666/minerva-ranger/tree/v0.3.0)：地图四态、地点解锁、树木资源、场景画廊、Skill 关联与存档迁移。
 - [`v0.2.0`](https://github.com/666feiyu666/minerva-ranger/tree/v0.2.0)：新版巡林笔记、Markdown 随笔、行动足迹和笔记归属迁移。
 - [`v0.1.0`](https://github.com/666feiyu666/minerva-ranger/tree/v0.1.0)：本地单机核心流程与首个存档兼容基线。
@@ -166,7 +166,7 @@ npm run test:installer
 - [x] 完成 `0.3.0` 地图探索、场景解锁、画廊和旧档迁移
 - [x] 完成 `0.4.0` 的全局巡林官与身份侧面前置切片
 - [x] 实现 Electron SQLite、事务修订、legacy 迁移、备份恢复和 NSIS 自动化验收
-- [ ] 用真实历史档案完成迁移与恢复人工验收，再决定 V0.4 是否进入待发布
+- [x] 用真实历史数据完成 Electron/SQLite 导入验证并发布 V0.4 稳定版
 - [ ] 整理 `1.0.0` 正式版发布清单
 - [ ] 为其余地点补充更多正式场景插画
 - [ ] 成就系统

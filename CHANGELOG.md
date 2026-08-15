@@ -2,18 +2,7 @@
 
 本项目按照语义化版本记录用户可见变化。日期采用北京时间。
 
-## [Unreleased]
-
-### 变更
-
-- 未打包的 Electron 开发态默认改用 `%APPDATA%/minerva-ranger-dev`，与安装版 `%APPDATA%/minerva-ranger` 的正式 SQLite 存档隔离。
-- `MINERVA_USER_DATA_DIR` 作为开发态、打包态和自动化测试的显式覆盖入口，优先级高于默认路径。
-
-### 验证
-
-- 新增开发态、打包态和显式覆盖目录的路径选择单元测试与 Electron 运行时路径断言。
-
-## [0.4.0-rc.1] - 2026-08-15
+## [0.4.0] - 2026-08-15
 
 ### 新增
 
@@ -35,6 +24,8 @@
 - 删除身份不再删除或回退巡林官全局成长与地图成果。
 - Electron 升级到 43.4.0；桌面版 SQLite 为权威数据源，浏览器开发保留 localStorage 兼容适配器。
 - 安装器自动化改用独立 `MinervaRangerSmoke` 标识，避免测试覆盖开发者的正式安装记录或玩家存档。
+- 未打包的 Electron 开发态默认改用 `%APPDATA%/minerva-ranger-dev`，与安装版 `%APPDATA%/minerva-ranger` 的正式 SQLite 存档隔离。
+- `MINERVA_USER_DATA_DIR` 作为开发态、打包态和自动化测试的显式覆盖入口，优先级高于默认路径。
 
 ### 修复
 
@@ -44,10 +35,11 @@
 ### 验证
 
 - `npm run check` 通过。
-- `npm test` 50/50 通过，覆盖 SQLite 事务、迁移、损坏/过新模式、IPC sender、渲染适配、安装器策略和既有玩法回归。
+- `npm test` 53/53 通过，覆盖 SQLite 事务、迁移、损坏/过新模式、IPC sender、渲染适配、userData 分流、安装器策略和既有玩法回归。
 - `npm run build` 与 `npm run test:electron-sqlite` 通过。
-- Electron 开发态和 `win-unpacked` 首次启动/同目录重启通过。
+- Electron 开发态、显式覆盖目录和 `win-unpacked` 首次启动/同目录重启通过；开发态与安装态 userData 路径断言通过。
 - NSIS 自定义目录安装、覆盖安装和启动通过；隔离卸载器实测显示两个互斥单选项，默认保留 SQLite，显式彻底卸载删除应用数据，外部 JSON 保留；危险确认默认焦点为“否”。
+- 用户使用 `npm run desktop` 将真实的 V0.3 以前历史数据导入 SQLite，主要身份与进度未发现阻断问题。
 
 ## [0.3.0] - 2026-08-15
 
@@ -86,7 +78,7 @@
 
 - 建立本地单机核心流程与首个存档兼容基线。
 
-[0.4.0-rc.1]: https://github.com/666feiyu666/minerva-ranger/compare/v0.3.0...v0.4.0-rc.1
+[0.4.0]: https://github.com/666feiyu666/minerva-ranger/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/666feiyu666/minerva-ranger/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/666feiyu666/minerva-ranger/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/666feiyu666/minerva-ranger/tree/v0.1.0
