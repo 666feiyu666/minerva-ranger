@@ -1,6 +1,7 @@
 import { buildSaveData } from '@/local-backend/services/saveService'
 import { useAppStore } from '@/stores/appStore'
 import { useNotebookStore } from '@/stores/notebookStore'
+import { useMapStore } from '@/stores/mapStore'
 import { usePlantingStore } from '@/stores/plantingStore'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useActionStore } from '@/stores/actionStore'
@@ -10,6 +11,7 @@ export function useGameSnapshot() {
   const playerStore = usePlayerStore()
   const actionStore = useActionStore()
   const notebookStore = useNotebookStore()
+  const mapStore = useMapStore()
   const plantingStore = usePlantingStore()
 
   function createGameSnapshot({ activeSlotId, activeSlotName }) {
@@ -19,6 +21,7 @@ export function useGameSnapshot() {
       ...playerStore.toPlayerSnapshot(),
       ...actionStore.toActionSnapshot(),
       ...notebookStore.toNotebookSnapshot(),
+      ...mapStore.toMapSnapshot(),
       ...appStore.toAppSnapshot(),
       ...plantingStore.toPlantingSnapshot(),
     })
@@ -29,6 +32,7 @@ export function useGameSnapshot() {
     playerStore.hydratePlayerState(data)
     actionStore.hydrateActionState(data)
     notebookStore.hydrateNotebookState(data)
+    mapStore.hydrateMapState(data)
     appStore.hydrateAppState(data)
     plantingStore.hydratePlantingState(data)
   }
@@ -38,6 +42,7 @@ export function useGameSnapshot() {
     playerStore.resetPlayerState()
     actionStore.resetActionState()
     notebookStore.resetNotebookState()
+    mapStore.resetMapState()
     appStore.resetAppState()
   }
 

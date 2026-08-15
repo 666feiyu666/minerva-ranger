@@ -23,6 +23,13 @@ export function validateSaveDataShape(saveData) {
     }
   }
 
+  if (
+    saveData.map !== undefined &&
+    (!saveData.map || typeof saveData.map !== 'object' || Array.isArray(saveData.map))
+  ) {
+    return { ok: false, error: '存档字段 map 必须是对象。' }
+  }
+
   return { ok: true, error: null }
 }
 

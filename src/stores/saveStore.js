@@ -17,6 +17,7 @@ import {
 } from '@/local-backend/services/saveService'
 import { useAppStore } from './appStore'
 import { useNotebookStore } from './notebookStore'
+import { useMapStore } from './mapStore'
 import { usePlantingStore } from './plantingStore'
 import { usePlayerStore } from './playerStore'
 import { useActionStore } from './actionStore'
@@ -26,6 +27,7 @@ export const useSaveStore = defineStore('save', () => {
   const playerStore = usePlayerStore()
   const actionStore = useActionStore()
   const notebookStore = useNotebookStore()
+  const mapStore = useMapStore()
   const plantingStore = usePlantingStore()
   const snapshot = useGameSnapshot()
 
@@ -176,6 +178,7 @@ export const useSaveStore = defineStore('save', () => {
     persist: saveToLocalStorage,
     flush: flushRuntimeState,
   })
+  mapStore.configurePersistenceAdapter({ persist: saveActiveSlot })
 
   function createSaveSlot(name, initialData = null, options = {}) {
     const { slotId, slotName, slotData } = createSaveSlotData(
@@ -366,6 +369,7 @@ export const useSaveStore = defineStore('save', () => {
       () => actionStore.skills,
       () => actionStore.actions,
       () => notebookStore.notebook,
+      () => mapStore.mapState,
       () => appStore.activeView,
       () => actionStore.activeSkillId,
       () => actionStore.activeActionId,

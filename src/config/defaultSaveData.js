@@ -1,3 +1,6 @@
+import { MAP_LOCATIONS } from '@/config/mapCatalog'
+import { createInitialMapState } from '@/local-backend/domain/mapModel'
+
 export function createEmptySaveData(slotId, slotName, options = {}) {
   const createdAt = Date.now()
   const defaultSkills = options.includeDefaultSkills
@@ -21,6 +24,7 @@ export function createEmptySaveData(slotId, slotName, options = {}) {
     skills: defaultSkills,
     actions: [],
     notebook: [],
+    map: createInitialMapState(MAP_LOCATIONS, createdAt),
     activeView: 'forest',
     activeSkillId: null,
     activeActionId: null,
