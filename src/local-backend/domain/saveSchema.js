@@ -1,5 +1,8 @@
 import { getGlobalLevelFromXP } from './leveling'
 
+const LEGACY_UNNAMED_IDENTITY = '\u672a\u547d\u540d\u8eab\u4efd\u6863\u6848'
+const LEGACY_NUMBERED_IDENTITY_PATTERN = /^\u65b0\u8eab\u4efd\u6863\u6848 #(\d+)$/
+
 const SAVE_ARRAY_FIELDS = [
   'unlockedTreeIds',
   'ownedBoostIds',
@@ -23,13 +26,21 @@ export function validateSaveDataShape(saveData) {
   return { ok: true, error: null }
 }
 
+export function normalizeIdentityName(name) {
+  if (typeof name !== 'string' || !name || name === LEGACY_UNNAMED_IDENTITY) {
+    return '未命名身份'
+  }
+  const numberedMatch = name.match(LEGACY_NUMBERED_IDENTITY_PATTERN)
+  return numberedMatch ? `新身份 #${numberedMatch[1]}` : name
+}
+
 export function normalizeSaveIndex(index = {}) {
   return {
     lastSelectedSlotId: index.lastSelectedSlotId || null,
     slots: Array.isArray(index.slots)
       ? index.slots.map((slot) => ({
           id: slot.id,
-          name: slot.name || '未命名身份档案',
+          name: normalizeIdentityName(slot.name),
           createdAt: slot.createdAt || new Date().toISOString(),
           updatedAt: slot.updatedAt || slot.createdAt || new Date().toISOString(),
           lastPlayedAt:

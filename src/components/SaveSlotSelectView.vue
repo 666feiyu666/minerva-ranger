@@ -6,17 +6,17 @@
           <span class="save-atlas__seal">M</span>
           <span>密涅瓦巡林志</span>
         </div>
-        <p class="paper-label">身份档案</p>
+        <p class="paper-label">长期身份</p>
         <h1>选择今天<br />要走进的森林</h1>
         <p class="save-atlas__lead">
-          每份档案对应一个长期身份。你反复实践的行动会在这里生长成技能、树木与可回看的记录。
+          每个身份对应一条长期方向。你反复实践的行动会在这里生长成技能、树木与可回看的记录。
         </p>
       </div>
 
       <div class="save-atlas__note">
         <strong>使用建议</strong>
-        <p>为不同的长期方向建立独立档案，例如“开发设计师”或“人类学研究者”。</p>
-        <small>档案仅保存在当前设备，请定期导出 JSON 备份。</small>
+        <p>为不同的长期方向建立独立身份，例如“开发设计师”或“人类学研究者”。</p>
+        <small>身份与进度仅保存在当前设备，请定期导出 JSON 备份。</small>
       </div>
     </aside>
 
@@ -25,33 +25,33 @@
         <header class="save-atlas__header">
           <div>
             <p class="paper-label">巡林入口</p>
-            <h2 class="display-title">身份档案</h2>
-            <p>共 {{ store.saveSlots.length }} 份档案，选择一份继续今天的行动。</p>
+            <h2 class="display-title">选择身份</h2>
+            <p>共 {{ store.saveSlots.length }} 个身份，选择一个继续今天的行动。</p>
           </div>
           <div class="save-atlas__header-actions">
-            <button class="quiet-button" @click="startImportAsNew">导入档案</button>
-            <button class="primary-button" @click="createSlot">新建档案</button>
+            <button class="quiet-button" @click="startImportAsNew">导入备份</button>
+            <button class="primary-button" @click="createSlot">新建身份</button>
           </div>
         </header>
 
         <div class="save-atlas__storage-note" role="note">
           <span aria-hidden="true">本地</span>
-          <p>所有档案都保存在这台设备上；导出备份后，可在另一台设备中继续使用。</p>
+          <p>所有身份与进度都保存在这台设备上；导出备份后，可在另一台设备中继续使用。</p>
         </div>
 
         <component :is="DevToolsPanel" v-if="DevToolsPanel" class="save-atlas__devtools" />
 
         <section v-if="store.saveSlots.length === 0" class="save-atlas__empty paper-panel">
           <span class="save-atlas__empty-mark" aria-hidden="true">＋</span>
-          <h3>还没有身份档案</h3>
-          <p>先创建一个长期身份，或导入已有的 JSON 档案。</p>
+          <h3>还没有长期身份</h3>
+          <p>先创建一个长期身份，或从已有的 JSON 备份恢复。</p>
           <div>
-            <button class="primary-button" @click="createSlot">创建第一份档案</button>
-            <button class="quiet-button" @click="startImportAsNew">导入已有档案</button>
+            <button class="primary-button" @click="createSlot">创建第一个身份</button>
+            <button class="quiet-button" @click="startImportAsNew">导入已有备份</button>
           </div>
         </section>
 
-        <section v-else class="save-atlas__list" aria-label="身份档案列表">
+        <section v-else class="save-atlas__list" aria-label="长期身份列表">
           <article
             v-for="(slot, index) in store.saveSlots"
             :key="slot.id"
@@ -63,9 +63,9 @@
             </div>
             <div class="save-card__body">
               <div class="save-card__meta">
-                <span>身份档案</span>
+                <span>长期身份</span>
                 <span v-if="store.saveIndex.lastSelectedSlotId === slot.id">最近使用</span>
-                <span v-if="store.activeSlotId === slot.id">当前档案</span>
+                <span v-if="store.activeSlotId === slot.id">当前身份</span>
               </div>
               <h3>{{ slot.name }}</h3>
               <dl class="save-card__stats">
@@ -89,7 +89,7 @@
               <p class="save-card__date">最后进入：{{ formatDate(slot.lastPlayedAt) }}</p>
             </div>
             <div class="save-card__actions">
-              <button class="primary-button" @click="store.enterSlot(slot.id)">进入档案</button>
+              <button class="primary-button" @click="store.enterSlot(slot.id)">继续行动</button>
               <div class="save-card__secondary">
                 <button class="quiet-button" @click="renameSlot(slot)">重命名</button>
                 <button class="quiet-button" @click="store.downloadSaveFile(slot.id)">导出</button>
@@ -155,10 +155,10 @@ const formatDate = (value) => {
 }
 
 const createSlot = async () => {
-  const name = await promptDialog('请输入身份档案名称', {
-    title: '新建身份档案',
+  const name = await promptDialog('请输入身份名称', {
+    title: '新建身份',
     defaultValue:
-      store.saveSlots.length === 0 ? '开发设计师' : `新身份档案 #${store.saveSlots.length + 1}`,
+      store.saveSlots.length === 0 ? '开发设计师' : `新身份 #${store.saveSlots.length + 1}`,
     confirmText: '创建',
   })
   if (name === null) return
@@ -167,8 +167,8 @@ const createSlot = async () => {
 }
 
 const renameSlot = async (slot) => {
-  const name = await promptDialog('请输入新的身份档案名称', {
-    title: '重命名身份档案',
+  const name = await promptDialog('请输入新的身份名称', {
+    title: '重命名身份',
     defaultValue: slot.name,
     confirmText: '保存',
   })
@@ -177,8 +177,8 @@ const renameSlot = async (slot) => {
 }
 
 const deleteSlot = async (slot) => {
-  const confirmed = await confirmDialog(`确认删除身份档案“${slot.name}”吗？此操作无法恢复。`, {
-    title: '删除身份档案',
+  const confirmed = await confirmDialog(`确认删除身份“${slot.name}”吗？此操作无法恢复。`, {
+    title: '删除身份',
     confirmText: '删除',
   })
   if (!confirmed) return

@@ -8,7 +8,7 @@
       <header class="app-toolbar">
         <div class="app-toolbar__context">
           <div class="app-toolbar__eyebrow">
-            {{ store.activeSlotMeta?.name || '未命名身份档案' }} · {{ currentViewEyebrow }}
+            {{ store.activeSlotMeta?.name || '未命名身份' }} · {{ currentViewEyebrow }}
           </div>
           <div class="app-toolbar__title">{{ currentViewTitle }}</div>
         </div>
@@ -18,8 +18,8 @@
             <button
               class="app-icon-button"
               type="button"
-              title="身份档案与设置"
-              aria-label="身份档案与设置"
+              title="身份与设置"
+              aria-label="身份与设置"
               @click="showUtilityMenu = !showUtilityMenu"
             >
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
@@ -31,22 +31,22 @@
             </button>
 
             <div v-if="showUtilityMenu" class="app-utility-menu">
-              <div class="paper-label">当前身份档案</div>
+              <div class="paper-label">当前身份</div>
               <div class="mt-2 display-title text-lg">
-                {{ store.activeSlotMeta?.name || '未命名身份档案' }}
+                {{ store.activeSlotMeta?.name || '未命名身份' }}
               </div>
               <p class="mt-2 text-xs leading-5" style="color: var(--ink-soft)">
-                档案保存在当前设备。建议定期从身份档案页导出备份。
+                身份与进度保存在当前设备。建议定期导出备份。
               </p>
               <div
                 v-if="store.persistenceError"
                 class="mt-3 rounded-lg border px-3 py-2 text-xs"
                 style="border-color: var(--danger); color: var(--danger)"
               >
-                本地保存异常：{{ store.persistenceError.action }}。请尽快导出当前身份档案。
+                本地保存异常：{{ store.persistenceError.action }}。请尽快导出当前身份的备份。
               </div>
               <button class="quiet-button mt-4 w-full" type="button" @click="handleExitToSlots">
-                返回身份档案
+                切换身份
               </button>
             </div>
           </div>

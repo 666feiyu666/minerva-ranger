@@ -6,7 +6,7 @@
     <template v-if="selectedAction">
       <div class="border-b px-6 py-5" :class="isNightMode ? 'border-white/10' : 'border-[#e5dfd1]'">
         <button class="text-xs font-bold opacity-70 hover:opacity-100" @click="selectedActionId = null">
-          ← 返回行动档案
+          ← 返回行动足迹
         </button>
         <div class="mt-4 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
           <div>

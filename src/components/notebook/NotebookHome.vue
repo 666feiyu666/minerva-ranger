@@ -53,8 +53,8 @@ const systemNotes = computed(() => notebook.value.filter((note) => note.type ===
 const sections = computed(() => [
   {
     id: 'actions',
-    eyebrow: '行动归档',
-    title: '行动档案',
+    eyebrow: '种植足迹',
+    title: '行动足迹',
     description: '按行动与技能回看种植历史、现场记录和相关随笔。',
     primaryLabel: '行动',
     primaryValue: actions.value.length,

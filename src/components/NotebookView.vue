@@ -42,13 +42,13 @@ let unregisterViewGuard = null
 const metaBySection = {
   home: {
     title: '巡林笔记',
-    description: '把行动留下的线索整理为可回看的档案、随笔与变更记录。',
+    description: '把行动留下的线索整理为可回看的足迹、随笔与变更记录。',
     breadcrumbs: ['笔记目录'],
   },
   actions: {
-    title: '行动档案',
+    title: '行动足迹',
     description: '按行动、技能或未分类状态追溯种植记录与相关随笔。',
-    breadcrumbs: ['笔记目录', '行动档案'],
+    breadcrumbs: ['笔记目录', '行动足迹'],
   },
   essays: {
     title: '巡林随笔',

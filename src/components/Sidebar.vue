@@ -545,7 +545,7 @@
               class="text-xs font-bold uppercase tracking-widest mb-1"
               :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
             >
-              行动归档
+              行动足迹
             </div>
             <h3
               class="text-xl font-bold"

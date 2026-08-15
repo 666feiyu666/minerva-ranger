@@ -17,7 +17,7 @@ export { hasBootstrappedDefaultIdentity, markDefaultIdentityBootstrapped }
 export function buildSaveData(snapshot) {
   return {
     slotId: snapshot.activeSlotId,
-    slotName: snapshot.activeSlotName || '未命名身份档案',
+    slotName: snapshot.activeSlotName || '未命名身份',
     timestamp: Date.now(),
     coins: snapshot.coins,
     globalXP: snapshot.globalXP,
@@ -52,7 +52,7 @@ export function shouldPersistActiveSlot({ activeSlotId, bootStage, offlineEarnin
 
 export function createSaveSlotData(name, slotCount, initialData = null, options = {}) {
   const slotId = createSlotId()
-  const slotName = name?.trim() || (slotCount === 0 ? '开发设计师' : `新身份档案 #${slotCount + 1}`)
+  const slotName = name?.trim() || (slotCount === 0 ? '开发设计师' : `新身份 #${slotCount + 1}`)
   const slotData = initialData
     ? { ...initialData, slotId, slotName, timestamp: Date.now() }
     : createEmptySaveData(slotId, slotName, options)
@@ -78,7 +78,7 @@ export function persistSlotDataToRepository({
   const nextData = {
     ...saveData,
     slotId,
-    slotName: options.slotName || saveData.slotName || activeSlotName || '未命名身份档案',
+    slotName: options.slotName || saveData.slotName || activeSlotName || '未命名身份',
     timestamp: Date.now(),
   }
 
@@ -94,7 +94,7 @@ export function persistSlotDataToRepository({
   } else {
     nextIndex.slots.push({
       id: slotId,
-      name: options.slotName || nextData.slotName || '未命名身份档案',
+      name: options.slotName || nextData.slotName || '未命名身份',
       createdAt: now,
       updatedAt: now,
       lastPlayedAt: now,
@@ -123,7 +123,7 @@ export function rebuildSaveIndexFromStoredSlots() {
       const updatedAt = new Date(timestamp).toISOString()
       slots.push({
         id: slotId,
-        name: saveData.slotName || '未命名身份档案',
+        name: saveData.slotName || '未命名身份',
         createdAt: updatedAt,
         updatedAt,
         lastPlayedAt: updatedAt,

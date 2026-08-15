@@ -59,7 +59,7 @@ export const PREVIEW_BACKGROUND_ITEMS = [
     id: 'background_archive_room',
     type: 'background',
     categoryId: 'backgrounds',
-    name: '档案室温室',
+    name: '手记温室',
     desc: '适用于单个行动的温室造景。',
     price: 1800,
     levelReq: 10,

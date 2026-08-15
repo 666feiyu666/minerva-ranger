@@ -68,6 +68,9 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
         import { useActionStore } from '@/stores/actionStore'
         import { useNotebookStore } from '@/stores/notebookStore'
         import { useSaveStore } from '@/stores/saveStore'
+        import { normalizeSaveIndex } from '@/local-backend/domain/saveSchema'
+
+        export { normalizeSaveIndex }
 
         export function createTestArchitecture() {
           setActivePinia(createPinia())
@@ -97,9 +100,26 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
   })
 
   try {
-    const { createTestArchitecture } = await import(pathToFileURL(bundledStorePath).href)
+    const { createTestArchitecture, normalizeSaveIndex } = await import(
+      pathToFileURL(bundledStorePath).href
+    )
 
-    await t.test('首次启动自动创建开发设计师身份档案和三个默认技能', () => {
+    await t.test('旧版系统默认名称会升级为新的身份用语', () => {
+      const normalized = normalizeSaveIndex({
+        slots: [
+          { id: 'unnamed', name: '\u672a\u547d\u540d\u8eab\u4efd\u6863\u6848' },
+          { id: 'numbered', name: '\u65b0\u8eab\u4efd\u6863\u6848 #2' },
+          { id: 'custom', name: '人类学研究者' },
+        ],
+      })
+
+      assert.deepEqual(
+        normalized.slots.map(slot => slot.name),
+        ['未命名身份', '新身份 #2', '人类学研究者'],
+      )
+    })
+
+    await t.test('首次启动自动创建开发设计师身份和三个默认技能', () => {
       storage.clear()
       const { action, save } = createTestArchitecture()
       save.initSaveSystem()
@@ -110,7 +130,7 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
       assert.deepEqual(action.skills.map(skill => skill.name), ['写代码', '做设计', '推广与宣传'])
     })
 
-    await t.test('用户手动创建的新身份档案保持空白', () => {
+    await t.test('用户手动创建的新身份保持空白', () => {
       storage.clear()
       const { action, save } = createTestArchitecture()
       save.initSaveSystem()

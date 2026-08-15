@@ -202,7 +202,7 @@ export const useSaveStore = defineStore('save', () => {
       )
       if (!persisted) return false
     } catch (error) {
-      return reportPersistenceError('重命名身份档案', error)
+      return reportPersistenceError('重命名身份', error)
     }
     return true
   }
@@ -221,7 +221,7 @@ export const useSaveStore = defineStore('save', () => {
       clearPersistenceError()
       return true
     } catch (error) {
-      return reportPersistenceError('调整身份档案顺序', error)
+      return reportPersistenceError('调整身份顺序', error)
     }
   }
 
@@ -239,7 +239,7 @@ export const useSaveStore = defineStore('save', () => {
       saveIndex.value = nextIndex
       clearPersistenceError()
     } catch (error) {
-      return reportPersistenceError('删除身份档案', error)
+      return reportPersistenceError('删除身份', error)
     }
     if (activeSlotId.value === slotId) {
       activeSlotId.value = null
@@ -339,7 +339,7 @@ export const useSaveStore = defineStore('save', () => {
     try {
       data = slotId === activeSlotId.value ? getSaveData() : readSlotData(slotId)
     } catch (error) {
-      reportPersistenceError('导出身份档案', error)
+      reportPersistenceError('导出身份备份', error)
       return
     }
     if (!data) return

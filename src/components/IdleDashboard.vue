@@ -284,7 +284,7 @@
               @keydown.ctrl.enter="confirmHarvest"
             ></textarea>
             <p class="mt-2 text-xs" style="color: var(--ink-soft)">
-              记录会归入行动档案；有效记录固定获得 10 金币。
+              记录会归入行动足迹；有效记录固定获得 10 金币。
             </p>
           </div>
 
