@@ -5,11 +5,18 @@ const { pathToFileURL } = require('node:url')
 const { app, BrowserWindow, ipcMain, session } = require('electron')
 const { registerPersistenceIpc } = require('./persistence/ipc')
 const { PersistenceService } = require('./persistence/service')
+const { resolveUserDataPath } = require('./userDataPath')
 
 const isSmokeTest = process.env.MINERVA_SMOKE_TEST === '1'
 if (isSmokeTest) app.disableHardwareAcceleration()
-if (isSmokeTest && process.env.MINERVA_USER_DATA_DIR) {
-  app.setPath('userData', path.resolve(process.env.MINERVA_USER_DATA_DIR))
+const defaultUserDataPath = app.getPath('userData')
+const configuredUserDataPath = resolveUserDataPath({
+  defaultUserDataPath,
+  isPackaged: app.isPackaged,
+  overridePath: process.env.MINERVA_USER_DATA_DIR,
+})
+if (configuredUserDataPath !== defaultUserDataPath) {
+  app.setPath('userData', configuredUserDataPath)
 }
 const rendererDirectory =
   !app.isPackaged && process.env.MINERVA_RENDERER_DIR
@@ -68,6 +75,16 @@ function configureSessionSecurity() {
 }
 
 async function runSmokeTest(win) {
+  const userDataPath = path.resolve(app.getPath('userData'))
+  if (process.env.MINERVA_EXPECTED_USER_DATA_DIR) {
+    const expectedUserDataPath = path.resolve(process.env.MINERVA_EXPECTED_USER_DATA_DIR)
+    if (userDataPath.toLowerCase() !== expectedUserDataPath.toLowerCase()) {
+      throw new Error(
+        `Electron userData 路径不符合预期：${userDataPath} !== ${expectedUserDataPath}`,
+      )
+    }
+  }
+
   const deadline = Date.now() + 15000
   while (Date.now() < deadline) {
     const diagnostics = await persistenceService.getDiagnostics()
@@ -80,6 +97,7 @@ async function runSmokeTest(win) {
         JSON.stringify({
           ok: true,
           run: process.env.MINERVA_SMOKE_RUN || 'single',
+          userDataPath,
           diagnostics,
           renderer,
         }),
@@ -107,8 +125,7 @@ app.whenReady().then(() => {
     mainWindow.webContents.once('did-finish-load', () => {
       void runSmokeTest(mainWindow).catch((error) => {
         console.error(error)
-        process.exitCode = 1
-        app.quit()
+        app.exit(1)
       })
     })
   }

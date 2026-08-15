@@ -8,7 +8,8 @@ const electronPath = require('electron')
 const vitePath = path.join(repoRoot, 'node_modules', 'vite', 'bin', 'vite.js')
 const smokeDirectory = mkdtempSync(path.join(tmpdir(), 'minerva-electron-app-'))
 const rendererDirectory = path.join(smokeDirectory, 'renderer')
-const userDataDirectory = path.join(smokeDirectory, 'user-data')
+const defaultUserDataDirectory = path.join(smokeDirectory, 'default-user-data')
+const overrideUserDataDirectory = path.join(smokeDirectory, 'override-user-data')
 
 try {
   const build = spawnSync(
@@ -20,16 +21,40 @@ try {
   if (build.status !== 0) {
     process.exitCode = build.status ?? 1
   } else {
-    for (const run of ['first-launch', 'restart']) {
-      const smoke = spawnSync(electronPath, [repoRoot], {
+    const runs = [
+      {
+        name: 'development-default-path',
+        arguments: [`--user-data-dir=${defaultUserDataDirectory}`],
+        expectedUserDataDirectory: `${defaultUserDataDirectory}-dev`,
+      },
+      {
+        name: 'override-first-launch',
+        userDataDirectory: overrideUserDataDirectory,
+        expectedUserDataDirectory: overrideUserDataDirectory,
+      },
+      {
+        name: 'override-restart',
+        userDataDirectory: overrideUserDataDirectory,
+        expectedUserDataDirectory: overrideUserDataDirectory,
+      },
+    ]
+
+    for (const run of runs) {
+      const environment = {
+        ...process.env,
+        MINERVA_RENDERER_DIR: rendererDirectory,
+        MINERVA_SMOKE_RUN: run.name,
+        MINERVA_SMOKE_TEST: '1',
+        MINERVA_EXPECTED_USER_DATA_DIR: run.expectedUserDataDirectory,
+      }
+      delete environment.MINERVA_USER_DATA_DIR
+      if (run.userDataDirectory) {
+        environment.MINERVA_USER_DATA_DIR = run.userDataDirectory
+      }
+
+      const smoke = spawnSync(electronPath, [repoRoot, ...(run.arguments || [])], {
         cwd: repoRoot,
-        env: {
-          ...process.env,
-          MINERVA_RENDERER_DIR: rendererDirectory,
-          MINERVA_SMOKE_RUN: run,
-          MINERVA_SMOKE_TEST: '1',
-          MINERVA_USER_DATA_DIR: userDataDirectory,
-        },
+        env: environment,
         stdio: 'inherit',
         timeout: 30000,
       })

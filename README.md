@@ -18,7 +18,7 @@
 
 - 当前版本：`0.4.0-rc.1`；实现分支为 `local-desktop`，以 GitHub 预发布版提供 Windows x64 安装包。
 - 当前重点：Windows Electron + SQLite 本地持久化、旧 localStorage 迁移、备份恢复与发布候选验收。
-- 数据路线：Electron 桌面版以 SQLite 为权威数据源；浏览器开发环境保留 localStorage 兼容适配器。
+- 数据路线：Electron 桌面版以 SQLite 为权威数据源；浏览器开发环境保留 localStorage 兼容适配器；未打包的 Electron 开发态与安装版使用相互隔离的 SQLite 目录。
 - 兼容边界：`0.1.0` 是首个存档基线；`0.2.0` 标准化旧版笔记；`0.3.0` 引入地图；`0.4.0` 会把已有身份中的巡林官成长与地图一次性合并为全局档案。
 - 运行边界：当前分支只实现本地单机链路，不包含账号、云同步或云服务器运行链路。
 - Electron 状态：已升级到 `43.4.0`，内置 Node `24.18.1` / SQLite `3.53.1`；开发态、打包态、可选安装目录、覆盖安装和双路径卸载自动化已通过。
@@ -139,7 +139,13 @@ npm run test:packaged-app
 npm run test:installer
 ```
 
-桌面数据库位于 `app.getPath('userData')/data/minerva-ranger.sqlite3`。安装器破坏性烟雾测试使用独立的 `MinervaRangerSmoke` 应用标识、临时安装目录和独立用户数据目录，不会读写真实玩家档案或正式安装记录。
+桌面数据库位于 `app.getPath('userData')/data/minerva-ranger.sqlite3`，但开发态与安装态的数据根目录明确隔离：
+
+- `npm run desktop`：`%APPDATA%/minerva-ranger-dev/data/minerva-ranger.sqlite3`
+- 安装后的应用：`%APPDATA%/minerva-ranger/data/minerva-ranger.sqlite3`
+- 显式设置 `MINERVA_USER_DATA_DIR` 时：`<指定目录>/data/minerva-ranger.sqlite3`
+
+因此日常桌面调试不会读取或修改正式安装版存档。Electron 与安装器烟雾测试还会使用临时 `userData` 或显式覆盖目录，不会读写真实玩家档案和正式安装记录。
 
 ## 🗂️ 当前主要界面
 

@@ -2,6 +2,17 @@
 
 本项目按照语义化版本记录用户可见变化。日期采用北京时间。
 
+## [Unreleased]
+
+### 变更
+
+- 未打包的 Electron 开发态默认改用 `%APPDATA%/minerva-ranger-dev`，与安装版 `%APPDATA%/minerva-ranger` 的正式 SQLite 存档隔离。
+- `MINERVA_USER_DATA_DIR` 作为开发态、打包态和自动化测试的显式覆盖入口，优先级高于默认路径。
+
+### 验证
+
+- 新增开发态、打包态和显式覆盖目录的路径选择单元测试与 Electron 运行时路径断言。
+
 ## [0.4.0-rc.1] - 2026-08-15
 
 ### 新增

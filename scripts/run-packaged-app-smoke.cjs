@@ -10,18 +10,21 @@ if (!existsSync(executablePath)) {
 }
 
 const smokeDirectory = mkdtempSync(path.join(tmpdir(), 'minerva-packaged-app-'))
-const userDataDirectory = path.join(smokeDirectory, 'user-data')
+const expectedUserDataDirectory = path.join(smokeDirectory, 'packaged-user-data')
 
 try {
   for (const run of ['packaged-first-launch', 'packaged-restart']) {
-    const smoke = spawnSync(executablePath, [], {
+    const environment = {
+      ...process.env,
+      MINERVA_SMOKE_RUN: run,
+      MINERVA_SMOKE_TEST: '1',
+      MINERVA_EXPECTED_USER_DATA_DIR: expectedUserDataDirectory,
+    }
+    delete environment.MINERVA_USER_DATA_DIR
+
+    const smoke = spawnSync(executablePath, [`--user-data-dir=${expectedUserDataDirectory}`], {
       cwd: repoRoot,
-      env: {
-        ...process.env,
-        MINERVA_SMOKE_RUN: run,
-        MINERVA_SMOKE_TEST: '1',
-        MINERVA_USER_DATA_DIR: userDataDirectory,
-      },
+      env: environment,
       stdio: 'inherit',
       timeout: 30000,
     })
