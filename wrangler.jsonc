@@ -30,10 +30,28 @@
     },
   ],
   "env": {
-    "preview": {
+    "development": {
+      "name": "minerva-ranger-cloud-development",
+      "vars": {
+        "ENVIRONMENT": "development",
+        "AUTH_MODE": "access",
+        "MAX_SNAPSHOT_BYTES": "1500000",
+        "TEAM_DOMAIN": "https://minerva-ranger-feiyut.cloudflareaccess.com",
+        "POLICY_AUD": "b8be990ff4397a9b6d34cf596fac7da884f10fb218843fb825b5e4e5ad01bb5a",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "minerva-ranger-cloud-development",
+          "database_id": "dcfa7bdc-efcf-4fbd-8bf0-8a53c83a086a",
+          "migrations_dir": "migrations",
+        },
+      ],
+    },
+    "production": {
       "name": "minerva-ranger-cloud-preview",
       "vars": {
-        "ENVIRONMENT": "preview",
+        "ENVIRONMENT": "production",
         "AUTH_MODE": "access",
         "MAX_SNAPSHOT_BYTES": "1500000",
         "TEAM_DOMAIN": "https://minerva-ranger-feiyut.cloudflareaccess.com",

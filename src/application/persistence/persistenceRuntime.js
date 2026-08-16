@@ -34,6 +34,7 @@ export function subscribePersistence(listener) {
     state: 'ready',
     revision: 0,
     user: null,
+    environment: 'local',
     updatedAt: null,
     error: null,
   })

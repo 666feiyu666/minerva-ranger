@@ -45,7 +45,11 @@ describe('Cloud D1 snapshot API', () => {
   it('creates and reloads one revisioned snapshot for the Access subject', async () => {
     const initial = await SELF.fetch('http://localhost/api/snapshot')
     expect(initial.status).toBe(200)
-    expect(await initial.json()).toMatchObject({ revision: 0, snapshot: null })
+    expect(await initial.json()).toMatchObject({
+      revision: 0,
+      snapshot: null,
+      environment: 'local',
+    })
 
     const snapshot = emptySnapshot()
     snapshot.rangerProfile = { globalLevel: 3 }

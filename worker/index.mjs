@@ -49,6 +49,7 @@ async function handleApi(request, env) {
       response: jsonResponse({
         ...stored,
         user: { email: identity.email, source: identity.source },
+        environment: env.ENVIRONMENT || 'unknown',
       }),
       identity,
     }

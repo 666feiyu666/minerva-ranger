@@ -104,14 +104,7 @@
               <p class="mt-2 text-xs leading-5" style="color: var(--ink-soft)">
                 {{ persistenceStorageDescription }}
               </p>
-              <p
-                v-if="store.persistenceMode === 'cloud-d1' && store.persistenceUser?.email"
-                class="mt-2 truncate text-xs"
-                style="color: var(--ink-soft)"
-                :title="store.persistenceUser.email"
-              >
-                登录账号：{{ store.persistenceUser.email }}
-              </p>
+              <CloudAccountPanel v-if="store.persistenceMode === 'cloud-d1'" />
               <div
                 v-if="store.persistenceError"
                 class="mt-3 rounded-lg border px-3 py-2 text-xs"
@@ -265,6 +258,7 @@ import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useActionWorkflow } from '@/application/workflows/actionWorkflow'
 import { alertDialog, confirmDialog } from '@/composables/dialogService'
 import AppDialogHost from './components/AppDialogHost.vue'
+import CloudAccountPanel from './components/CloudAccountPanel.vue'
 import ForestView from './components/ForestView.vue'
 import IdleDashboard from './components/IdleDashboard.vue'
 import MapView from './components/MapView.vue'
@@ -322,7 +316,7 @@ const currentViewTitle = computed(() => {
 const isSystemView = computed(() => SYSTEM_VIEWS.has(store.activeView))
 const isCloudPersistence = computed(() => store.persistenceMode === 'cloud-d1')
 const persistenceBootLabel = computed(() =>
-  isCloudPersistence.value ? 'V0.5 云端巡林志' : 'V0.5 本地存档',
+  isCloudPersistence.value ? 'V0.4 Cloud 巡林志' : 'V0.4 Desktop 本地存档',
 )
 const persistenceBootTitle = computed(() =>
   isCloudPersistence.value ? '正在连接云端巡林官档案' : '正在检查巡林官档案',

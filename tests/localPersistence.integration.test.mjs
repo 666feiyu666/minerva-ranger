@@ -309,6 +309,58 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
       assert.equal(storage.getItem(`minerva_slot_${importedSlotId}_backup`), null)
     })
 
+    await t.test('V0.4 Desktop 导出的多个身份可导入且共享巡林官不会重复累计', () => {
+      storage.clear()
+      const architecture = createTestArchitecture()
+      architecture.save.initSaveSystem()
+
+      const sharedRanger = {
+        version: 1,
+        profileId: 'ranger_desktop_export',
+        globalXP: 240,
+        coins: 18,
+        unlockedTreeIds: ['t1'],
+        ownedBoostIds: [],
+        unlockedBackgroundIds: ['background_default'],
+      }
+      const buildExport = (slotId, slotName) =>
+        JSON.stringify({
+          formatVersion: 2,
+          exportedAt: '2026-08-16T00:00:00.000Z',
+          identity: {
+            slotId,
+            slotName,
+            skills: [],
+            actions: [],
+            notebook: [],
+          },
+          ranger: sharedRanger,
+        })
+
+      const firstSlotId = architecture.save.importSaveAsNewSlot(
+        buildExport('desktop_identity_1', '人类学家'),
+      )
+      const secondSlotId = architecture.save.importSaveAsNewSlot(
+        buildExport('desktop_identity_2', '开发设计师'),
+      )
+
+      assert.ok(firstSlotId)
+      assert.ok(secondSlotId)
+      assert.equal(
+        architecture.save.saveSlots.some((slot) => slot.name === '人类学家'),
+        true,
+      )
+      assert.equal(
+        architecture.save.saveSlots.some((slot) => slot.name === '开发设计师'),
+        true,
+      )
+
+      const storedRanger = JSON.parse(storage.getItem('minerva_ranger_profile'))
+      assert.equal(storedRanger.profileId, sharedRanger.profileId)
+      assert.equal(storedRanger.globalXP, sharedRanger.globalXP)
+      assert.equal(storedRanger.coins, sharedRanger.coins)
+    })
+
     await t.test('巡林官成长跨身份共享且删除身份不会让全局进度倒退', () => {
       storage.clear()
       const first = createTestArchitecture()

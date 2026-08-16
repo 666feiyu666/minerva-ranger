@@ -34,6 +34,8 @@
           </div>
         </header>
 
+        <CloudAccountPanel v-if="isCloudPersistence" wide />
+
         <div class="save-atlas__storage-note" role="note">
           <span aria-hidden="true">{{ isCloudPersistence ? '云端' : '本地' }}</span>
           <p>
@@ -135,6 +137,7 @@
 import { storeToRefs } from 'pinia'
 import { computed, defineAsyncComponent, reactive, ref } from 'vue'
 import { confirmDialog, promptDialog } from '@/composables/dialogService'
+import CloudAccountPanel from '@/components/CloudAccountPanel.vue'
 import { useSaveStore } from '@/stores/saveStore'
 
 const saveStore = useSaveStore()
@@ -258,8 +261,7 @@ const handleImportFile = (event) => {
     }
 
     if (importMode.value.type === 'new') {
-      const suggested = file.name.replace(/\.json$/i, '')
-      store.importSaveAsNewSlot(content, suggested)
+      store.importSaveAsNewSlot(content)
     } else if (importMode.value.slotId) {
       store.importSaveData(content, { targetSlotId: importMode.value.slotId })
     }

@@ -65,6 +65,7 @@ export const useSaveStore = defineStore('save', () => {
   const persistenceState = ref(managedPersistence ? 'initializing' : 'ready')
   const persistenceRevision = ref(0)
   const persistenceUser = ref(null)
+  const persistenceEnvironment = ref(null)
   const persistenceUpdatedAt = ref(null)
   const persistenceBackups = ref([])
   let notifiedPersistenceError = null
@@ -105,6 +106,7 @@ export const useSaveStore = defineStore('save', () => {
     persistenceState.value = status.state
     persistenceRevision.value = status.revision
     persistenceUser.value = status.user || null
+    persistenceEnvironment.value = status.environment || null
     persistenceUpdatedAt.value = status.updatedAt || null
     if (status.error) {
       reportPersistenceError(
@@ -712,6 +714,7 @@ export const useSaveStore = defineStore('save', () => {
     persistenceState,
     persistenceRevision,
     persistenceUser,
+    persistenceEnvironment,
     persistenceUpdatedAt,
     persistenceBackups,
     isHydrating,

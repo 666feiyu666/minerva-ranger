@@ -22,6 +22,7 @@ let currentStatus = {
   state: 'initializing',
   revision: 0,
   user: null,
+  environment: null,
   updatedAt: null,
   error: null,
 }
@@ -143,6 +144,7 @@ export async function initializeCloudPersistence() {
       state: 'ready',
       revision,
       user: result.user || null,
+      environment: result.environment || null,
       updatedAt: result.updatedAt || null,
       error: null,
     })
@@ -249,6 +251,7 @@ export async function reloadCloudPersistence() {
     state: 'ready',
     revision,
     user: result.user || currentStatus.user,
+    environment: result.environment || currentStatus.environment,
     updatedAt: result.updatedAt || null,
     error: null,
   })

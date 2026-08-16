@@ -15,6 +15,7 @@ dist-cloud
 dist-ssr
 coverage
 .wrangler/
+.cloudflare-backups/
 *.local
 
 # Environment files
