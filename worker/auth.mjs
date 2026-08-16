@@ -3,10 +3,35 @@ import { ApiError } from './responses.mjs'
 
 const LOCAL_HOSTS = new Set(['localhost', '127.0.0.1', '[::1]'])
 
+export function normalizeTeamDomain(value) {
+  const configured = String(value || '')
+    .trim()
+    .replace(/\/+$/, '')
+  if (!configured) return ''
+  const candidate = configured.includes('://') ? configured : `https://${configured}`
+  try {
+    const url = new URL(candidate)
+    if (
+      url.protocol !== 'https:' ||
+      url.username ||
+      url.password ||
+      url.port ||
+      url.pathname !== '/' ||
+      url.search ||
+      url.hash
+    ) {
+      return ''
+    }
+    return url.origin
+  } catch {
+    return ''
+  }
+}
+
 function requireAccessConfig(env) {
-  const teamDomain = String(env.TEAM_DOMAIN || '').replace(/\/+$/, '')
+  const teamDomain = normalizeTeamDomain(env.TEAM_DOMAIN)
   const audience = String(env.POLICY_AUD || '').trim()
-  if (!teamDomain.startsWith('https://') || !audience) {
+  if (!teamDomain || !audience) {
     throw new ApiError(500, 'ACCESS_NOT_CONFIGURED', 'Cloudflare Access 尚未完成配置。', {
       recoverable: false,
     })
