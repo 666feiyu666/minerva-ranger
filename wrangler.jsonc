@@ -36,6 +36,8 @@
         "ENVIRONMENT": "preview",
         "AUTH_MODE": "access",
         "MAX_SNAPSHOT_BYTES": "1500000",
+        "TEAM_DOMAIN": "minerva-ranger-feiyut.cloudflareaccess.com",
+        "POLICY_AUD": "b7af2f91232f81bf4fc467b362f2b099acfead5ed1e7c51e2e1a5a5814897f8b",
       },
       "d1_databases": [
         {
