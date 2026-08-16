@@ -1,12 +1,19 @@
 {
   "name": "minerva-ranger",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "private": true,
   "main": "electron/main.js",
   "scripts": {
     "dev": "vite",
+    "dev:cloud": "vite --mode cloud",
     "build": "vite build",
-    "test": "node --test",
+    "build:cloud": "vite build --mode cloud",
+    "build:cloud:preview": "cross-env CLOUDFLARE_ENV=preview vite build --mode cloud",
+    "deploy:cloud:preview": "npm run build:cloud:preview && wrangler deploy",
+    "test": "node --test \"tests/*.test.mjs\" \"tests/*.test.cjs\"",
+    "test:cloud": "vitest run --config vitest.config.mjs",
+    "types:cloud": "wrangler types worker-configuration.d.ts",
+    "check:cloud": "wrangler types worker-configuration.d.ts --check && vitest run --config vitest.config.mjs && vite build --mode cloud",
     "test:electron-sqlite": "node scripts/run-electron-sqlite-probe.cjs",
     "test:electron-app": "node scripts/run-electron-app-smoke.cjs",
     "test:packaged-app": "node scripts/run-packaged-app-smoke.cjs",
@@ -23,6 +30,7 @@
     "@capacitor/core": "^8.0.2",
     "@capacitor/ios": "^8.0.2",
     "dompurify": "^3.4.13",
+    "jose": "^6.2.9",
     "marked": "^18.0.9",
     "pinia": "^3.0.4",
     "vue": "^3.5.27",
@@ -30,9 +38,12 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.0.2",
+    "@cloudflare/vite-plugin": "^1.52.1",
+    "@cloudflare/vitest-pool-workers": "^0.21.3",
     "@eslint/js": "^9.39.2",
     "@vitejs/plugin-vue": "^6.0.3",
     "autoprefixer": "^10.4.23",
+    "cross-env": "^10.1.0",
     "electron": "43.4.0",
     "electron-builder": "^26.4.0",
     "eslint": "^9.39.2",
@@ -46,7 +57,9 @@
     "prettier": "3.8.1",
     "tailwindcss": "^3.4.17",
     "vite": "^7.3.1",
-    "vite-plugin-vue-devtools": "^8.0.5"
+    "vite-plugin-vue-devtools": "^8.0.5",
+    "vitest": "^4.1.0",
+    "wrangler": "^4.123.0"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"

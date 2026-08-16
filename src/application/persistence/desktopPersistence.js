@@ -1,15 +1,9 @@
 import {
-  DEFAULT_IDENTITY_BOOTSTRAP_KEY,
-  RANGER_PROFILE_BACKUP_KEY,
-  RANGER_PROFILE_KEY,
-  SAVE_INDEX_BACKUP_KEY,
-  SAVE_INDEX_KEY,
-  SAVE_SLOT_BACKUP_SUFFIX,
-  SAVE_SLOT_KEY_PREFIX,
-  getSlotBackupStorageKey,
-  getSlotStorageKey,
-} from '@/config/storageKeys'
-import { buildSaveSummary, normalizeSaveIndex } from '@/local-backend/domain/saveSchema'
+  buildSnapshotFromStorage,
+  collectBrowserEnvelope,
+  createMemoryStorage,
+  snapshotToEntries,
+} from '@/application/persistence/snapshotStorage'
 import { configureStorageClient } from '@/local-backend/storage/localStorageClient'
 
 const statusListeners = new Set()
@@ -34,187 +28,6 @@ function publishStatus(updates) {
   for (const listener of statusListeners) listener({ ...currentStatus })
 }
 
-function parseJsonWithBackup(storage, key, backupKey, label) {
-  const primary = storage.getItem(key)
-  if (primary === null) return null
-  try {
-    return JSON.parse(primary)
-  } catch (primaryError) {
-    const backupValue = storage.getItem(backupKey)
-    if (backupValue === null) {
-      throw new Error(`${label}损坏且没有可用备份。`, { cause: primaryError })
-    }
-    try {
-      return JSON.parse(backupValue)
-    } catch (backupError) {
-      throw new Error(`${label}及其备份均已损坏。`, { cause: backupError })
-    }
-  }
-}
-
-function listNativeSlotIds(storage) {
-  const ids = []
-  for (let index = 0; index < storage.length; index += 1) {
-    const key = storage.key(index)
-    if (!key?.startsWith(SAVE_SLOT_KEY_PREFIX) || key.endsWith(SAVE_SLOT_BACKUP_SUFFIX)) continue
-    ids.push(key.slice(SAVE_SLOT_KEY_PREFIX.length))
-  }
-  return [...new Set(ids)]
-}
-
-function collectLegacyEnvelope() {
-  const storage = window.localStorage
-  const slotIds = listNativeSlotIds(storage)
-  const slots = slotIds.map((slotId) => {
-    const payload = parseJsonWithBackup(
-      storage,
-      getSlotStorageKey(slotId),
-      getSlotBackupStorageKey(slotId),
-      `旧身份 ${slotId}`,
-    )
-    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
-      throw new Error(`旧身份 ${slotId} 不是有效对象。`)
-    }
-    return { id: slotId, payload: { ...payload, slotId } }
-  })
-
-  let saveIndex
-  try {
-    saveIndex = parseJsonWithBackup(
-      storage,
-      SAVE_INDEX_KEY,
-      SAVE_INDEX_BACKUP_KEY,
-      '旧存档索引',
-    )
-  } catch {
-    saveIndex = null
-  }
-  const normalizedIndex = normalizeSaveIndex(saveIndex || undefined)
-  const metadataById = new Map(normalizedIndex.slots.map((slot) => [slot.id, slot]))
-  const timestamp = new Date().toISOString()
-  const repairedSlots = slots.map(({ id, payload }) => {
-    const stored = metadataById.get(id)
-    const updatedAt = new Date(Number(payload.timestamp) || Date.now()).toISOString()
-    return {
-      id,
-      name: stored?.name || payload.slotName || '未命名身份',
-      createdAt: stored?.createdAt || updatedAt,
-      updatedAt: stored?.updatedAt || updatedAt,
-      lastPlayedAt: stored?.lastPlayedAt || updatedAt,
-      summary: stored?.summary || buildSaveSummary(payload),
-    }
-  })
-  const repairedIndex = {
-    ...normalizedIndex,
-    lastSelectedSlotId: repairedSlots.some(
-      (slot) => slot.id === normalizedIndex.lastSelectedSlotId,
-    )
-      ? normalizedIndex.lastSelectedSlotId
-      : repairedSlots[0]?.id || null,
-    slots: repairedSlots,
-  }
-
-  let rangerProfile = null
-  try {
-    rangerProfile = parseJsonWithBackup(
-      storage,
-      RANGER_PROFILE_KEY,
-      RANGER_PROFILE_BACKUP_KEY,
-      '旧巡林官档案',
-    )
-  } catch {
-    // Existing recovery semantics rebuild a damaged global profile from slots.
-  }
-
-  const relevantKeys = [
-    DEFAULT_IDENTITY_BOOTSTRAP_KEY,
-    SAVE_INDEX_KEY,
-    SAVE_INDEX_BACKUP_KEY,
-    RANGER_PROFILE_KEY,
-    RANGER_PROFILE_BACKUP_KEY,
-  ]
-  const hasLegacyData =
-    slotIds.length > 0 || relevantKeys.some((key) => storage.getItem(key) !== null)
-
-  return {
-    collectedAt: timestamp,
-    hasLegacyData,
-    snapshot: {
-      defaultIdentityBootstrapped: storage.getItem(DEFAULT_IDENTITY_BOOTSTRAP_KEY) === '1',
-      saveIndex: repairedIndex,
-      rangerProfile,
-      slots,
-    },
-  }
-}
-
-function createMemoryStorage(initialEntries = []) {
-  const values = new Map(initialEntries)
-  return {
-    get length() {
-      return values.size
-    },
-    key(index) {
-      return [...values.keys()][index] ?? null
-    },
-    getItem(key) {
-      return values.has(String(key)) ? values.get(String(key)) : null
-    },
-    setItem(key, value) {
-      values.set(String(key), String(value))
-      markDirty()
-    },
-    removeItem(key) {
-      const removed = values.delete(String(key))
-      if (removed) markDirty()
-    },
-    clear() {
-      if (values.size === 0) return
-      values.clear()
-      markDirty()
-    },
-    replace(entries) {
-      values.clear()
-      for (const [key, value] of entries) values.set(String(key), String(value))
-    },
-  }
-}
-
-function snapshotToEntries(snapshot) {
-  const entries = []
-  if (snapshot.saveIndex) entries.push([SAVE_INDEX_KEY, JSON.stringify(snapshot.saveIndex)])
-  if (snapshot.rangerProfile) {
-    entries.push([RANGER_PROFILE_KEY, JSON.stringify(snapshot.rangerProfile)])
-  }
-  if (snapshot.defaultIdentityBootstrapped) {
-    entries.push([DEFAULT_IDENTITY_BOOTSTRAP_KEY, '1'])
-  }
-  for (const slot of snapshot.slots || []) {
-    entries.push([getSlotStorageKey(slot.id), JSON.stringify(slot.payload)])
-  }
-  return entries
-}
-
-function readMemoryJson(key) {
-  const value = memoryStorage.getItem(key)
-  return value === null ? null : JSON.parse(value)
-}
-
-function buildSnapshotFromMemory() {
-  const saveIndex = normalizeSaveIndex(readMemoryJson(SAVE_INDEX_KEY) || undefined)
-  const slots = saveIndex.slots.map((metadata) => {
-    const payload = readMemoryJson(getSlotStorageKey(metadata.id))
-    if (!payload) throw new Error(`身份 ${metadata.id} 缺少内存快照。`)
-    return { id: metadata.id, payload }
-  })
-  return {
-    defaultIdentityBootstrapped: memoryStorage.getItem(DEFAULT_IDENTITY_BOOTSTRAP_KEY) === '1',
-    saveIndex,
-    rangerProfile: readMemoryJson(RANGER_PROFILE_KEY),
-    slots,
-  }
-}
-
 function markDirty() {
   if (!bridge) return
   dirty = true
@@ -227,9 +40,7 @@ function markDirty() {
 }
 
 export function hasDesktopPersistence() {
-  return Boolean(
-    typeof window !== 'undefined' && window.minervaDesktopPersistence?.initialize,
-  )
+  return Boolean(typeof window !== 'undefined' && window.minervaDesktopPersistence?.initialize)
 }
 
 export function subscribeDesktopPersistence(listener) {
@@ -249,10 +60,10 @@ export async function initializeDesktopPersistence() {
   bridge = window.minervaDesktopPersistence
   publishStatus({ mode: 'sqlite', state: 'initializing', error: null })
   try {
-    const legacyEnvelope = collectLegacyEnvelope()
+    const legacyEnvelope = collectBrowserEnvelope()
     const result = await bridge.initialize(legacyEnvelope)
     revision = Number(result.snapshot.revision) || 0
-    memoryStorage = createMemoryStorage(snapshotToEntries(result.snapshot))
+    memoryStorage = createMemoryStorage(snapshotToEntries(result.snapshot), markDirty)
     configureStorageClient(memoryStorage)
     dirty = false
     lastError = null
@@ -290,7 +101,7 @@ export async function flushDesktopPersistence() {
   dirty = false
   let snapshot
   try {
-    snapshot = buildSnapshotFromMemory()
+    snapshot = buildSnapshotFromStorage(memoryStorage)
   } catch (error) {
     dirty = true
     lastError = error
@@ -352,7 +163,7 @@ export async function restoreDesktopBackup(filename) {
   if (memoryStorage) {
     memoryStorage.replace(snapshotToEntries(result.restored))
   } else {
-    memoryStorage = createMemoryStorage(snapshotToEntries(result.restored))
+    memoryStorage = createMemoryStorage(snapshotToEntries(result.restored), markDirty)
     configureStorageClient(memoryStorage)
   }
   dirty = false

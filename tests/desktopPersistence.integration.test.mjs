@@ -47,7 +47,11 @@ test('桌面适配器迁移旧 localStorage 后改由 SQLite 快照提交且保�
           getDesktopPersistenceStatus,
           initializeDesktopPersistence,
         } from '@/application/persistence/desktopPersistence'
-        export { readJson, writeJson } from '@/local-backend/storage/localStorageClient'
+        export {
+          readJson,
+          writeJson,
+          writeJsonWithBackup,
+        } from '@/local-backend/storage/localStorageClient'
       `,
       resolveDir: repoRoot,
       sourcefile: 'desktop-persistence-test-entry.mjs',
@@ -144,6 +148,13 @@ test('桌面适配器迁移旧 localStorage 后改由 SQLite 快照提交且保�
     assert.equal(commits.at(-1).expectedRevision, 1)
     assert.equal(commits.at(-1).snapshot.rangerProfile.globalXP, 99)
     assert.equal(persistence.getDesktopPersistenceStatus().state, 'ready')
+    const commitCount = commits.length
+    persistence.writeJsonWithBackup('minerva_ranger_profile', 'minerva_ranger_profile_backup', {
+      ...legacyRanger,
+      globalXP: 99,
+    })
+    await persistence.flushDesktopPersistence()
+    assert.equal(commits.length, commitCount)
     assert.equal(JSON.parse(nativeStorage.getItem('minerva_ranger_profile')).globalXP, 12)
     assert.equal(nativeStorage.getItem('minerva_slot_slot_legacy'), '{ damaged')
   } finally {

@@ -1,0 +1,50 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "minerva-ranger-cloud",
+  "main": "./worker/index.mjs",
+  "compatibility_date": "2026-08-16",
+  "compatibility_flags": ["nodejs_compat"],
+  "upload_source_maps": true,
+  "preview_urls": true,
+  "placement": { "mode": "smart" },
+  "assets": {
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"],
+  },
+  "observability": {
+    "enabled": true,
+    "logs": { "enabled": true, "invocation_logs": true },
+    "traces": { "enabled": true, "head_sampling_rate": 0.1 },
+  },
+  "vars": {
+    "ENVIRONMENT": "local",
+    "AUTH_MODE": "development",
+    "MAX_SNAPSHOT_BYTES": "1500000",
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "minerva-ranger-cloud-local",
+      "database_id": "00000000-0000-0000-0000-000000000001",
+      "migrations_dir": "migrations",
+    },
+  ],
+  "env": {
+    "preview": {
+      "name": "minerva-ranger-cloud-preview",
+      "vars": {
+        "ENVIRONMENT": "preview",
+        "AUTH_MODE": "access",
+        "MAX_SNAPSHOT_BYTES": "1500000",
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "minerva-ranger-cloud-preview",
+          "database_id": "2d7ade0e-7b44-48d7-aa5c-d5318d2046ea",
+          "migrations_dir": "migrations",
+        },
+      ],
+    },
+  },
+}

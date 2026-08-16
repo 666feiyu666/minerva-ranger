@@ -11,14 +11,17 @@ node_modules
 .npm-cache/
 .DS_Store
 dist
+dist-cloud
 dist-ssr
 coverage
+.wrangler/
 *.local
 
 # Environment files
 .env
 .env.local
 .env.*.local
+.dev.vars*
 !.env.example
 !.env.devtools
 
@@ -36,6 +39,8 @@ docs
 !docs/
 docs/*
 !docs/v0.4-electron-sqlite-spec.md
+!docs/v0.5-cloud-spec.md
+!docs/cloud-development-progress.md
 *.tsbuildinfo
 
 .eslintcache

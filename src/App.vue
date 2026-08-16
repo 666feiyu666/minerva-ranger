@@ -5,10 +5,10 @@
     style="background: var(--paper); color: var(--ink)"
   >
     <section class="paper-panel max-w-md px-10 py-12 text-center">
-      <div class="paper-label">V0.4 本地存档</div>
-      <h1 class="display-title mt-3 text-2xl">正在检查巡林官档案</h1>
+      <div class="paper-label">{{ persistenceBootLabel }}</div>
+      <h1 class="display-title mt-3 text-2xl">{{ persistenceBootTitle }}</h1>
       <p class="mt-3 text-sm leading-7" style="color: var(--ink-soft)">
-        初始化 SQLite，并在需要时迁移旧版浏览器存档。此过程不会删除旧数据。
+        {{ persistenceBootDescription }}
       </p>
     </section>
   </div>
@@ -19,15 +19,18 @@
     style="background: var(--paper); color: var(--ink)"
   >
     <section class="paper-panel max-w-lg px-10 py-12 text-center">
-      <div class="paper-label">本地存档不可用</div>
+      <div class="paper-label">{{ persistenceErrorLabel }}</div>
       <h1 class="display-title mt-3 text-2xl">没有继续写入，以保护现有数据</h1>
       <p class="mt-3 text-sm leading-7" style="color: var(--ink-soft)">
-        {{ store.persistenceError?.message || 'SQLite 初始化失败，请重试。' }}
+        {{ store.persistenceError?.message || persistenceErrorFallback }}
       </p>
-      <button class="primary-button mt-5" type="button" @click="retryPersistence">
-        重新检查
-      </button>
-      <button class="quiet-button ml-2 mt-5" type="button" @click="loadRecoveryBackups">
+      <button class="primary-button mt-5" type="button" @click="retryPersistence">重新检查</button>
+      <button
+        v-if="store.persistenceMode === 'sqlite'"
+        class="quiet-button ml-2 mt-5"
+        type="button"
+        @click="loadRecoveryBackups"
+      >
         查找本地备份
       </button>
       <div v-if="store.persistenceBackups.length" class="mt-5 space-y-2 text-left">
@@ -38,7 +41,13 @@
           type="button"
           @click="restoreRecoveryBackup(backup)"
         >
-          恢复 {{ new Date(backup.createdAt).toLocaleString('zh-CN', { hour12: false }) }} 的备份
+          恢复
+          {{
+            new Date(backup.createdAt).toLocaleString('zh-CN', {
+              hour12: false,
+            })
+          }}
+          的备份
         </button>
       </div>
     </section>
@@ -53,12 +62,24 @@
       <header class="app-toolbar">
         <div class="app-toolbar__context">
           <div class="app-toolbar__eyebrow">
-            {{ store.activeSlotMeta?.name || '未命名身份' }} · {{ currentViewEyebrow }}
+            {{ store.activeSlotMeta?.name || '未命名身份' }} ·
+            {{ currentViewEyebrow }}
           </div>
           <div class="app-toolbar__title">{{ currentViewTitle }}</div>
         </div>
 
         <div class="app-toolbar__actions">
+          <div
+            class="app-sync-state"
+            :class="`app-sync-state--${persistenceStatus.tone}`"
+            role="status"
+            aria-live="polite"
+            :title="persistenceStatus.detail"
+          >
+            <span class="app-sync-state__dot" aria-hidden="true"></span>
+            <span>{{ persistenceStatus.label }}</span>
+          </div>
+
           <div class="relative" data-utility-menu>
             <button
               class="app-icon-button"
@@ -81,15 +102,32 @@
                 {{ store.activeSlotMeta?.name || '未命名身份' }}
               </div>
               <p class="mt-2 text-xs leading-5" style="color: var(--ink-soft)">
-                巡林官全局进度与当前身份记录都保存在本设备。建议定期导出备份。
+                {{ persistenceStorageDescription }}
+              </p>
+              <p
+                v-if="store.persistenceMode === 'cloud-d1' && store.persistenceUser?.email"
+                class="mt-2 truncate text-xs"
+                style="color: var(--ink-soft)"
+                :title="store.persistenceUser.email"
+              >
+                登录账号：{{ store.persistenceUser.email }}
               </p>
               <div
                 v-if="store.persistenceError"
                 class="mt-3 rounded-lg border px-3 py-2 text-xs"
                 style="border-color: var(--danger); color: var(--danger)"
               >
-                本地保存异常：{{ store.persistenceError.action }}。请尽快导出当前身份的备份。
+                {{ store.persistenceMode === 'cloud-d1' ? '云端同步异常' : '本地保存异常' }}：
+                {{ store.persistenceError.action }}。{{ store.persistenceError.message }}
               </div>
+              <button
+                v-if="store.persistenceMode === 'cloud-d1' && store.persistenceState === 'conflict'"
+                class="quiet-button mt-3 w-full"
+                type="button"
+                @click="handleReloadCloud"
+              >
+                载入云端最新版本
+              </button>
               <button class="quiet-button mt-4 w-full" type="button" @click="handleExitToSlots">
                 切换身份
               </button>
@@ -187,7 +225,9 @@
                 alt=""
               />
               <div class="min-w-0 flex-1">
-                <div class="display-title text-lg">{{ store.offlineEarnings.tree.name }}</div>
+                <div class="display-title text-lg">
+                  {{ store.offlineEarnings.tree.name }}
+                </div>
                 <div class="mt-1 text-xs" style="color: var(--ink-soft)">
                   新完成 {{ store.offlineEarnings.completedCycles }} 个周期
                 </div>
@@ -257,6 +297,7 @@ const store = reactive({
   createPersistenceBackup: saveStore.createPersistenceBackup,
   loadPersistenceBackups: saveStore.loadPersistenceBackups,
   restorePersistenceBackup: saveStore.restorePersistenceBackup,
+  reloadCommittedPersistenceState: saveStore.reloadCommittedPersistenceState,
   openForest: actionWorkflow.openForest,
   openNotebook: appStore.openNotebook,
   openShop: appStore.openShop,
@@ -279,6 +320,92 @@ const currentViewTitle = computed(() => {
   return viewMeta[store.activeView]?.title || '密涅瓦的巡林官'
 })
 const isSystemView = computed(() => SYSTEM_VIEWS.has(store.activeView))
+const isCloudPersistence = computed(() => store.persistenceMode === 'cloud-d1')
+const persistenceBootLabel = computed(() =>
+  isCloudPersistence.value ? 'V0.5 云端巡林志' : 'V0.5 本地存档',
+)
+const persistenceBootTitle = computed(() =>
+  isCloudPersistence.value ? '正在连接云端巡林官档案' : '正在检查巡林官档案',
+)
+const persistenceBootDescription = computed(() =>
+  isCloudPersistence.value
+    ? '正在验证登录身份并从 D1 载入存档。载入完成前不会在本机创建另一份分叉数据。'
+    : '初始化 SQLite，并在需要时迁移旧版浏览器存档。此过程不会删除旧数据。',
+)
+const persistenceErrorLabel = computed(() =>
+  isCloudPersistence.value ? '云端存档不可用' : '本地存档不可用',
+)
+const persistenceErrorFallback = computed(() =>
+  isCloudPersistence.value
+    ? '云端连接失败，请检查网络或登录状态后重试。'
+    : 'SQLite 初始化失败，请重试。',
+)
+const persistenceStorageDescription = computed(() => {
+  if (isCloudPersistence.value) {
+    return '巡林官全局进度与身份记录通过当前登录账号同步到云端。出现冲突时不会自动覆盖。'
+  }
+  if (store.persistenceMode === 'sqlite') {
+    return '巡林官全局进度与当前身份记录保存在本设备的 SQLite 数据库中。建议定期导出备份。'
+  }
+  return '巡林官全局进度与当前身份记录保存在当前浏览器。建议定期导出备份。'
+})
+const persistenceStatus = computed(() => {
+  if (isCloudPersistence.value) {
+    const states = {
+      initializing: {
+        label: '连接云端',
+        tone: 'working',
+        detail: '正在载入云端存档',
+      },
+      pending: {
+        label: '等待同步',
+        tone: 'working',
+        detail: '修改已记录，等待写入云端',
+      },
+      saving: {
+        label: '同步中',
+        tone: 'working',
+        detail: '正在写入 Cloudflare D1',
+      },
+      ready: {
+        label: '云端已同步',
+        tone: 'ready',
+        detail: `云端修订 ${store.persistenceRevision}`,
+      },
+      offline: {
+        label: '离线未同步',
+        tone: 'warning',
+        detail: '修改仅保留在当前页面内存中',
+      },
+      conflict: {
+        label: '版本冲突',
+        tone: 'danger',
+        detail: '云端已有更新，未自动覆盖',
+      },
+      degraded: {
+        label: '同步异常',
+        tone: 'danger',
+        detail: '云端写入失败，请查看身份与设置',
+      },
+      fatal: {
+        label: '云端不可用',
+        tone: 'danger',
+        detail: '云端配置或数据发生不可恢复错误',
+      },
+    }
+    return states[store.persistenceState] || states.degraded
+  }
+  if (store.persistenceMode === 'sqlite') {
+    return store.persistenceState === 'saving'
+      ? { label: '本地保存中', tone: 'working', detail: '正在写入 SQLite' }
+      : {
+          label: 'SQLite 已保存',
+          tone: 'ready',
+          detail: `本地修订 ${store.persistenceRevision}`,
+        }
+  }
+  return { label: '浏览器存档', tone: 'ready', detail: '数据保存在当前浏览器' }
+})
 
 onMounted(async () => {
   const ready = await store.initSaveSystem()
@@ -352,6 +479,15 @@ const handleCreateBackup = async () => {
   }
 }
 
+const handleReloadCloud = async () => {
+  const confirmed = await confirmDialog(
+    '载入云端最新版本会放弃当前页面中尚未同步的修改。是否继续？',
+    { title: '解决云端版本冲突', confirmText: '载入云端版本' },
+  )
+  if (!confirmed) return
+  if (await store.reloadCommittedPersistenceState()) showUtilityMenu.value = false
+}
+
 const handleExitToSlots = async () => {
   showUtilityMenu.value = false
   store.exitToSaveSelection()
@@ -372,6 +508,44 @@ const formatDuration = (seconds) => {
 </script>
 
 <style>
+.app-sync-state {
+  display: inline-flex;
+  min-height: 30px;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: 5px 10px;
+  color: var(--ink-soft);
+  background: color-mix(in srgb, var(--paper-strong) 78%, transparent);
+  font-size: 11px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+.app-sync-state__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.app-sync-state--ready {
+  color: var(--forest);
+}
+
+.app-sync-state--working {
+  color: var(--lake);
+}
+
+.app-sync-state--warning {
+  color: var(--ochre);
+}
+
+.app-sync-state--danger {
+  color: var(--danger);
+}
+
 .fade-enter-active,
 .fade-leave-active {
   transition: opacity 0.22s ease;

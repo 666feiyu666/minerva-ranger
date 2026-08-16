@@ -16,7 +16,7 @@
       <div class="save-atlas__note">
         <strong>使用建议</strong>
         <p>用“开发设计师”或“人类学研究者”等侧面整理行动，而不是建立彼此隔离的世界。</p>
-        <small>巡林官与身份数据仅保存在当前设备，请定期导出 JSON 备份。</small>
+        <small>{{ storageAdvice }}</small>
       </div>
     </aside>
 
@@ -35,10 +35,14 @@
         </header>
 
         <div class="save-atlas__storage-note" role="note">
-          <span aria-hidden="true">本地</span>
+          <span aria-hidden="true">{{ isCloudPersistence ? '云端' : '本地' }}</span>
           <p>
             巡林等级 Lv. {{ store.rangerSummary.globalLevel }} · 已种植
-            {{ store.rangerSummary.totalTrees }} 棵 · 所有身份共享地图与巡林官成长。
+            {{ store.rangerSummary.totalTrees }} 棵 · 所有身份共享地图与巡林官成长。<template
+              v-if="isCloudPersistence"
+            >
+              当前状态：{{ cloudStateLabel }}。</template
+            >
           </p>
         </div>
 
@@ -129,7 +133,7 @@
 
 <script setup>
 import { storeToRefs } from 'pinia'
-import { defineAsyncComponent, reactive, ref } from 'vue'
+import { computed, defineAsyncComponent, reactive, ref } from 'vue'
 import { confirmDialog, promptDialog } from '@/composables/dialogService'
 import { useSaveStore } from '@/stores/saveStore'
 
@@ -153,6 +157,25 @@ const isDevToolsMode = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEV_TO
 const DevToolsPanel = isDevToolsMode
   ? defineAsyncComponent(() => import('@/components/DevToolsPanel.vue'))
   : null
+const isCloudPersistence = computed(() => store.persistenceMode === 'cloud-d1')
+const storageAdvice = computed(() =>
+  isCloudPersistence.value
+    ? '巡林官与身份数据会同步到当前登录账号；仍建议定期导出 JSON 作为独立备份。'
+    : '巡林官与身份数据仅保存在当前设备，请定期导出 JSON 备份。',
+)
+const cloudStateLabel = computed(() => {
+  const labels = {
+    initializing: '连接中',
+    pending: '等待同步',
+    saving: '同步中',
+    ready: '已同步',
+    offline: '离线未同步',
+    conflict: '版本冲突',
+    degraded: '同步异常',
+    fatal: '云端不可用',
+  }
+  return labels[store.persistenceState] || '同步异常'
+})
 
 const formatDate = (value) => {
   if (!value) return '尚未进入'
@@ -584,6 +607,30 @@ const handleImportFile = (event) => {
   }
   .save-atlas__note {
     display: none;
+  }
+}
+
+@media (min-height: 681px) and (max-height: 760px) {
+  .save-atlas__intro {
+    padding-block: 32px;
+  }
+  .save-atlas__brand {
+    margin-bottom: 42px;
+  }
+  .save-atlas__intro h1 {
+    margin-block: 10px 16px;
+    font-size: clamp(38px, 4vw, 52px);
+  }
+  .save-atlas__lead {
+    font-size: 14px;
+    line-height: 1.7;
+  }
+  .save-atlas__note > p {
+    display: none;
+  }
+  .save-atlas__note small {
+    display: block;
+    margin-top: 8px;
   }
 }
 </style>
