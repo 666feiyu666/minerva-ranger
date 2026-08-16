@@ -39,7 +39,7 @@ docs
 !docs/
 docs/*
 !docs/v0.4-electron-sqlite-spec.md
-!docs/v0.5-cloud-spec.md
+!docs/v0.4-cloud-spec.md
 !docs/cloud-development-progress.md
 *.tsbuildinfo
 
