@@ -14,6 +14,21 @@ export function renameSkillInList(skills, skillId, newName) {
   return true
 }
 
+export function moveSkillInList(skills, skillId, direction) {
+  if (!Array.isArray(skills) || (direction !== -1 && direction !== 1)) return null
+
+  const currentIndex = skills.findIndex((skill) => skill.id === skillId)
+  const targetIndex = currentIndex + direction
+  if (currentIndex < 0 || targetIndex < 0 || targetIndex >= skills.length) return null
+
+  const nextSkills = [...skills]
+  const [movedSkill] = nextSkills.splice(currentIndex, 1)
+  if (!movedSkill) return null
+
+  nextSkills.splice(targetIndex, 0, movedSkill)
+  return nextSkills
+}
+
 export function deleteSkillFromLists(skills, actions, skillId) {
   return {
     nextSkills: skills.filter((skill) => skill.id !== skillId),

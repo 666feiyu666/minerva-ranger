@@ -9,6 +9,7 @@ import {
 import {
   createSkillRecord,
   deleteSkillFromLists,
+  moveSkillInList,
   renameSkillInList,
 } from '@/local-backend/services/skillService'
 
@@ -29,10 +30,7 @@ export const useActionStore = defineStore('action', () => {
         actionCount: skillActions.length,
         totalXP: skillActions.reduce((sum, action) => sum + (action.totalXP || 0), 0),
         totalTrees: skillActions.reduce((sum, action) => sum + (action.totalTrees || 0), 0),
-        totalTimeSpent: skillActions.reduce(
-          (sum, action) => sum + (action.totalTimeSpent || 0),
-          0,
-        ),
+        totalTimeSpent: skillActions.reduce((sum, action) => sum + (action.totalTimeSpent || 0), 0),
       }
     }),
   )
@@ -43,6 +41,13 @@ export const useActionStore = defineStore('action', () => {
 
   function renameSkill(id, newName) {
     return renameSkillInList(skills.value, id, newName)
+  }
+
+  function moveSkill(skillId, direction) {
+    const nextSkills = moveSkillInList(skills.value, skillId, direction)
+    if (!nextSkills) return false
+    skills.value = nextSkills
+    return true
   }
 
   function deleteSkill(id) {
@@ -124,6 +129,7 @@ export const useActionStore = defineStore('action', () => {
     skillSummaries,
     createSkill,
     renameSkill,
+    moveSkill,
     deleteSkill,
     addAction,
     renameAction,

@@ -133,6 +133,30 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
       )
     })
 
+    await t.test('技能顺序调整后会随身份存档保留', () => {
+      storage.clear()
+      const first = createTestArchitecture()
+      first.save.initSaveSystem()
+      const slotId = first.save.saveSlots[0].id
+      assert.equal(first.save.enterSlot(slotId), true)
+
+      const promotionSkillId = first.action.skills[2].id
+      assert.equal(first.action.moveSkill(promotionSkillId, -1), true)
+      assert.deepEqual(
+        first.action.skills.map((skill) => skill.name),
+        ['写代码', '推广与宣传', '做设计'],
+      )
+      assert.equal(first.save.saveActiveSlot(false), true)
+
+      const restored = createTestArchitecture()
+      restored.save.initSaveSystem()
+      assert.equal(restored.save.enterSlot(slotId), true)
+      assert.deepEqual(
+        restored.action.skills.map((skill) => skill.name),
+        ['写代码', '推广与宣传', '做设计'],
+      )
+    })
+
     await t.test('用户手动创建的新身份保持空白', () => {
       storage.clear()
       const { action, save } = createTestArchitecture()

@@ -1,6 +1,6 @@
 # 地图与地点概念图
 
-本目录保存 2026-08-15 使用 `D:\Project\DH-Automation\image-generation` 生成并整理进 `mr-script` 的首轮视觉示意图。
+本目录保存 2026-08-15 使用 `D:\Project-Development\DH-Automation\image-generation` 生成并整理进 `mr-script` 的首轮视觉示意图。
 
 这些文件已经作为 v0.3 地图与场景图志的正式运行资源接入 `src/config/mapCatalog.js`：
 

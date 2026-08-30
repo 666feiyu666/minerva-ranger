@@ -100,14 +100,14 @@
           @dragleave.prevent="dragOverSkillId = null"
           @drop="handleDropOnSkill(group.id, $event)"
         >
-          <div class="flex items-center gap-2">
+          <div class="flex min-w-0 items-center gap-2">
             <span
-              class="transition-transform inline-block"
+              class="inline-block flex-none transition-transform"
               :class="expandedSkills.has(group.id) ? 'rotate-90' : ''"
               >›</span
             >
 
-            <div v-if="editingSkillId === group.id" @click.stop>
+            <div v-if="editingSkillId === group.id" class="min-w-0" @click.stop>
               <input
                 ref="renameSkillInput"
                 v-model="editSkillName"
@@ -115,18 +115,38 @@
                 @keyup.enter="confirmRenameSkill"
                 @keyup.esc="cancelRenameSkill"
                 type="text"
-                class="text-xs px-1 py-0.5 rounded outline-none border border-blue-500 bg-transparent"
+                class="w-full min-w-0 rounded border border-blue-500 bg-transparent px-1 py-0.5 text-xs outline-none"
                 :class="store.isNightMode ? 'text-white' : 'text-gray-900'"
               />
             </div>
-            <span v-else>{{ group.name }}</span>
+            <span v-else class="truncate" :title="group.name">{{ group.name }}</span>
           </div>
 
-          <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          <div class="app-sidebar__skill-actions">
+            <button
+              v-if="group.id && editingSkillId !== group.id"
+              @click.stop="store.moveSkill(group.id, -1)"
+              :disabled="!canMoveSkill(group.id, -1)"
+              class="app-sidebar__skill-action-button hover:bg-black/10 dark:hover:bg-white/10"
+              :aria-label="`将“${group.name}”向上移动`"
+              :title="`将“${group.name}”向上移动`"
+            >
+              <span aria-hidden="true">↑</span>
+            </button>
+            <button
+              v-if="group.id && editingSkillId !== group.id"
+              @click.stop="store.moveSkill(group.id, 1)"
+              :disabled="!canMoveSkill(group.id, 1)"
+              class="app-sidebar__skill-action-button hover:bg-black/10 dark:hover:bg-white/10"
+              :aria-label="`将“${group.name}”向下移动`"
+              :title="`将“${group.name}”向下移动`"
+            >
+              <span aria-hidden="true">↓</span>
+            </button>
             <button
               v-if="group.id && editingSkillId !== group.id"
               @click.stop="startRenameSkill(group)"
-              class="p-1 hover:bg-black/10 dark:hover:bg-white/10 rounded"
+              class="app-sidebar__skill-action-button hover:bg-black/10 dark:hover:bg-white/10"
               title="重命名技能"
             >
               改
@@ -134,7 +154,7 @@
             <button
               v-if="group.id"
               @click.stop="handleDeleteSkill(group)"
-              class="p-1 hover:bg-red-500/20 text-red-500 rounded"
+              class="app-sidebar__skill-action-button text-red-500 hover:bg-red-500/20"
               title="删除技能"
             >
               删
@@ -660,6 +680,7 @@ const store = reactive({
   createSkill: actionStore.createSkill,
   deleteSkill: skillWorkflow.deleteSkill,
   moveActionToSkill: skillWorkflow.moveActionToSkill,
+  moveSkill: actionStore.moveSkill,
   renameAction: actionStore.renameAction,
   renameSkill: actionStore.renameSkill,
   reorderActions: actionStore.reorderActions,
@@ -695,6 +716,12 @@ const expandedSkills = ref(new Set([null])) // 默认展开未分类
 const toggleSkill = (id) => {
   if (expandedSkills.value.has(id)) expandedSkills.value.delete(id)
   else expandedSkills.value.add(id)
+}
+
+const canMoveSkill = (skillId, direction) => {
+  const currentIndex = store.skills.findIndex((skill) => skill.id === skillId)
+  const targetIndex = currentIndex + direction
+  return currentIndex >= 0 && targetIndex >= 0 && targetIndex < store.skills.length
 }
 
 // === 🌟 拖拽归类逻辑 ===
@@ -1103,6 +1130,44 @@ const isActive = (id) => store.activeActionId === id && store.activeView === 'da
 .app-sidebar__skill-row:hover {
   color: var(--ink) !important;
   background: color-mix(in srgb, var(--sage) 9%, transparent) !important;
+}
+
+.app-sidebar__skill-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 150ms ease;
+}
+
+.app-sidebar__skill-row:hover .app-sidebar__skill-actions,
+.app-sidebar__skill-row:focus-within .app-sidebar__skill-actions {
+  opacity: 1;
+}
+
+.app-sidebar__skill-action-button {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  place-items: center;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.app-sidebar__skill-action-button:focus-visible {
+  outline: 2px solid var(--forest);
+  outline-offset: 1px;
+}
+
+.app-sidebar__skill-action-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.3;
+}
+
+.app-sidebar__skill-action-button:disabled:hover {
+  background: transparent !important;
 }
 
 .app-sidebar__action-row {
