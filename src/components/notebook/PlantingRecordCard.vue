@@ -11,7 +11,7 @@
             v-model="draft.content"
             class="field h-36 resize-none"
             :class="fieldClass"
-            placeholder="会话备注可以为空"
+            placeholder="备注可以留空"
           ></textarea>
         </div>
         <div class="space-y-3">
@@ -61,7 +61,7 @@
 
       <div v-if="note.content" class="mt-4 whitespace-pre-wrap text-sm leading-7">{{ note.content }}</div>
       <div v-else class="mt-4 rounded-xl border border-dashed px-4 py-5 text-sm opacity-60">
-        未填写会话备注
+        没有备注
       </div>
 
       <div class="mt-4 grid gap-2 text-xs sm:grid-cols-2 xl:grid-cols-4">

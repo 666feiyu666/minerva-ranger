@@ -18,13 +18,13 @@
         <dd>{{ lastSyncedLabel }}</dd>
       </div>
       <div>
-        <dt>云端修订</dt>
+        <dt>云端版本</dt>
         <dd>{{ store.persistenceRevision || 0 }}</dd>
       </div>
     </dl>
 
     <footer class="cloud-account-panel__footer">
-      <p>账号由管理员邀请并通过邮箱验证码登录；身份数据只写入当前账号。</p>
+      <p>账号由管理员邀请，用邮箱验证码登录。数据只写进当前账号。</p>
       <button v-if="canLogout" class="quiet-button" type="button" @click="handleLogout">
         退出登录
       </button>
@@ -53,7 +53,7 @@ const canLogout = computed(() => store.persistenceUser?.source === 'cloudflare-a
 const environmentLabel = computed(() => {
   const labels = {
     production: '正式环境',
-    preview: '临时正式环境',
+    preview: '预览环境',
     development: 'Development',
     local: 'Local',
   }

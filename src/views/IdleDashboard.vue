@@ -162,7 +162,7 @@
         >
           <div class="flex items-start justify-between gap-5">
             <div>
-              <div class="paper-label">开始一次巡林会话</div>
+              <div class="paper-label">开始一次种植</div>
               <h2 class="display-title mt-2 text-2xl">选择计时方式</h2>
               <p class="mt-2 text-sm" style="color: var(--ink-soft)">
                 {{ store.activeAction?.name }} · {{ selectedTree?.name }}

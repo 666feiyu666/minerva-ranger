@@ -34,7 +34,7 @@ function publishStatus(updates) {
 
 function createCloudError(payload, status) {
   const details = payload?.error || {}
-  const error = new Error(details.message || `云端请求失败（HTTP ${status}）。`)
+  const error = new Error(details.message || `云端请求失败（错误码 ${status}）。`)
   error.code = details.code || 'CLOUD_REQUEST_FAILED'
   error.recoverable = details.recoverable !== false
   error.status = status

@@ -425,7 +425,7 @@
               class="text-xs font-bold uppercase tracking-wider"
               :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
             >
-              Commit / 说明（可选）
+              说明（可选）
             </label>
             <textarea
               v-model="mergeCommitMessage"
@@ -447,7 +447,7 @@
                 : 'border-gray-200 bg-gray-50 text-gray-600'
             "
           >
-            合并后会迁移源行动的树木、时长、经验和关联会话记录，并生成一条系统记录。
+            合并后会迁移源行动的树木、时长、经验和关联的行动记录，并生成一条系统记录。
           </div>
 
           <button
@@ -514,7 +514,7 @@
               class="text-sm font-semibold mb-2"
               :class="store.isNightMode ? 'text-red-200' : 'text-red-800'"
             >
-              删除后行动本体无法恢复
+              删除后这个行动无法恢复
             </p>
             <p class="text-sm" :class="store.isNightMode ? 'text-red-100/80' : 'text-red-700'">
               目标行动：{{ deleteTargetAction.name }}
@@ -529,7 +529,7 @@
                 : 'border-gray-200 bg-gray-50 text-gray-600'
             "
           >
-            系统会自动生成一条删除记录，保留行动名称、树木、时长、经验和关联会话数量。
+            系统会自动生成一条删除记录，保留行动名称、树木、时长、经验和记录数。
           </div>
 
           <div class="space-y-2">
@@ -537,7 +537,7 @@
               class="text-xs font-bold uppercase tracking-wider"
               :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
             >
-              Commit / 说明（可选）
+              说明（可选）
             </label>
             <textarea
               v-model="deleteCommitMessage"

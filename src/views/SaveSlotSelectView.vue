@@ -9,13 +9,13 @@
         <p class="paper-label">同一位巡林官 · 多个身份侧面</p>
         <h1>选择今天<br />要走进的森林</h1>
         <p class="save-atlas__lead">
-          每个身份整理一条长期方向；所有方向共同生长巡林等级、世界地图与同一片森林。
+          每个身份对应一条长期方向。巡林等级、世界地图和森林由所有身份共同累积。
         </p>
       </div>
 
       <div class="save-atlas__note">
         <strong>使用建议</strong>
-        <p>用“开发设计师”或“人类学研究者”等侧面整理行动，而不是建立彼此隔离的世界。</p>
+        <p>“开发设计师”“人类学研究者”是同一个人的不同侧面，不是彼此隔离的世界。</p>
         <small>{{ storageAdvice }}</small>
       </div>
     </aside>
@@ -26,7 +26,7 @@
           <div>
             <p class="paper-label">巡林入口</p>
             <h2 class="display-title">选择身份</h2>
-            <p>共 {{ store.saveSlots.length }} 个身份侧面，选择一个继续今天的行动。</p>
+            <p>共 {{ store.saveSlots.length }} 个身份侧面，选一个继续今天的行动。</p>
           </div>
           <div class="save-atlas__header-actions">
             <button class="quiet-button" @click="startImportAsNew">导入备份</button>

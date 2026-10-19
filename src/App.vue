@@ -162,9 +162,9 @@
         <div v-else class="flex flex-1 items-center justify-center p-8">
           <div class="paper-panel max-w-lg px-10 py-12 text-center">
             <div class="paper-label">尚未选择行动</div>
-            <h2 class="display-title mt-3 text-2xl">从左侧目录选一条实践路径</h2>
+            <h2 class="display-title mt-3 text-2xl">从左侧选一个行动开始</h2>
             <p class="mt-3 text-sm leading-7" style="color: var(--ink-soft)">
-              选择行动后，可以开始计时种植，让现实投入在这里留下可回望的树木与记录。
+              选好行动就能开始计时，投入的时间会长成树，也留下记录。
             </p>
           </div>
         </div>
@@ -295,15 +295,15 @@ const currentViewTitle = computed(() => {
 const isSystemView = computed(() => SYSTEM_VIEWS.has(store.activeView))
 const isCloudPersistence = computed(() => store.persistenceMode === 'cloud-d1')
 const persistenceBootLabel = computed(() =>
-  isCloudPersistence.value ? 'V0.4 Cloud 巡林志' : 'V0.4 Desktop 本地存档',
+  isCloudPersistence.value ? '云端巡林志' : '本地存档',
 )
 const persistenceBootTitle = computed(() =>
   isCloudPersistence.value ? '正在连接云端巡林官档案' : '正在检查巡林官档案',
 )
 const persistenceBootDescription = computed(() =>
   isCloudPersistence.value
-    ? '正在验证登录身份并从 D1 载入存档。载入完成前不会在本机创建另一份分叉数据。'
-    : '初始化 SQLite，并在需要时迁移旧版浏览器存档。此过程不会删除旧数据。',
+    ? '正在验证登录身份并载入云端存档。载入完成前不会在本机另建一份数据。'
+    : '正在打开本地存档，必要时把旧版浏览器数据搬过来。这个过程不会删除任何数据。',
 )
 const persistenceErrorLabel = computed(() =>
   isCloudPersistence.value ? '云端存档不可用' : '本地存档不可用',
@@ -311,14 +311,14 @@ const persistenceErrorLabel = computed(() =>
 const persistenceErrorFallback = computed(() =>
   isCloudPersistence.value
     ? '云端连接失败，请检查网络或登录状态后重试。'
-    : 'SQLite 初始化失败，请重试。',
+    : '本地存档打开失败，请重试。',
 )
 const persistenceStorageDescription = computed(() => {
   if (isCloudPersistence.value) {
     return '巡林官全局进度与身份记录通过当前登录账号同步到云端。出现冲突时不会自动覆盖。'
   }
   if (store.persistenceMode === 'sqlite') {
-    return '巡林官全局进度与当前身份记录保存在本设备的 SQLite 数据库中。建议定期导出备份。'
+    return '巡林官全局进度与当前身份记录保存在这台设备上。建议定期导出备份。'
   }
   return '巡林官全局进度与当前身份记录保存在当前浏览器。建议定期导出备份。'
 })
@@ -338,12 +338,12 @@ const persistenceStatus = computed(() => {
       saving: {
         label: '同步中',
         tone: 'working',
-        detail: '正在写入 Cloudflare D1',
+        detail: '正在同步到云端',
       },
       ready: {
         label: '云端已同步',
         tone: 'ready',
-        detail: `云端修订 ${store.persistenceRevision}`,
+        detail: `云端版本 ${store.persistenceRevision}`,
       },
       offline: {
         label: '离线未同步',
@@ -370,9 +370,9 @@ const persistenceStatus = computed(() => {
   }
   if (store.persistenceMode === 'sqlite') {
     return store.persistenceState === 'saving'
-      ? { label: '本地保存中', tone: 'working', detail: '正在写入 SQLite' }
+      ? { label: '本地保存中', tone: 'working', detail: '正在保存' }
       : {
-          label: 'SQLite 已保存',
+          label: '已保存',
           tone: 'ready',
           detail: `本地修订 ${store.persistenceRevision}`,
         }
@@ -429,14 +429,14 @@ const retryPersistence = async () => {
 const loadRecoveryBackups = async () => {
   const backups = await store.loadPersistenceBackups()
   if (backups.length === 0) {
-    await alertDialog('没有找到可用的 SQLite 备份。', { title: '本地恢复' })
+    await alertDialog('没有找到可用的本地备份。', { title: '本地恢复' })
   }
 }
 
 const restoreRecoveryBackup = async (backup) => {
   const confirmed = await confirmDialog(
     '恢复备份会先保留当前数据库文件，再切换到所选版本。是否继续？',
-    { title: '恢复 SQLite 备份', confirmText: '恢复' },
+    { title: '恢复本地备份', confirmText: '恢复' },
   )
   if (!confirmed) return
   if (await store.restorePersistenceBackup(backup.filename)) {
@@ -448,7 +448,7 @@ const restoreRecoveryBackup = async (backup) => {
 const handleCreateBackup = async () => {
   const backup = await store.createPersistenceBackup('manual')
   if (backup) {
-    await alertDialog('数据库备份已创建。', { title: '本地备份' })
+    await alertDialog('备份已创建。', { title: '本地备份' })
   }
 }
 

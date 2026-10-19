@@ -110,7 +110,7 @@ export const useSaveStore = defineStore('save', () => {
     persistenceUpdatedAt.value = status.updatedAt || null
     if (status.error) {
       reportPersistenceError(
-        status.mode === 'cloud-d1' ? '云端同步' : 'SQLite 持久化',
+        status.mode === 'cloud-d1' ? '云端同步' : '本地存档',
         status.error,
       )
     }
@@ -349,13 +349,13 @@ export const useSaveStore = defineStore('save', () => {
       clearPersistenceError()
       return true
     } catch (error) {
-      const action = persistenceMode.value === 'cloud-d1' ? '同步云端存档' : '写入 SQLite 存档'
+      const action = persistenceMode.value === 'cloud-d1' ? '同步云端存档' : '保存到本地'
       reportPersistenceError(action, error)
       if (options.reloadOnFailure && persistenceMode.value !== 'cloud-d1') {
         try {
           await reloadCommittedPersistenceState()
         } catch (reloadError) {
-          reportPersistenceError('重新载入 SQLite 存档', reloadError)
+          reportPersistenceError('重新载入本地存档', reloadError)
         }
       }
       return false
@@ -369,7 +369,7 @@ export const useSaveStore = defineStore('save', () => {
       clearPersistenceError()
       return result
     } catch (error) {
-      reportPersistenceError('创建 SQLite 备份', error)
+      reportPersistenceError('创建本地备份', error)
       return null
     }
   }
@@ -380,7 +380,7 @@ export const useSaveStore = defineStore('save', () => {
       persistenceBackups.value = await listPersistenceRuntimeBackups()
       return persistenceBackups.value
     } catch (error) {
-      reportPersistenceError('读取 SQLite 备份列表', error)
+      reportPersistenceError('读取备份列表', error)
       return []
     }
   }
@@ -394,7 +394,7 @@ export const useSaveStore = defineStore('save', () => {
       clearPersistenceError()
       return true
     } catch (error) {
-      return reportPersistenceError('恢复 SQLite 备份', error)
+      return reportPersistenceError('恢复本地备份', error)
     }
   }
 
@@ -634,7 +634,7 @@ export const useSaveStore = defineStore('save', () => {
       .catch((error) => {
         bootStage.value = 'persistence-error'
         persistenceState.value = error.recoverable === false ? 'fatal' : 'degraded'
-        const action = persistenceMode.value === 'cloud-d1' ? '载入云端存档' : '初始化 SQLite 存档'
+        const action = persistenceMode.value === 'cloud-d1' ? '载入云端存档' : '打开本地存档'
         return reportPersistenceError(action, error)
       })
   }
