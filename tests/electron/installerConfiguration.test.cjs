@@ -7,7 +7,7 @@ const repoRoot = path.resolve(__dirname, '../..')
 const packageMetadata = require('../../package.json')
 const smokeConfig = require('../../scripts/electron-builder-smoke.config.cjs')
 const installerInclude = readFileSync(
-  path.join(repoRoot, 'installer', 'installer.nsh'),
+  path.join(repoRoot, 'electron', 'installer', 'installer.nsh'),
   'utf8',
 )
 
@@ -17,7 +17,7 @@ test('NSIS 使用可选择安装目录的引导式安装器', () => {
     perMachine: false,
     allowToChangeInstallationDirectory: true,
     deleteAppDataOnUninstall: false,
-    include: 'installer/installer.nsh',
+    include: 'electron/installer/installer.nsh',
   })
 })
 

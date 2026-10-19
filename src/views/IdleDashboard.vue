@@ -305,7 +305,7 @@
 <script setup>
 import { storeToRefs } from 'pinia'
 import { computed, reactive, ref, watch } from 'vue'
-import { confirmDialog } from '@/composables/dialogService'
+import { confirmDialog } from '@/utils/dialogService'
 import { useActionStore } from '@/stores/actionStore'
 import { useAppStore } from '@/stores/appStore'
 import { usePlantingStore } from '@/stores/plantingStore'

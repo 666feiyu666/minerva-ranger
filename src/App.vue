@@ -234,7 +234,7 @@
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { useActionWorkflow } from '@/application/workflows/actionWorkflow'
-import { alertDialog, confirmDialog } from '@/composables/dialogService'
+import { alertDialog, confirmDialog } from '@/utils/dialogService'
 import AppDialogHost from './components/AppDialogHost.vue'
 import AppIcon from './components/ui/AppIcon.vue'
 import CloudAccountPanel from './components/CloudAccountPanel.vue'

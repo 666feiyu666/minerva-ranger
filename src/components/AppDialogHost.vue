@@ -54,7 +54,7 @@
 
 <script setup>
 import { computed, nextTick, ref, watch } from 'vue'
-import { dialogState, dismissActiveDialog, resolveDialog } from '@/composables/dialogService'
+import { dialogState, dismissActiveDialog, resolveDialog } from '@/utils/dialogService'
 
 const promptInput = ref(null)
 const promptValue = ref('')

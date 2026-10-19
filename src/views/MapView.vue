@@ -368,7 +368,7 @@
 <script setup>
 import { storeToRefs } from 'pinia'
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
-import { alertDialog, confirmDialog } from '@/composables/dialogService'
+import { alertDialog, confirmDialog } from '@/utils/dialogService'
 import { MAP_BACKGROUND, MAP_LOCATION_BY_ID, MAP_LOCATIONS } from '@/config/mapCatalog'
 import { TREE_TYPES } from '@/config/treeCatalog'
 import { MAP_SCALE_MAX, MAP_SCALE_MIN } from '@/domain/models/mapModel'

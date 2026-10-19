@@ -205,7 +205,7 @@
 <script setup>
 import { computed, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { storeToRefs } from 'pinia'
-import { choiceDialog, confirmDialog } from '@/composables/dialogService'
+import { choiceDialog, confirmDialog } from '@/utils/dialogService'
 import { useActionStore } from '@/stores/actionStore'
 import { useAppStore } from '@/stores/appStore'
 import { useNotebookStore } from '@/stores/notebookStore'

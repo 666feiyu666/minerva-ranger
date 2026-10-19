@@ -15,8 +15,8 @@
     "validate:cloud-imports": "node scripts/validate-cloud-imports.cjs",
     "test": "node --test \"tests/domain/*.test.mjs\" \"tests/integration/*.test.mjs\" \"tests/electron/*.test.cjs\" \"tests/release/*.test.cjs\"",
     "test:cloud": "vitest run --config vitest.config.mjs",
-    "types:cloud": "wrangler types worker-configuration.d.ts",
-    "check:cloud": "wrangler types worker-configuration.d.ts --check && vitest run --config vitest.config.mjs && vite build --mode cloud",
+    "types:cloud": "wrangler types worker/worker-configuration.d.ts",
+    "check:cloud": "wrangler types worker/worker-configuration.d.ts --check && vitest run --config vitest.config.mjs && vite build --mode cloud",
     "test:electron-sqlite": "node scripts/run-electron-sqlite-probe.cjs",
     "test:electron-app": "node scripts/run-electron-app-smoke.cjs",
     "test:packaged-app": "node scripts/run-packaged-app-smoke.cjs",
@@ -66,6 +66,11 @@
   "engines": {
     "node": "^20.19.0 || >=22.12.0"
   },
+  "prettier": {
+    "semi": false,
+    "singleQuote": true,
+    "printWidth": 100
+  },
   "build": {
     "appId": "com.minerva.ranger",
     "productName": "MinervaRanger",
@@ -87,7 +92,7 @@
       "perMachine": false,
       "allowToChangeInstallationDirectory": true,
       "deleteAppDataOnUninstall": false,
-      "include": "installer/installer.nsh"
+      "include": "electron/installer/installer.nsh"
     },
     "mac": {
       "target": "dmg"

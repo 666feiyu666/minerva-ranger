@@ -4,7 +4,7 @@ import { cloudflareTest, readD1Migrations } from '@cloudflare/vitest-pool-worker
 import { defineConfig } from 'vitest/config'
 
 const projectRoot = path.dirname(fileURLToPath(import.meta.url))
-const migrations = await readD1Migrations(path.join(projectRoot, 'migrations'))
+const migrations = await readD1Migrations(path.join(projectRoot, 'worker', 'migrations'))
 
 export default defineConfig({
   plugins: [

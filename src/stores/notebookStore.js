@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import { alertDialog } from '@/composables/dialogService'
+import { alertDialog } from '@/utils/dialogService'
 import { normalizeNote, toActionIds } from '@/domain/models/noteModel'
 import {
   createNoteRecord,

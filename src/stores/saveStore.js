@@ -12,7 +12,7 @@ import {
   restorePersistenceRuntimeBackup,
   subscribePersistence,
 } from '@/application/persistence/persistenceRuntime'
-import { alertDialog } from '@/composables/dialogService'
+import { alertDialog } from '@/utils/dialogService'
 import { MAP_LOCATIONS } from '@/config/mapCatalog'
 import {
   hasLegacyRangerProgress,

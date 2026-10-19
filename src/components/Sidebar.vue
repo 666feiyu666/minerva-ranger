@@ -571,7 +571,7 @@
 <script setup>
 import { storeToRefs } from 'pinia'
 import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
-import { alertDialog, confirmDialog } from '@/composables/dialogService'
+import { alertDialog, confirmDialog } from '@/utils/dialogService'
 import { useActionWorkflow } from '@/application/workflows/actionWorkflow'
 import { useSkillWorkflow } from '@/application/workflows/skillWorkflow'
 import AppIcon from '@/components/ui/AppIcon.vue'

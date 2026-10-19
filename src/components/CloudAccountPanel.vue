@@ -35,7 +35,7 @@
 <script setup>
 import { storeToRefs } from 'pinia'
 import { computed, reactive } from 'vue'
-import { confirmDialog } from '@/composables/dialogService'
+import { confirmDialog } from '@/utils/dialogService'
 import { useSaveStore } from '@/stores/saveStore'
 
 defineProps({

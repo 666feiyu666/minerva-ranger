@@ -82,7 +82,7 @@
 
 <script setup>
 import { ref } from 'vue'
-import { alertDialog, confirmDialog } from '@/composables/dialogService'
+import { alertDialog, confirmDialog } from '@/utils/dialogService'
 import { devSaveFixtures } from '@/devtools/saveFixtures'
 import { useSaveStore } from '@/stores/saveStore'
 import AppIcon from '@/components/ui/AppIcon.vue'

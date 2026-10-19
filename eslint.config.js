@@ -38,16 +38,6 @@ export default defineConfig([
     },
   },
 
-  {
-    files: ['postcss.config.js'],
-    languageOptions: {
-      globals: {
-        ...globals.node,
-      },
-      sourceType: 'commonjs',
-    },
-  },
-
   js.configs.recommended,
   ...pluginVue.configs['flat/essential'],
 

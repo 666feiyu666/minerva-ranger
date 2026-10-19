@@ -85,7 +85,7 @@
 
 <script setup>
 import { computed, reactive, ref } from 'vue'
-import { confirmDialog } from '@/composables/dialogService'
+import { confirmDialog } from '@/utils/dialogService'
 import { useNotebookStore } from '@/stores/notebookStore'
 
 const props = defineProps({

@@ -150,7 +150,7 @@
 <script setup>
 import { storeToRefs } from 'pinia'
 import { computed, defineAsyncComponent, reactive, ref } from 'vue'
-import { confirmDialog, promptDialog } from '@/composables/dialogService'
+import { confirmDialog, promptDialog } from '@/utils/dialogService'
 import CloudAccountPanel from '@/components/CloudAccountPanel.vue'
 import AppIcon from '@/components/ui/AppIcon.vue'
 import { useSaveStore } from '@/stores/saveStore'

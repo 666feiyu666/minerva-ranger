@@ -1,6 +1,6 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { alertDialog } from '@/composables/dialogService'
+import { alertDialog } from '@/utils/dialogService'
 import {
   PREVIEW_BACKGROUND_ITEMS,
   PREVIEW_SKILL_ITEMS,
