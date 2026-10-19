@@ -7,13 +7,13 @@ import {
   SHOP_CATEGORIES,
 } from '@/config/shopCatalog'
 import { TREE_TYPES } from '@/config/treeCatalog'
-import { getGlobalLevelFromXP } from '@/local-backend/domain/leveling'
+import { getGlobalLevelFromXP } from '@/domain/models/leveling'
 import {
   buildShopCatalog,
   buildShopItems,
   canPurchaseShopItem as canPurchaseCatalogItem,
   ownsShopItem as ownsCatalogItem,
-} from '@/local-backend/services/shopService'
+} from '@/domain/services/shopService'
 
 export const usePlayerStore = defineStore('player', () => {
   const coins = ref(0)

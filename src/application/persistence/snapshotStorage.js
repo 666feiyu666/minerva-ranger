@@ -9,7 +9,7 @@ import {
   getSlotBackupStorageKey,
   getSlotStorageKey,
 } from '@/config/storageKeys'
-import { buildSaveSummary, normalizeSaveIndex } from '@/local-backend/domain/saveSchema'
+import { buildSaveSummary, normalizeSaveIndex } from '@/domain/models/saveSchema'
 
 function parseJsonWithBackup(storage, key, backupKey, label) {
   const primary = storage.getItem(key)

@@ -53,7 +53,7 @@ async function withMutedConsoleError(operation) {
 }
 
 test('localStorage 存档在重启、损坏和写入失败时保持可恢复', async (t) => {
-  const repoRoot = path.resolve(import.meta.dirname, '..')
+  const repoRoot = path.resolve(import.meta.dirname, '../..')
   const bundledStorePath = path.join(tmpdir(), `mr-local-storage-${Date.now()}.mjs`)
   const storage = new MemoryStorage()
   globalThis.localStorage = storage
@@ -68,7 +68,7 @@ test('localStorage 存档在重启、损坏和写入失败时保持可恢复', a
         import { useActionStore } from '@/stores/actionStore'
         import { useNotebookStore } from '@/stores/notebookStore'
         import { useSaveStore } from '@/stores/saveStore'
-        import { normalizeSaveIndex } from '@/local-backend/domain/saveSchema'
+        import { normalizeSaveIndex } from '@/domain/models/saveSchema'
 
         export { normalizeSaveIndex }
 

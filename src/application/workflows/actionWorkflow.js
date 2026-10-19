@@ -1,5 +1,5 @@
-import { isSameActionId } from '@/local-backend/domain/actionModel'
-import { deleteActionFromList, mergeActionData } from '@/local-backend/services/actionService'
+import { isSameActionId } from '@/domain/models/actionModel'
+import { deleteActionFromList, mergeActionData } from '@/domain/services/actionService'
 import { useAppStore } from '@/stores/appStore'
 import { useNotebookStore } from '@/stores/notebookStore'
 import { usePlantingStore } from '@/stores/plantingStore'

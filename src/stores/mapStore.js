@@ -12,7 +12,7 @@ import {
   normalizeTreeCounts,
   unlockMapLocation,
   validateMapCatalog,
-} from '@/local-backend/domain/mapModel'
+} from '@/domain/models/mapModel'
 
 const EMPTY_PERSISTENCE_ADAPTER = Object.freeze({ persist: () => true })
 

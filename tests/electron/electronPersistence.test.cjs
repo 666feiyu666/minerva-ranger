@@ -5,9 +5,9 @@ const path = require('node:path')
 const { pathToFileURL } = require('node:url')
 const { test } = require('node:test')
 const { DatabaseSync } = require('node:sqlite')
-const { PersistenceDatabase } = require('../electron/persistence/database')
-const { toPersistenceError } = require('../electron/persistence/errors')
-const { createTrustedSenderCheck } = require('../electron/persistence/ipc')
+const { PersistenceDatabase } = require('../../electron/persistence/database')
+const { toPersistenceError } = require('../../electron/persistence/errors')
+const { createTrustedSenderCheck } = require('../../electron/persistence/ipc')
 
 function createSnapshot(name = '开发设计师') {
   const timestamp = '2026-08-15T00:00:00.000Z'

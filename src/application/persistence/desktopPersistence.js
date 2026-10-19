@@ -4,7 +4,7 @@ import {
   createMemoryStorage,
   snapshotToEntries,
 } from '@/application/persistence/snapshotStorage'
-import { configureStorageClient } from '@/local-backend/storage/localStorageClient'
+import { configureStorageClient } from '@/domain/storage/localStorageClient'
 
 const statusListeners = new Set()
 

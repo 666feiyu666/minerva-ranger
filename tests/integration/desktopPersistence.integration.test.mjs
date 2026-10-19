@@ -37,7 +37,7 @@ class MemoryStorage {
 }
 
 test('桌面适配器迁移旧 localStorage 后改由 SQLite 快照提交且保留旧数据', async () => {
-  const repoRoot = path.resolve(import.meta.dirname, '..')
+  const repoRoot = path.resolve(import.meta.dirname, '../..')
   const bundlePath = path.join(tmpdir(), `minerva-desktop-persistence-${process.pid}.mjs`)
   await build({
     stdin: {
@@ -51,7 +51,7 @@ test('桌面适配器迁移旧 localStorage 后改由 SQLite 快照提交且保�
           readJson,
           writeJson,
           writeJsonWithBackup,
-        } from '@/local-backend/storage/localStorageClient'
+        } from '@/domain/storage/localStorageClient'
       `,
       resolveDir: repoRoot,
       sourcefile: 'desktop-persistence-test-entry.mjs',

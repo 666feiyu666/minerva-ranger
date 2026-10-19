@@ -26,11 +26,11 @@
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useAppStore } from '@/stores/appStore'
-import NotebookActionArchive from './notebook/NotebookActionArchive.vue'
-import NotebookEssayWorkspace from './notebook/NotebookEssayWorkspace.vue'
-import NotebookHeader from './notebook/NotebookHeader.vue'
-import NotebookHome from './notebook/NotebookHome.vue'
-import NotebookSystemRecords from './notebook/NotebookSystemRecords.vue'
+import NotebookActionArchive from '@/components/notebook/NotebookActionArchive.vue'
+import NotebookEssayWorkspace from '@/components/notebook/NotebookEssayWorkspace.vue'
+import NotebookHeader from '@/components/notebook/NotebookHeader.vue'
+import NotebookHome from '@/components/notebook/NotebookHome.vue'
+import NotebookSystemRecords from '@/components/notebook/NotebookSystemRecords.vue'
 
 const appStore = useAppStore()
 const { isNightMode, notebookComposeRequest } = storeToRefs(appStore)

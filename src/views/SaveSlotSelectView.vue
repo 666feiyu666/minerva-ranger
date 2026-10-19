@@ -173,7 +173,7 @@ const fileInput = ref(null)
 const importMode = ref({ type: 'new', slotId: null })
 const isDevToolsMode = import.meta.env.DEV && import.meta.env.VITE_ENABLE_DEV_TOOLS === 'true'
 const DevToolsPanel = isDevToolsMode
-  ? defineAsyncComponent(() => import('@/components/DevToolsPanel.vue'))
+  ? defineAsyncComponent(() => import('@/devtools/DevToolsPanel.vue'))
   : null
 const isCloudPersistence = computed(() => store.persistenceMode === 'cloud-d1')
 const storageAdvice = computed(() =>

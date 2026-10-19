@@ -5,7 +5,7 @@ import {
   mergeLegacySaveIntoRangerProfile,
   mergeRangerProfiles,
   migrateLegacySlotsToRangerProfile,
-} from '../src/local-backend/domain/rangerProfile.js'
+} from '../../src/domain/models/rangerProfile.js'
 
 const LOCATIONS = [
   {

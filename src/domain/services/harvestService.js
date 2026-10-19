@@ -1,4 +1,4 @@
-import { getActionLevelState } from '@/local-backend/domain/leveling'
+import { getActionLevelState } from '@/domain/models/leveling'
 
 export function getTreeYield(tree, action) {
   if (!tree || !action) return { trees: 0, xp: 0, multiplier: 1 }

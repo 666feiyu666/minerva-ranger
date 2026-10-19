@@ -1,17 +1,17 @@
 import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
-import { normalizeAction } from '@/local-backend/domain/actionModel'
+import { normalizeAction } from '@/domain/models/actionModel'
 import {
   createActionRecord,
   moveActionToSkill as moveActionToSkillList,
   reorderActions as reorderActionList,
-} from '@/local-backend/services/actionService'
+} from '@/domain/services/actionService'
 import {
   createSkillRecord,
   deleteSkillFromLists,
   moveSkillInList,
   renameSkillInList,
-} from '@/local-backend/services/skillService'
+} from '@/domain/services/skillService'
 
 export const useActionStore = defineStore('action', () => {
   const skills = ref([])

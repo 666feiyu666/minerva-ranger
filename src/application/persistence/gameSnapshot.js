@@ -1,4 +1,4 @@
-import { buildSaveData } from '@/local-backend/services/saveService'
+import { buildSaveData } from '@/domain/services/saveService'
 import { useAppStore } from '@/stores/appStore'
 import { useNotebookStore } from '@/stores/notebookStore'
 import { useMapStore } from '@/stores/mapStore'

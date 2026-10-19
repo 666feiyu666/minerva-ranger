@@ -6,8 +6,8 @@ const {
   createReleasePlan,
   timestampForPath,
   verifyAccessProtection,
-} = require('../scripts/cloud-release.cjs')
-const { validateCloudImport } = require('../scripts/validate-cloud-imports.cjs')
+} = require('../../scripts/cloud-release.cjs')
+const { validateCloudImport } = require('../../scripts/validate-cloud-imports.cjs')
 
 test('Development 与 Production 使用不同的 D1 数据库', () => {
   assert.notEqual(TARGETS.development.databaseName, TARGETS.production.databaseName)

@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
 import { alertDialog } from '@/composables/dialogService'
-import { normalizeNote, toActionIds } from '@/local-backend/domain/noteModel'
+import { normalizeNote, toActionIds } from '@/domain/models/noteModel'
 import {
   createNoteRecord,
   deleteUserNote,
@@ -11,7 +11,7 @@ import {
   syncNotesForActionOwnership,
   updateUserNote,
   updateUserNoteTags,
-} from '@/local-backend/services/notebookService'
+} from '@/domain/services/notebookService'
 import { useActionStore } from './actionStore'
 import { usePlayerStore } from './playerStore'
 

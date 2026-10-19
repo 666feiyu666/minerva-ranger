@@ -4,7 +4,7 @@ const { test } = require('node:test')
 const {
   DEVELOPMENT_USER_DATA_SUFFIX,
   resolveUserDataPath,
-} = require('../electron/userDataPath')
+} = require('../../electron/userDataPath')
 
 test('未打包 Electron 默认使用独立的开发数据目录', () => {
   const defaultUserDataPath = path.join('example', 'minerva-ranger')

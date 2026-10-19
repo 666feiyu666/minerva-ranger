@@ -21,8 +21,8 @@ import {
   mergeRangerProfiles,
   migrateLegacySlotsToRangerProfile,
   normalizeRangerProfile,
-} from '@/local-backend/domain/rangerProfile'
-import { normalizeSaveIndex, validateSaveDataShape } from '@/local-backend/domain/saveSchema'
+} from '@/domain/models/rangerProfile'
+import { normalizeSaveIndex, validateSaveDataShape } from '@/domain/models/saveSchema'
 import {
   createSaveSlotData,
   hasBootstrappedDefaultIdentity,
@@ -36,7 +36,7 @@ import {
   shouldPersistActiveSlot,
   writeRangerProfile,
   writeSaveIndex,
-} from '@/local-backend/services/saveService'
+} from '@/domain/services/saveService'
 import { useAppStore } from './appStore'
 import { useNotebookStore } from './notebookStore'
 import { useMapStore } from './mapStore'

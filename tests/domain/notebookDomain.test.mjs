@@ -7,21 +7,21 @@ import { pathToFileURL } from 'node:url'
 import { buildSync } from 'esbuild'
 
 async function loadNotebookDomain() {
-  const repoRoot = path.resolve(import.meta.dirname, '..')
+  const repoRoot = path.resolve(import.meta.dirname, '../..')
   const bundledPath = path.join(tmpdir(), `mr-notebook-domain-${Date.now()}.mjs`)
 
   buildSync({
     stdin: {
       contents: `
-        export { normalizeNote } from '@/local-backend/domain/noteModel'
-        export { countVisibleNoteCharacters } from '@/local-backend/domain/noteContent'
+        export { normalizeNote } from '@/domain/models/noteModel'
+        export { countVisibleNoteCharacters } from '@/domain/models/noteContent'
         export {
           createNoteRecord,
           migrateNotesForDeletedAction,
           migrateNotesForDeletedSkill,
           syncNotesForActionOwnership
-        } from '@/local-backend/services/notebookService'
-        export { mergeActionData } from '@/local-backend/services/actionService'
+        } from '@/domain/services/notebookService'
+        export { mergeActionData } from '@/domain/services/actionService'
       `,
       resolveDir: repoRoot,
       sourcefile: 'notebook-domain-test-entry.mjs'

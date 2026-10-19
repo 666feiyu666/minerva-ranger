@@ -1,5 +1,5 @@
 import { MAP_LOCATIONS } from '@/config/mapCatalog'
-import { createInitialMapState } from '@/local-backend/domain/mapModel'
+import { createInitialMapState } from '@/domain/models/mapModel'
 
 const now = Date.now()
 

@@ -1,7 +1,7 @@
-import { deriveTotalXPFromLegacyAction, getActionLevelState } from '@/local-backend/domain/leveling'
-import { normalizeNote } from '@/local-backend/domain/noteModel'
-import { isSameActionId, normalizeAction } from '@/local-backend/domain/actionModel'
-import { migrateNotesForDeletedAction } from '@/local-backend/services/notebookService'
+import { deriveTotalXPFromLegacyAction, getActionLevelState } from '@/domain/models/leveling'
+import { normalizeNote } from '@/domain/models/noteModel'
+import { isSameActionId, normalizeAction } from '@/domain/models/actionModel'
+import { migrateNotesForDeletedAction } from '@/domain/services/notebookService'
 
 export function createActionRecord(name, skillId = null, id = Date.now()) {
   return normalizeAction({

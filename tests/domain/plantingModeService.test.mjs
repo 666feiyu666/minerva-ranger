@@ -7,7 +7,7 @@ import {
   PLANTING_MODES,
   getTaskTimeState,
   validatePlantingMode
-} from '../src/local-backend/services/plantingModeService.mjs'
+} from '../../src/domain/services/plantingModeService.mjs'
 
 const CYCLE_DURATION = 25 * 60
 

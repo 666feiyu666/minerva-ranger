@@ -1,5 +1,5 @@
 import { createEmptySaveData } from '@/config/defaultSaveData'
-import { buildSaveSummary } from '@/local-backend/domain/saveSchema'
+import { buildSaveSummary } from '@/domain/models/saveSchema'
 import {
   createSlotId,
   hasBootstrappedDefaultIdentity,
@@ -12,7 +12,7 @@ import {
   writeSaveIndex,
   writeRangerProfile,
   writeSlotData,
-} from '@/local-backend/storage/saveSlotRepository'
+} from '@/domain/storage/saveSlotRepository'
 
 export {
   hasBootstrappedDefaultIdentity,

@@ -13,7 +13,7 @@
     "release:cloud:development": "node scripts/cloud-release.cjs development",
     "release:cloud:production": "node scripts/cloud-release.cjs production --confirm-production",
     "validate:cloud-imports": "node scripts/validate-cloud-imports.cjs",
-    "test": "node --test \"tests/*.test.mjs\" \"tests/*.test.cjs\"",
+    "test": "node --test \"tests/domain/*.test.mjs\" \"tests/integration/*.test.mjs\" \"tests/electron/*.test.cjs\" \"tests/release/*.test.cjs\"",
     "test:cloud": "vitest run --config vitest.config.mjs",
     "types:cloud": "wrangler types worker-configuration.d.ts",
     "check:cloud": "wrangler types worker-configuration.d.ts --check && vitest run --config vitest.config.mjs && vite build --mode cloud",
@@ -36,8 +36,7 @@
     "jose": "^6.2.9",
     "marked": "^18.0.9",
     "pinia": "^3.0.4",
-    "vue": "^3.5.27",
-    "vue-router": "^4.6.4"
+    "vue": "^3.5.27"
   },
   "devDependencies": {
     "@capacitor/cli": "^8.0.2",

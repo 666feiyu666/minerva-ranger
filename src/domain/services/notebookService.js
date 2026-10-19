@@ -1,6 +1,6 @@
-import { normalizeNote, toActionIds } from '@/local-backend/domain/noteModel'
-import { countVisibleNoteCharacters } from '@/local-backend/domain/noteContent'
-import { isSameActionId } from '@/local-backend/domain/actionModel'
+import { normalizeNote, toActionIds } from '@/domain/models/noteModel'
+import { countVisibleNoteCharacters } from '@/domain/models/noteContent'
+import { isSameActionId } from '@/domain/models/actionModel'
 
 export function createNoteRecord({
   title,

@@ -36,7 +36,7 @@ class MemoryStorage {
 }
 
 test('地图 Store 接入全局巡林官进度、身份切换与种树结算', async () => {
-  const repoRoot = path.resolve(import.meta.dirname, '..')
+  const repoRoot = path.resolve(import.meta.dirname, '../..')
   const bundledStorePath = path.join(tmpdir(), `mr-map-store-${Date.now()}.mjs`)
   const storage = new MemoryStorage()
   globalThis.localStorage = storage

@@ -8,11 +8,11 @@ import { pathToFileURL } from 'node:url'
 import { buildSync } from 'esbuild'
 
 test('技能顺序移动只调整数组位置并守住边界', async () => {
-  const repoRoot = path.resolve(import.meta.dirname, '..')
+  const repoRoot = path.resolve(import.meta.dirname, '../..')
   const bundledServicePath = path.join(tmpdir(), `mr-skill-service-${Date.now()}.mjs`)
 
   buildSync({
-    entryPoints: [path.join(repoRoot, 'src/local-backend/services/skillService.js')],
+    entryPoints: [path.join(repoRoot, 'src/domain/services/skillService.js')],
     bundle: true,
     platform: 'node',
     format: 'esm',

@@ -2,21 +2,21 @@ import { defineStore } from 'pinia'
 import { computed, ref } from 'vue'
 import { RUNNING_SAVE_INTERVAL_MS, TIMER_TICK_INTERVAL_MS } from '@/config/gameBalance'
 import { TREE_TYPES } from '@/config/treeCatalog'
-import { isSameActionId } from '@/local-backend/domain/actionModel'
+import { isSameActionId } from '@/domain/models/actionModel'
 import {
   applyCompletedTreeCycles,
   buildPlantingNoteInput,
   getFinishedCycles,
   getTreeYield as getTreeYieldFromHarvestService,
-} from '@/local-backend/services/harvestService'
+} from '@/domain/services/harvestService'
 import {
   DEFAULT_COUNTUP_DURATION,
   PLANTING_MODES,
   getPlantingModeLabel,
   getTaskTimeState,
   validatePlantingMode,
-} from '@/local-backend/services/plantingModeService.mjs'
-import { getRunningTimerDelta } from '@/local-backend/services/timerService'
+} from '@/domain/services/plantingModeService.mjs'
+import { getRunningTimerDelta } from '@/domain/services/timerService'
 import { useNotebookStore } from './notebookStore'
 import { useMapStore } from './mapStore'
 import { usePlayerStore } from './playerStore'

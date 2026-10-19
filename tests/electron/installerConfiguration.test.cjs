@@ -3,9 +3,9 @@ const { readFileSync } = require('node:fs')
 const path = require('node:path')
 const test = require('node:test')
 
-const repoRoot = path.resolve(__dirname, '..')
-const packageMetadata = require('../package.json')
-const smokeConfig = require('../scripts/electron-builder-smoke.config.cjs')
+const repoRoot = path.resolve(__dirname, '../..')
+const packageMetadata = require('../../package.json')
+const smokeConfig = require('../../scripts/electron-builder-smoke.config.cjs')
 const installerInclude = readFileSync(
   path.join(repoRoot, 'installer', 'installer.nsh'),
   'utf8',

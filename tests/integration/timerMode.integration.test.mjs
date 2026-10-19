@@ -8,7 +8,7 @@ import { pathToFileURL } from 'node:url'
 import { buildSync } from 'esbuild'
 
 test('Store创建两种计时任务并按完整周期结算', async () => {
-  const repoRoot = path.resolve(import.meta.dirname, '..')
+  const repoRoot = path.resolve(import.meta.dirname, '../..')
   const bundledStorePath = path.join(tmpdir(), `mr-game-store-${Date.now()}.mjs`)
 
   buildSync({

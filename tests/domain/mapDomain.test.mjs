@@ -8,7 +8,7 @@ import {
   normalizeMapState,
   unlockMapLocation,
   validateMapCatalog,
-} from '../src/local-backend/domain/mapModel.js'
+} from '../../src/domain/models/mapModel.js'
 
 const LOCATIONS = [
   {

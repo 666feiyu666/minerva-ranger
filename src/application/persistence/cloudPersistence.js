@@ -3,7 +3,7 @@ import {
   createMemoryStorage,
   snapshotToEntries,
 } from '@/application/persistence/snapshotStorage'
-import { configureStorageClient } from '@/local-backend/storage/localStorageClient'
+import { configureStorageClient } from '@/domain/storage/localStorageClient'
 
 const SAVE_DEBOUNCE_MS = 1200
 const statusListeners = new Set()

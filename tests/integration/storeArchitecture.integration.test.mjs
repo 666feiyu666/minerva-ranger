@@ -33,7 +33,7 @@ class MemoryStorage {
 }
 
 test('领域 Store 重构保持跨模块业务与当前存档契约', async () => {
-  const repoRoot = path.resolve(import.meta.dirname, '..')
+  const repoRoot = path.resolve(import.meta.dirname, '../..')
   const bundledStorePath = path.join(tmpdir(), `mr-architecture-${Date.now()}.mjs`)
   globalThis.localStorage = new MemoryStorage()
 
