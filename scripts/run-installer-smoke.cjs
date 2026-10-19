@@ -9,16 +9,19 @@ const {
 } = require('node:fs')
 const { tmpdir } = require('node:os')
 const path = require('node:path')
+const { version } = require('../package.json')
 
 const repoRoot = path.resolve(__dirname, '..')
 const installerPath = path.join(
   repoRoot,
   'release',
   'installer-smoke',
-  'MinervaRangerSmoke Setup 0.4.0.exe',
+  `MinervaRangerSmoke Setup ${version}.exe`,
 )
 if (!existsSync(installerPath)) {
-  throw new Error('缺少隔离的 V0.4 NSIS 测试安装包，请先运行 npm run dist:installer-smoke。')
+  throw new Error(
+    `缺少隔离的 NSIS 测试安装包（${path.basename(installerPath)}），请先运行 npm run dist:installer-smoke。`,
+  )
 }
 
 const smokeDirectory = mkdtempSync(path.join(tmpdir(), 'minerva-installer-'))

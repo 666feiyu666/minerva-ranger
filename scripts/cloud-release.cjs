@@ -46,7 +46,7 @@ function createReleasePlan(targetName, options = {}) {
     target,
     backupPath,
     steps: [
-      { name: 'V0.4 regression tests', command: npmExecutable, args: ['test'] },
+      { name: 'regression tests', command: npmExecutable, args: ['test'] },
       { name: 'lint checks', command: npmExecutable, args: ['run', 'check'] },
       { name: 'Workers and D1 checks', command: npmExecutable, args: ['run', 'check:cloud'] },
       {

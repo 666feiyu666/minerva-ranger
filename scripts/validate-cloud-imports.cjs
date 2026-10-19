@@ -12,7 +12,7 @@ function validateCloudImport(document, sourceName = 'JSON') {
     throw new Error(`${sourceName} 的顶层必须是对象。`)
   }
   if (document.formatVersion !== 2) {
-    throw new Error(`${sourceName} 不是受支持的 V0.4 formatVersion 2 导出。`)
+    throw new Error(`${sourceName} 不是受支持的导出文件（需要 formatVersion 2）。`)
   }
   if (!document.identity || typeof document.identity !== 'object') {
     throw new Error(`${sourceName} 缺少 identity。`)
@@ -35,7 +35,7 @@ function validateCloudImport(document, sourceName = 'JSON') {
 
 function validateFiles(paths) {
   if (paths.length === 0) {
-    throw new Error('请传入至少一个 V0.4 Desktop JSON 文件路径。')
+    throw new Error('请传入至少一个 Desktop 导出的 JSON 文件路径。')
   }
   const reports = paths.map((path) => {
     const absolutePath = resolve(path)
