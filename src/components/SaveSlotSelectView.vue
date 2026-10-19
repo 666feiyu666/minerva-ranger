@@ -51,7 +51,9 @@
         <component :is="DevToolsPanel" v-if="DevToolsPanel" class="save-atlas__devtools" />
 
         <section v-if="store.saveSlots.length === 0" class="save-atlas__empty paper-panel">
-          <span class="save-atlas__empty-mark" aria-hidden="true">＋</span>
+          <span class="save-atlas__empty-mark" aria-hidden="true">
+            <AppIcon name="plus" :size="18" />
+          </span>
           <h3>还没有长期身份</h3>
           <p>先创建一个长期身份，或从已有的 JSON 备份恢复。</p>
           <div>
@@ -100,28 +102,40 @@
             <div class="save-card__actions">
               <button class="primary-button" @click="enterSlot(slot.id)">继续行动</button>
               <div class="save-card__secondary">
-                <button class="quiet-button" @click="renameSlot(slot)">重命名</button>
-                <button class="quiet-button" @click="store.downloadSaveFile(slot.id)">导出</button>
+                <button class="quiet-button" @click="renameSlot(slot)">
+                  <AppIcon name="pencil" :size="13" />
+                  <span>重命名</span>
+                </button>
+                <button class="quiet-button" @click="store.downloadSaveFile(slot.id)">
+                  <AppIcon name="export" :size="13" />
+                  <span>导出</span>
+                </button>
                 <button
                   class="quiet-button"
                   :disabled="store.saveSlots[0]?.id === slot.id"
                   aria-label="向上移动"
+                  title="向上移动"
                   @click="moveSlot(slot.id, -1)"
                 >
-                  ↑
+                  <AppIcon name="arrow-up" :size="13" />
                 </button>
                 <button
                   class="quiet-button"
                   :disabled="store.saveSlots[store.saveSlots.length - 1]?.id === slot.id"
                   aria-label="向下移动"
+                  title="向下移动"
                   @click="moveSlot(slot.id, 1)"
                 >
-                  ↓
+                  <AppIcon name="arrow-down" :size="13" />
                 </button>
                 <button class="quiet-button" @click="startOverwriteImport(slot.id)">
-                  覆盖导入
+                  <AppIcon name="import" :size="13" />
+                  <span>覆盖导入</span>
                 </button>
-                <button class="danger-button" @click="deleteSlot(slot)">删除</button>
+                <button class="danger-button" @click="deleteSlot(slot)">
+                  <AppIcon name="trash" :size="13" />
+                  <span>删除</span>
+                </button>
               </div>
             </div>
           </article>
@@ -138,6 +152,7 @@ import { storeToRefs } from 'pinia'
 import { computed, defineAsyncComponent, reactive, ref } from 'vue'
 import { confirmDialog, promptDialog } from '@/composables/dialogService'
 import CloudAccountPanel from '@/components/CloudAccountPanel.vue'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import { useSaveStore } from '@/stores/saveStore'
 
 const saveStore = useSaveStore()

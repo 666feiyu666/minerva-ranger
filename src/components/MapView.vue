@@ -96,7 +96,7 @@
               :aria-label="`可移栽树木，共 ${totalAvailableTrees} 棵`"
               @click.stop="resourceOpen = !resourceOpen"
             >
-              <span aria-hidden="true">♧</span>
+              <span aria-hidden="true"><AppIcon name="sapling" :size="15" /></span>
               <strong>{{ totalAvailableTrees }}</strong>
               <small>可移栽树木</small>
             </button>
@@ -124,9 +124,13 @@
           </div>
 
           <div class="map-zoom-controls" aria-label="地图缩放控制">
-            <button type="button" aria-label="缩小地图" @click="zoomBy(-0.15)">−</button>
+            <button type="button" aria-label="缩小地图" @click="zoomBy(-0.15)">
+              <AppIcon name="minus" :size="16" />
+            </button>
             <output aria-live="polite">{{ Math.round(viewport.scale * 100) }}%</output>
-            <button type="button" aria-label="放大地图" @click="zoomBy(0.15)">＋</button>
+            <button type="button" aria-label="放大地图" @click="zoomBy(0.15)">
+              <AppIcon name="plus" :size="16" />
+            </button>
           </div>
           <button
             type="button"
@@ -134,7 +138,7 @@
             aria-label="复位地图视角"
             @click="resetViewport"
           >
-            <span aria-hidden="true">⌖</span><small>复位视角</small>
+            <span aria-hidden="true"><AppIcon name="compass" :size="16" /></span><small>复位视角</small>
           </button>
         </div>
       </header>
@@ -155,7 +159,9 @@
       >
         <div class="map-detail__topline">
           <span class="paper-label">{{ selectedLocationState.region }}</span>
-          <button type="button" aria-label="关闭地点详情" @click="detailOpen = false">×</button>
+          <button type="button" aria-label="关闭地点详情" @click="detailOpen = false">
+            <AppIcon name="close" :size="15" />
+          </button>
         </div>
 
         <button
@@ -314,7 +320,7 @@
       </section>
 
       <div v-if="newDiscoveryNotice" class="map-discovery-toast" role="status">
-        <span aria-hidden="true">✦</span>
+        <span aria-hidden="true"><AppIcon name="compass" :size="18" /></span>
         <div>
           <strong>新的路径显现了</strong>
           <p>{{ newDiscoveryNotice }}</p>
@@ -368,6 +374,7 @@ import { TREE_TYPES } from '@/config/treeCatalog'
 import { MAP_SCALE_MAX, MAP_SCALE_MIN } from '@/local-backend/domain/mapModel'
 import { useMapStore } from '@/stores/mapStore'
 import { useSaveStore } from '@/stores/saveStore'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 const mapStore = useMapStore()
 const saveStore = useSaveStore()

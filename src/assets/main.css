@@ -373,6 +373,13 @@ button:disabled {
   image-rendering: crisp-edges;
 }
 
+/* 统一图标语言：内联 SVG 作为 flex 子项时不被压缩，并跟随文字基线 */
+.app-icon {
+  display: block;
+  flex: 0 0 auto;
+  vertical-align: middle;
+}
+
 @media (max-width: 1120px) {
   .app-toolbar {
     padding-inline: 18px;

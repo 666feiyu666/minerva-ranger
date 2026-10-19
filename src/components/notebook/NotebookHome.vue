@@ -24,7 +24,7 @@
           <dd>{{ item.secondaryValue }}</dd>
         </div>
       </dl>
-      <span class="notebook-entry__arrow" aria-hidden="true">→</span>
+      <span class="notebook-entry__arrow" aria-hidden="true"><AppIcon name="arrow-right" :size="15" /></span>
     </button>
   </section>
 </template>
@@ -34,6 +34,7 @@ import { computed } from 'vue'
 import { storeToRefs } from 'pinia'
 import { useActionStore } from '@/stores/actionStore'
 import { useNotebookStore } from '@/stores/notebookStore'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 defineEmits(['open'])
 

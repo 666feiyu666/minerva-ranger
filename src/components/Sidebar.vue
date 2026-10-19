@@ -23,47 +23,28 @@
         <button
           @click="systemAppsExpanded = !systemAppsExpanded"
           class="app-sidebar__section-toggle"
+          :aria-expanded="systemAppsExpanded"
         >
           <span>图志目录</span>
-          <span aria-hidden="true">{{ systemAppsExpanded ? '−' : '+' }}</span>
+          <AppIcon
+            :name="systemAppsExpanded ? 'chevron-down' : 'chevron-right'"
+            :size="14"
+            class="app-sidebar__section-chevron"
+          />
         </button>
 
         <div v-show="systemAppsExpanded" class="mt-1 space-y-1">
-          <button
-            @click="store.openShop()"
-            :class="
-              navBtnClass(
-                'shop',
-                'text-yellow-500',
-                'bg-yellow-700',
-                'text-yellow-700',
-                'bg-yellow-100',
-              )
-            "
-          >
-            <span class="app-sidebar__nav-mark">苗</span><span>巡林苗圃</span>
+          <button @click="store.openShop()" :class="navBtnClass('shop')">
+            <span class="app-sidebar__nav-mark"><AppIcon name="sapling" :size="16" /></span>
+            <span>巡林苗圃</span>
           </button>
-          <button
-            @click="store.openMap()"
-            :class="
-              navBtnClass('map', 'text-amber-500', 'bg-amber-900', 'text-amber-700', 'bg-amber-100')
-            "
-          >
-            <span class="app-sidebar__nav-mark">图</span><span>密涅瓦地图</span>
+          <button @click="store.openMap()" :class="navBtnClass('map')">
+            <span class="app-sidebar__nav-mark"><AppIcon name="map" :size="16" /></span>
+            <span>密涅瓦地图</span>
           </button>
-          <button
-            @click="store.openNotebook()"
-            :class="
-              navBtnClass(
-                'notebook',
-                'text-blue-500',
-                'bg-blue-800',
-                'text-blue-700',
-                'bg-blue-100',
-              )
-            "
-          >
-            <span class="app-sidebar__nav-mark">记</span><span>巡林笔记</span>
+          <button @click="store.openNotebook()" :class="navBtnClass('notebook')">
+            <span class="app-sidebar__nav-mark"><AppIcon name="notebook" :size="16" /></span>
+            <span>巡林笔记</span>
           </button>
         </div>
       </div>
@@ -101,11 +82,12 @@
           @drop="handleDropOnSkill(group.id, $event)"
         >
           <div class="flex min-w-0 items-center gap-2">
-            <span
-              class="inline-block flex-none transition-transform"
+            <AppIcon
+              name="chevron-right"
+              :size="13"
+              class="flex-none transition-transform"
               :class="expandedSkills.has(group.id) ? 'rotate-90' : ''"
-              >›</span
-            >
+            />
 
             <div v-if="editingSkillId === group.id" class="min-w-0" @click.stop>
               <input
@@ -131,7 +113,7 @@
               :aria-label="`将“${group.name}”向上移动`"
               :title="`将“${group.name}”向上移动`"
             >
-              <span aria-hidden="true">↑</span>
+              <span aria-hidden="true"><AppIcon name="arrow-up" :size="13" /></span>
             </button>
             <button
               v-if="group.id && editingSkillId !== group.id"
@@ -141,23 +123,25 @@
               :aria-label="`将“${group.name}”向下移动`"
               :title="`将“${group.name}”向下移动`"
             >
-              <span aria-hidden="true">↓</span>
+              <span aria-hidden="true"><AppIcon name="arrow-down" :size="13" /></span>
             </button>
             <button
               v-if="group.id && editingSkillId !== group.id"
               @click.stop="startRenameSkill(group)"
               class="app-sidebar__skill-action-button hover:bg-black/10 dark:hover:bg-white/10"
+              aria-label="重命名技能"
               title="重命名技能"
             >
-              改
+              <AppIcon name="pencil" :size="13" />
             </button>
             <button
               v-if="group.id"
               @click.stop="handleDeleteSkill(group)"
-              class="app-sidebar__skill-action-button text-red-500 hover:bg-red-500/20"
+              class="app-sidebar__skill-action-button app-sidebar__skill-action-button--danger hover:bg-red-500/20"
+              aria-label="删除技能"
               title="删除技能"
             >
-              删
+              <AppIcon name="trash" :size="13" />
             </button>
             <span v-if="!group.id" class="text-[10px]">未归属技能</span>
           </div>
@@ -216,10 +200,9 @@
               ]"
             >
               <div
-                class="absolute left-1 opacity-0 group-hover/item:opacity-100 cursor-move text-xs mr-1"
-                :class="store.isNightMode ? 'text-gray-600' : 'text-gray-400'"
+                class="app-sidebar__drag-handle absolute left-1 opacity-0 group-hover/item:opacity-100 cursor-move mr-1"
               >
-                ⋮⋮
+                <AppIcon name="drag-handle" :size="13" />
               </div>
 
               <div class="app-sidebar__action-mark pointer-events-none">
@@ -267,7 +250,7 @@
                     :class="store.isNightMode ? 'bg-gray-700' : 'bg-gray-200'"
                   >
                     <div
-                      class="bg-blue-500 h-full transition-all"
+                      class="app-sidebar__action-xp h-full transition-all"
                       :style="{ width: (action.currentXP / action.nextLevelXP) * 100 + '%' }"
                     ></div>
                   </div>
@@ -285,63 +268,28 @@
                 ]"
                 title="更多操作"
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  stroke-width="2"
-                  stroke-linecap="round"
-                  stroke-linejoin="round"
-                >
-                  <circle cx="12" cy="12" r="1" />
-                  <circle cx="12" cy="5" r="1" />
-                  <circle cx="12" cy="19" r="1" />
-                </svg>
+                <AppIcon name="more-vertical" :size="16" />
               </button>
 
               <div
                 v-if="activeMenuId === action.id"
-                class="absolute right-0 top-full mt-1 w-32 rounded-lg shadow-xl border z-50 overflow-hidden animate-in fade-in zoom-in duration-200 flex flex-col py-1"
-                :class="
-                  store.isNightMode ? 'bg-[#252525] border-gray-700' : 'bg-white border-gray-200'
-                "
+                class="app-sidebar__menu absolute right-0 top-full mt-1 z-50 flex w-36 flex-col overflow-hidden"
                 @click.stop
               >
-                <button
-                  @click="startRename(action)"
-                  class="text-left px-3 py-2 text-xs font-bold flex items-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-t"
-                  :class="
-                    store.isNightMode
-                      ? 'border-gray-700 text-blue-400'
-                      : 'border-gray-100 text-blue-600'
-                  "
-                >
-                  <span aria-hidden="true">改</span> 重命名
+                <button class="app-sidebar__menu-item" @click="startRename(action)">
+                  <AppIcon name="pencil" :size="13" />
+                  <span>重命名</span>
+                </button>
+                <button class="app-sidebar__menu-item" @click="openMergeModal(action)">
+                  <AppIcon name="merge" :size="13" />
+                  <span>合并到…</span>
                 </button>
                 <button
-                  @click="openMergeModal(action)"
-                  class="text-left px-3 py-2 text-xs font-bold flex items-center gap-2 hover:bg-black/5 dark:hover:bg-white/5 transition-colors border-t"
-                  :class="
-                    store.isNightMode
-                      ? 'border-gray-700 text-amber-400'
-                      : 'border-gray-100 text-amber-600'
-                  "
-                >
-                  <span aria-hidden="true">并</span> 合并到…
-                </button>
-                <button
+                  class="app-sidebar__menu-item app-sidebar__menu-item--danger"
                   @click="handleDelete(action)"
-                  class="text-left px-3 py-2 text-xs font-bold flex items-center gap-2 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors border-t"
-                  :class="
-                    store.isNightMode
-                      ? 'text-red-400 border-gray-700'
-                      : 'text-red-600 border-gray-100'
-                  "
                 >
-                  <span aria-hidden="true">删</span> 删除
+                  <AppIcon name="trash" :size="13" />
+                  <span>删除</span>
                 </button>
               </div>
             </div>
@@ -376,54 +324,22 @@
           :placeholder="
             createMode === 'skill' ? '输入技能名称' : '输入动词型行动，例如“审阅前端代码”'
           "
-          class="w-full text-sm px-3 py-2 rounded border focus:border-green-500 outline-none transition-colors"
-          :class="
-            store.isNightMode
-              ? 'bg-gray-800 text-white border-gray-600'
-              : 'bg-white text-gray-900 border-gray-300 shadow-inner'
-          "
+          class="app-sidebar__create-input"
         />
         <div class="flex gap-2">
-          <button
-            @click="confirmCreate"
-            class="flex-1 bg-green-700 hover:bg-green-600 text-white text-xs py-1.5 rounded font-bold"
-          >
-            确认
-          </button>
-          <button
-            @click="createMode = null"
-            class="flex-1 text-white text-xs py-1.5 rounded transition-colors"
-            :class="
-              store.isNightMode ? 'bg-gray-700 hover:bg-gray-600' : 'bg-gray-400 hover:bg-gray-500'
-            "
-          >
-            取消
-          </button>
+          <button @click="confirmCreate" class="app-sidebar__create-confirm">确认</button>
+          <button @click="createMode = null" class="app-sidebar__create-cancel">取消</button>
         </div>
       </div>
 
       <div v-else class="flex gap-2">
-        <button
-          @click="startCreating('action')"
-          class="flex-1 flex items-center justify-center gap-1 py-2 rounded transition-colors text-xs font-bold border border-dashed"
-          :class="
-            store.isNightMode
-              ? 'bg-gray-700 hover:bg-gray-600 text-gray-200 border-transparent'
-              : 'bg-white/50 hover:bg-white text-gray-500 border-gray-300'
-          "
-        >
-          + 行动
+        <button @click="startCreating('action')" class="app-sidebar__ghost-button">
+          <AppIcon name="plus" :size="13" />
+          <span>行动</span>
         </button>
-        <button
-          @click="startCreating('skill')"
-          class="flex-1 flex items-center justify-center gap-1 py-2 rounded transition-colors text-xs font-bold border border-dashed"
-          :class="
-            store.isNightMode
-              ? 'bg-[#333] hover:bg-[#444] text-blue-400 border-transparent'
-              : 'bg-blue-50/50 hover:bg-blue-50 text-blue-600 border-blue-200'
-          "
-        >
-          + 技能
+        <button @click="startCreating('skill')" class="app-sidebar__ghost-button">
+          <AppIcon name="plus" :size="13" />
+          <span>技能</span>
         </button>
       </div>
     </div>
@@ -658,6 +574,7 @@ import { computed, nextTick, onMounted, onUnmounted, reactive, ref } from 'vue'
 import { alertDialog, confirmDialog } from '@/composables/dialogService'
 import { useActionWorkflow } from '@/application/workflows/actionWorkflow'
 import { useSkillWorkflow } from '@/application/workflows/skillWorkflow'
+import AppIcon from '@/components/ui/AppIcon.vue'
 import { useAppStore } from '@/stores/appStore'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useActionStore } from '@/stores/actionStore'
@@ -941,22 +858,10 @@ const handleDeleteSkill = async (skill) => {
 }
 
 // === 样式辅助 ===
-const navBtnClass = (view, nightText, nightBg, dayText, dayBg) => {
-  const isActive = store.activeView === view
-  const isNight = store.isNightMode
-  const base = 'app-sidebar__nav-button'
-  return isActive
-    ? [
-        base,
-        isNight ? `${nightBg} text-white` : `${dayBg} ${dayText} shadow-md ring-1 ring-black/5`,
-      ]
-    : [
-        base,
-        isNight
-          ? `bg-[#333] ${nightText} hover:bg-[#3a3a3a]`
-          : `bg-white/50 text-gray-500 hover:bg-white/80`,
-      ]
-}
+const navBtnClass = (view) => [
+  'app-sidebar__nav-button',
+  store.activeView === view ? 'is-active' : '',
+]
 
 const actionMark = (action) => (action?.name || '行').trim().slice(0, 1)
 const isActive = (id) => store.activeActionId === id && store.activeView === 'dashboard'
@@ -1057,6 +962,11 @@ const isActive = (id) => store.activeActionId === id && store.activeView === 'da
   padding: 7px 9px;
 }
 
+.app-sidebar__section-chevron {
+  flex: 0 0 auto;
+  opacity: 0.72;
+}
+
 .app-sidebar__section-toggle:hover {
   color: var(--ink);
   background: color-mix(in srgb, var(--sage) 12%, transparent);
@@ -1091,10 +1001,16 @@ const isActive = (id) => store.activeActionId === id && store.activeView === 'da
   background: color-mix(in srgb, var(--sage) 11%, transparent) !important;
 }
 
-:deep(.app-sidebar__nav-button.ring-1) {
+:deep(.app-sidebar__nav-button.is-active) {
   border-color: var(--line-strong) !important;
   color: var(--forest-deep) !important;
   background: color-mix(in srgb, var(--sage) 20%, var(--paper-strong)) !important;
+}
+
+:deep(.app-sidebar__nav-button.is-active) .app-sidebar__nav-mark {
+  border-color: color-mix(in srgb, var(--forest) 38%, transparent);
+  color: var(--forest-deep);
+  background: color-mix(in srgb, var(--sage) 26%, var(--paper-strong));
 }
 
 .app-sidebar__nav-mark {
@@ -1107,8 +1023,6 @@ const isActive = (id) => store.activeActionId === id && store.activeView === 'da
   border-radius: 7px;
   color: var(--forest);
   background: var(--paper-strong);
-  font-family: var(--font-display);
-  font-size: 12px;
 }
 
 .app-sidebar__skill-row {
@@ -1211,6 +1125,131 @@ const isActive = (id) => store.activeActionId === id && store.activeView === 'da
   font-family: var(--font-display);
   font-size: 13px;
   font-weight: 700;
+}
+
+.app-sidebar__action-xp {
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--sage), var(--forest));
+}
+
+.app-sidebar__drag-handle {
+  color: var(--ink-faint);
+}
+
+.app-sidebar__menu {
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  padding: 4px;
+  color: var(--ink);
+  background: var(--paper-strong);
+  box-shadow: var(--shadow-float);
+}
+
+.app-sidebar__menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 6px;
+  padding: 7px 9px;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 750;
+  text-align: left;
+  transition:
+    color 140ms ease,
+    background 140ms ease;
+}
+
+.app-sidebar__menu-item:hover {
+  background: color-mix(in srgb, var(--sage) 16%, transparent);
+}
+
+.app-sidebar__menu-item--danger {
+  color: var(--danger);
+}
+
+.app-sidebar__menu-item--danger:hover {
+  background: color-mix(in srgb, var(--danger) 12%, transparent);
+}
+
+.app-sidebar__skill-action-button--danger {
+  color: var(--danger);
+}
+
+.app-sidebar__create-input {
+  width: 100%;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  padding: 8px 11px;
+  color: var(--ink);
+  background: var(--paper-strong);
+  font-size: 13px;
+  outline: none;
+  transition: border-color 150ms ease;
+}
+
+.app-sidebar__create-input:focus {
+  border-color: var(--forest);
+}
+
+.app-sidebar__create-input::placeholder {
+  color: var(--ink-faint);
+}
+
+.app-sidebar__create-confirm {
+  flex: 1;
+  border: 1px solid var(--forest-deep);
+  border-radius: 8px;
+  padding: 7px 0;
+  color: #fffaf0;
+  background: var(--forest-deep);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.app-sidebar__create-confirm:hover {
+  background: color-mix(in srgb, var(--forest-deep) 86%, white);
+}
+
+.app-sidebar__create-cancel {
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 7px 0;
+  color: var(--ink-soft);
+  background: color-mix(in srgb, var(--paper-strong) 78%, transparent);
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.app-sidebar__create-cancel:hover {
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+.app-sidebar__ghost-button {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 1px dashed var(--line-strong);
+  border-radius: 8px;
+  padding: 7px 0;
+  color: var(--ink-soft);
+  background: transparent;
+  font-size: 12px;
+  font-weight: 750;
+  transition:
+    color 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease;
+}
+
+.app-sidebar__ghost-button:hover {
+  border-color: var(--forest);
+  color: var(--forest-deep);
+  background: color-mix(in srgb, var(--sage) 12%, transparent);
 }
 
 .app-sidebar__footer {

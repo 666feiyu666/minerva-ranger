@@ -29,7 +29,9 @@
         <p class="mt-2 text-sm opacity-70">系统生成的合并、删除和其他审计事件。</p>
       </div>
       <div v-if="systemNotes.length === 0" class="px-6 py-16 text-center">
-        <div class="text-4xl mb-3">📜</div>
+        <div class="mb-3 flex justify-center">
+          <AppIcon name="notebook" :size="28" />
+        </div>
         <p class="font-semibold">当前还没有系统记录。</p>
       </div>
       <div v-else class="space-y-3 p-6">
@@ -63,6 +65,7 @@ import { storeToRefs } from 'pinia'
 import { useActionStore } from '@/stores/actionStore'
 import { useAppStore } from '@/stores/appStore'
 import { useNotebookStore } from '@/stores/notebookStore'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 const appStore = useAppStore()
 const actionStore = useActionStore()

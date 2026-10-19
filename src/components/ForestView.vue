@@ -31,7 +31,9 @@
                   class="text-3xl font-bold flex items-center gap-3 mt-2 transition-colors"
                   :class="store.isNightMode ? 'text-emerald-300' : 'text-emerald-700'"
                 >
-                  <span class="forest-section-mark" aria-hidden="true">林</span>
+                  <span class="forest-section-mark" aria-hidden="true">
+                    <AppIcon name="tree" :size="17" />
+                  </span>
                   {{
                     currentSkillName === '全局' ? '全局森林巡视' : currentSkillName + ' · 森林巡视'
                   }}
@@ -138,7 +140,9 @@
             class="px-7 py-14 text-center"
             :class="store.isNightMode ? 'text-gray-500' : 'text-gray-400'"
           >
-            <div class="forest-empty-mark" aria-hidden="true">空</div>
+            <div class="forest-empty-mark" aria-hidden="true">
+              <AppIcon name="sprout" :size="20" />
+            </div>
             <p class="font-semibold">这个技能下还没有行动。</p>
             <p class="text-sm mt-2">可以先在左侧新建行动，或把现有行动拖进这个技能。</p>
           </div>
@@ -163,7 +167,8 @@
                     : 'border-[#e3d1ba] bg-[#fffaf3]'
                 "
               >
-                {{ action.icon || '📁' }}
+                <span v-if="action.icon" aria-hidden="true">{{ action.icon }}</span>
+                <AppIcon v-else name="folder" :size="24" class="forest-action-fallback-icon" />
               </div>
 
               <div class="min-w-0 flex-1">
@@ -265,7 +270,7 @@
               : 'text-gray-700 bg-white/50 border-white/50 hover:bg-white/80'
           "
         >
-          <span>←</span>
+          <AppIcon name="arrow-left" :size="16" />
           <span class="text-sm font-bold group-hover:pl-1 transition-all">返回行动列表</span>
         </button>
 
@@ -283,7 +288,8 @@
               class="text-sm font-bold flex items-center gap-1"
               :class="store.isNightMode ? 'text-green-400' : 'text-emerald-600'"
             >
-              🌲 {{ viewingAction.totalTrees }}
+              <AppIcon name="tree" :size="15" />
+              <span>{{ viewingAction.totalTrees }}</span>
             </span>
           </div>
 
@@ -312,7 +318,9 @@
           v-if="scenicForestTrees.length === 0"
           class="absolute inset-x-0 bottom-[120px] z-30 flex flex-col items-center justify-center opacity-70"
         >
-          <div class="text-4xl animate-bounce mb-2">🌱</div>
+          <div class="text-4xl animate-bounce mb-2">
+            <AppIcon name="sprout" :size="36" />
+          </div>
           <span class="bg-black/40 text-white px-3 py-1 rounded text-xs whitespace-nowrap"
             >这里还没有树木，先完成一次行动吧。</span
           >
@@ -370,6 +378,7 @@ import { useActionWorkflow } from '@/application/workflows/actionWorkflow'
 import { useAppStore } from '@/stores/appStore'
 import { usePlayerStore } from '@/stores/playerStore'
 import { useActionStore } from '@/stores/actionStore'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 const appStore = useAppStore()
 const playerStore = usePlayerStore()
@@ -622,6 +631,11 @@ const formatDuration = (seconds) => {
   height: 44px;
   margin: 0 auto 12px;
   font-size: 16px;
+}
+
+.forest-action-fallback-icon {
+  color: var(--ink-soft);
+  opacity: 0.75;
 }
 
 @container (max-width: 700px) {

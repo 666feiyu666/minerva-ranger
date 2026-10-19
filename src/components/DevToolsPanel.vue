@@ -22,16 +22,18 @@
 
       <div class="flex flex-wrap gap-3">
         <button
-          class="rounded-2xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-bold text-white transition-colors hover:bg-white/15"
+          class="app-devtools__action"
           @click="openJsonImport"
         >
-          📥 Load JSON
+          <AppIcon name="import" :size="15" />
+          <span>Load JSON</span>
         </button>
         <button
-          class="rounded-2xl border border-red-300/25 bg-red-400/10 px-4 py-3 text-sm font-bold text-red-100 transition-colors hover:bg-red-400/20"
+          class="app-devtools__action app-devtools__action--danger"
           @click="clearLocalSaves"
         >
-          🧹 Clear Local
+          <AppIcon name="trash" :size="15" />
+          <span>Clear Local</span>
         </button>
       </div>
     </div>
@@ -83,6 +85,7 @@ import { ref } from 'vue'
 import { alertDialog, confirmDialog } from '@/composables/dialogService'
 import { devSaveFixtures } from '@/devtools/saveFixtures'
 import { useSaveStore } from '@/stores/saveStore'
+import AppIcon from '@/components/ui/AppIcon.vue'
 
 const store = useSaveStore()
 const fileInput = ref(null)
@@ -148,3 +151,37 @@ const clearLocalSaves = async () => {
   store.initSaveSystem()
 }
 </script>
+
+<style scoped>
+.app-devtools__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid color-mix(in srgb, var(--paper-strong) 24%, transparent);
+  border-radius: 12px;
+  padding: 10px 15px;
+  color: var(--paper-strong);
+  background: color-mix(in srgb, var(--paper-strong) 12%, transparent);
+  font-size: 13px;
+  font-weight: 750;
+  transition:
+    background 150ms ease,
+    border-color 150ms ease;
+}
+
+.app-devtools__action:hover {
+  border-color: color-mix(in srgb, var(--paper-strong) 40%, transparent);
+  background: color-mix(in srgb, var(--paper-strong) 20%, transparent);
+}
+
+.app-devtools__action--danger {
+  border-color: color-mix(in srgb, var(--danger) 48%, transparent);
+  color: color-mix(in srgb, var(--danger) 42%, var(--paper-strong));
+  background: color-mix(in srgb, var(--danger) 18%, transparent);
+}
+
+.app-devtools__action--danger:hover {
+  border-color: color-mix(in srgb, var(--danger) 66%, transparent);
+  background: color-mix(in srgb, var(--danger) 28%, transparent);
+}
+</style>
